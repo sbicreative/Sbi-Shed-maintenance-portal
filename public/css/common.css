@@ -1,0 +1,499 @@
+/* =====================================================
+   SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM
+   COMMON CSS
+   Version : 2.1 Final
+===================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
+}
+
+/* =====================================================
+   BODY
+===================================================== */
+
+body{
+
+    background:#edf3fa;
+
+    color:#333;
+
+}
+
+/* =====================================================
+   MAIN HEADER
+===================================================== */
+
+/* =====================================================
+   COMMON MAIN HEADER
+   SBI SHED LOCO MANAGEMENT SYSTEM
+===================================================== */
+
+.main-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    width:100%;
+
+    min-height:95px;
+
+    background:linear-gradient(
+        90deg,
+        #1B4D4A 0%,
+        #2E7D75 50%,
+        #1B4D4A 100%
+    );
+
+    color:#FFFFFF;
+
+    padding:12px 25px;
+
+    border-bottom:5px solid #D4A017;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+
+    box-sizing:border-box;
+
+}
+
+/* =====================================================
+   LEFT LOGO
+===================================================== */
+
+.logo-left{
+
+    width:110px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.logo-left img{
+
+    width:72px;
+
+    height:72px;
+
+    object-fit:contain;
+
+}
+
+/* =====================================================
+   RIGHT LOGO
+===================================================== */
+
+.logo-right{
+
+    width:110px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.logo-right img{
+
+    width:72px;
+
+    height:72px;
+
+    object-fit:contain;
+
+}
+
+/* =====================================================
+   HEADER TITLE
+===================================================== */
+
+.header-title{
+
+    flex:1;
+
+    text-align:center;
+
+    padding:0 15px;
+
+}
+
+.header-title h1{
+
+    margin:0;
+
+    color:#FFFFFF;
+
+    font-size:30px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+}
+
+.header-title h3{
+
+    margin-top:8px;
+
+    margin-bottom:0;
+
+    color:#EAF6F5;
+
+    font-size:18px;
+
+    font-weight:500;
+
+    letter-spacing:.5px;
+
+}
+
+
+/* =====================================================
+   COMMON BUTTON
+===================================================== */
+
+.btn{
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.btn:hover{
+
+    transform:translateY(-2px);
+
+}
+
+/* =====================================================
+   COMMON CARD
+===================================================== */
+
+.common-card{
+
+    background:#fff;
+
+    border-radius:12px;
+
+    padding:20px;
+
+    box-shadow:0 5px 15px rgba(0,0,0,.15);
+
+}
+/* =====================================================
+   COMMON SECOND HEADER ROW
+===================================================== */
+
+.page-header-bar{
+
+    min-height:58px;
+
+    background:#d6a625;
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr 1fr;
+
+    align-items:center;
+
+    padding:8px 30px;
+
+    color:#172033;
+
+    box-shadow:0 3px 8px rgba(0,0,0,.15);
+
+}
+
+
+/* LEFT - PAGE TITLE */
+
+.page-header-left{
+
+    font-size:20px;
+
+    font-weight:700;
+
+    letter-spacing:.5px;
+
+}
+
+
+/* CENTER - BLANK / FUTURE USE */
+
+.page-header-center{
+
+    min-height:1px;
+
+}
+
+
+/* RIGHT - USER DETAILS */
+
+.page-header-right{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    align-items:center;
+
+    gap:15px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+
+/* DASHBOARD BUTTON */
+
+.header-dashboard-btn{
+
+    background:#173b73;
+
+    color:#fff;
+
+    border:none;
+
+    padding:9px 16px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+}
+
+.header-dashboard-btn:hover{
+
+    background:#0f2c59;
+
+}
+
+
+/* =====================================================
+   SECOND HEADER ROW RESPONSIVE
+===================================================== */
+
+@media(max-width:800px){
+
+    .page-header-bar{
+
+        grid-template-columns:1fr;
+
+        gap:8px;
+
+        text-align:center;
+
+        padding:12px 15px;
+
+    }
+
+    .page-header-left{
+
+        text-align:center;
+
+    }
+
+    .page-header-right{
+
+        justify-content:center;
+
+        flex-wrap:wrap;
+
+    }
+
+}
+/* ==========================================
+   COMMON HEADER
+========================================== */
+
+.main-header{
+
+    width:100%;
+
+    height:95px;
+
+    background:#0d47a1;
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 20px;
+
+    box-sizing:border-box;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+
+}
+
+.header-logo img{
+
+    width:70px;
+
+    height:70px;
+
+    object-fit:contain;
+
+}
+
+.header-title{
+
+    flex:1;
+
+    text-align:center;
+
+}
+
+.header-title h1{
+
+    margin:0;
+
+    font-size:30px;
+
+    letter-spacing:1px;
+
+}
+
+.header-title h3{
+
+    margin-top:6px;
+
+    font-size:18px;
+
+    font-weight:400;
+
+}
+
+/* =====================================================
+   PAGE TITLE
+===================================================== */
+
+.page-title{
+
+    color:#0d47a1;
+
+    font-size:24px;
+
+    margin-bottom:20px;
+
+    font-weight:700;
+
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:992px){
+
+.main-header{
+
+    flex-direction:column;
+
+    text-align:center;
+
+    gap:12px;
+
+    padding:18px;
+
+}
+
+.logo-left,
+.logo-right{
+
+    width:auto;
+
+}
+
+.logo-left img,
+.logo-right img{
+
+    width:65px;
+
+    height:65px;
+
+}
+
+.header-title h1{
+
+    font-size:24px;
+
+}
+
+.header-title h2{
+
+    font-size:18px;
+
+}
+
+.header-title p{
+
+    font-size:14px;
+
+}
+
+}
+
+@media(max-width:576px){
+
+.header-title h1{
+
+    font-size:18px;
+
+    line-height:28px;
+
+}
+
+.header-title h2{
+
+    font-size:15px;
+
+}
+
+.header-title p{
+
+    font-size:12px;
+
+}
+
+.logo-left img,
+.logo-right img{
+
+    width:50px;
+
+    height:50px;
+
+}
+
+}

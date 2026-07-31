@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locomotive Shed Sabarmati Portal</title>
+    <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+    <header class="site-header">
+        <img src="/images/IR-logo.jpeg" alt="Indian Railways" class="brand-logo">
+        <div class="brand-copy">
+            <h1>Locomotive Shed, Sabarmati</h1>
+            <p>Western Railway</p>
+        </div>
+        <img src="/images/SBI-logo.jpeg" alt="Sabarmati Shed" class="brand-logo">
+    </header>
+
+    <div class="portal-subheader">
+        Integrated Maintenance &amp; Loco Tracking Portal
+    </div>
+
+    <main>
+        <section class="photo-hero">
+            <img src="/images/sbi-shed-hero.jpeg" alt="Aerial view of Locomotive Shed Sabarmati">
+            <div class="hero-shade"></div>
+            <div class="hero-content">
+                <h2>Powering maintenance. Tracking every movement.</h2>
+                <p class="hero-text">One shed. One digital platform.</p>
+            </div>
+            <div class="hero-actions">
+                <button id="openLoginBtn" class="primary-login" type="button">Login</button>
+                <a href="/tracking/" class="public-board-link">View Live Position Board</a>
+            </div>
+            <div class="shed-count-card" aria-live="polite">
+                <span class="live-indicator"></span>
+                <p>Locos available in shed</p>
+                <strong id="shedLocoCount">--</strong>
+                <small id="shedCountStatus">Loading live position data...</small>
+            </div>
+        </section>
+
+        <section class="fleet-journey">
+            <div class="section-heading">
+                <p class="section-label">Our locomotive fleet</p>
+                <h2>Locomotive Shed, Sabarmati</h2>
+                <p>A Journey Through Generations of Locomotives</p>
+            </div>
+            <div class="fleet-track" aria-label="Locomotive generations">
+                <div class="track-line" aria-hidden="true"></div>
+                <article class="fleet-stop heritage">
+                    <span class="era">Heritage</span><strong>Meter Gauge</strong><p>The foundation years</p>
+                </article>
+                <article class="fleet-stop diesel">
+                    <span class="era">Classic Diesel</span><strong>ALCO</strong><p>Proven railway workhorses</p>
+                </article>
+                <article class="fleet-stop diesel-modern">
+                    <span class="era">High Horsepower</span><strong>HHP</strong><p>A new generation of diesel power</p>
+                </article>
+                <article class="fleet-stop electric">
+                    <span class="era">Electric Freight</span><strong>WAG-9</strong><p>Heavy-haul electric traction</p>
+                </article>
+                <article class="fleet-stop passenger">
+                    <span class="era">Electric Passenger</span><strong>WAP-7</strong><p>High-speed passenger service</p>
+                </article>
+                <article class="fleet-stop modern">
+                    <span class="era">Next Generation</span><strong>WAG-12</strong><p>Modern high-power freight</p>
+                </article>
+            </div>
+            <p class="fleet-note">Fleet types shown represent the shed's operational journey. Counts are displayed only where verified data is available.</p>
+        </section>
+    </main>
+
+    <footer>© 2026 Locomotive Shed Sabarmati | Western Railway</footer>
+
+    <div id="loginModal" class="login-modal" hidden>
+        <div class="modal-backdrop" data-close-modal></div>
+        <section class="login-dialog" role="dialog" aria-modal="true" aria-labelledby="loginDialogTitle">
+            <button id="closeLoginBtn" class="modal-close" type="button" aria-label="Close login">×</button>
+            <div class="dialog-heading">
+                <p class="section-label">Choose your workspace</p>
+                <h2 id="loginDialogTitle">Portal Login</h2>
+                <p>Select the module you want to access.</p>
+            </div>
+
+            <div class="login-options">
+                <article class="login-option maintenance-option">
+                    <div class="option-mark">M</div>
+                    <h3>Maintenance Login</h3>
+                    <p>For staff, supervisors, incharges and authorized viewers.</p>
+                    <form id="maintenanceLoginForm" class="login-form">
+                        <label for="maintenanceName">Name</label>
+                        <input id="maintenanceName" type="text" autocomplete="name" placeholder="Enter registered name" required>
+                        <label for="maintenanceMobile">Mobile No. (CUG)</label>
+                        <input id="maintenanceMobile" type="tel" inputmode="numeric" placeholder="Enter registered mobile" required>
+                        <button type="submit">Login to Maintenance</button>
+                        <p id="maintenanceMessage" class="form-message" role="status"></p>
+                    </form>
+                    <a class="registration-link" href="/dashboard/register.html">New user registration</a>
+                </article>
+
+                <article class="login-option tracking-option">
+                    <div class="option-mark">T</div>
+                    <h3>Loco Tracking Login</h3>
+                    <p>For authorized staff responsible for updating live shed positions.</p>
+                    <ul>
+                        <li>Update all 26 shed locations</li>
+                        <li>Move locos between positions</li>
+                        <li>Maintain live status information</li>
+                    </ul>
+                    <a class="tracking-login-link" href="/tracking/?login=1">Continue to Authorized Login</a>
+                    <a class="public-login-link" href="/tracking/">Open public board without login</a>
+                </article>
+            </div>
+        </section>
+    </div>
+
+    <script src="/js/portal.js"></script>
+</body>
+</html>

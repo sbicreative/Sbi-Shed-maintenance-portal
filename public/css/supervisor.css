@@ -1,0 +1,252 @@
+/* ==========================================
+   SBI SHED MAINTENANCE PORTAL
+   Supervisor Dashboard
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+}
+
+body{
+    background:#eef3f8;
+}
+
+/* ================= HEADER ================= */
+
+.navbar{
+    background:#0d47a1 !important;
+    padding:12px 20px;
+}
+
+.navbar-brand{
+    font-size:24px;
+    font-weight:bold;
+    color:#fff !important;
+}
+
+.navbar .text-white{
+    font-size:18px;
+    font-weight:600;
+}
+
+/* ================= CARD ================= */
+
+.card{
+    border:none;
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:20px;
+}
+
+.card-header{
+    background:#1565c0;
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.card-body{
+    background:#fff;
+    padding:20px;
+}
+
+/* ================= BUTTON ================= */
+
+.btn{
+    border-radius:8px;
+    font-weight:600;
+    transition:0.3s;
+}
+
+.btn:hover{
+    transform:translateY(-2px);
+}
+
+.btn-success{
+    background:#2e7d32;
+    border:none;
+}
+
+.btn-success:hover{
+    background:#1b5e20;
+}
+
+.btn-primary{
+    background:#1565c0;
+    border:none;
+}
+
+.btn-primary:hover{
+    background:#0d47a1;
+}
+
+.btn-warning{
+    font-weight:bold;
+}
+
+/* ================= TABLE ================= */
+
+.table{
+    margin-top:15px;
+}
+
+.table thead{
+    background:#1565c0;
+    color:#fff;
+}
+
+.table th{
+    text-align:center;
+    vertical-align:middle;
+}
+
+.table td{
+    vertical-align:middle;
+}
+
+.table input,
+.table select{
+    min-height:40px;
+}
+
+/* ================= FORM ================= */
+
+.form-control,
+.form-select{
+    border-radius:8px;
+}
+
+label{
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+/* ================= HOME PANEL ================= */
+
+#homePanel{
+    text-align:center;
+}
+
+#homePanel h2{
+    color:#1565c0;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+#homePanel p{
+    color:#555;
+}
+
+/* ================= WORK PANEL ================= */
+
+#workPanel,
+#reviewPanel{
+    animation:fadeIn .3s;
+}
+
+/* ================= ANIMATION ================= */
+
+@keyframes fadeIn{
+
+from{
+
+opacity:0;
+
+transform:translateY(10px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+/* ================= SHADOW ================= */
+
+.shadow{
+
+box-shadow:0 4px 12px rgba(0,0,0,.15)!important;
+
+}
+
+/* ================= SCROLLBAR ================= */
+
+::-webkit-scrollbar{
+
+width:8px;
+
+height:8px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+background:#1565c0;
+
+border-radius:10px;
+
+}
+
+::-webkit-scrollbar-track{
+
+background:#ddd;
+
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:992px){
+
+.navbar-brand{
+
+font-size:20px;
+
+}
+
+.navbar .text-white{
+
+font-size:15px;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.btn{
+
+width:100%;
+
+margin-bottom:10px;
+
+}
+
+.card-body{
+
+padding:15px;
+
+}
+
+}
+
+/* ================= FOOTER ================= */
+
+.footer{
+
+margin-top:25px;
+
+text-align:center;
+
+font-size:14px;
+
+color:#666;
+
+}

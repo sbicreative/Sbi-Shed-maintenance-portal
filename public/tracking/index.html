@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1f392d">
+    <title>SBI Shed Loco Tracking</title>
+    <link rel="stylesheet" href="./tracking.css">
+</head>
+<body>
+    <header class="tracking-header">
+        <a class="portal-link" href="../portal.html" aria-label="Return to Main Portal">
+            <span aria-hidden="true">&larr;</span> Main Portal
+        </a>
+        <div class="brand-block">
+            <p>Western Railway &middot; Diesel Loco Shed, Sabarmati</p>
+            <h1>&#128646; SBI Shed Live Position Board &#128646;</h1>
+        </div>
+        <button id="adminLoginBtn" class="outline-button" type="button">Authorized Login</button>
+    </header>
+
+    <main>
+        <section class="hero-panel" aria-labelledby="boardTitle">
+            <div class="hero-copy">
+                <p class="eyebrow">Live shed overview</p>
+                <h2 id="boardTitle">Loco Position Board</h2>
+                <p>Track position, shed area and shunting order across all 26 locations.</p>
+            </div>
+            <div class="metrics" aria-label="Tracking summary">
+                <article><span>Total locos</span><strong id="totalLocos">0</strong></article>
+                <article><span>Occupied</span><strong id="occupiedLocations">0</strong></article>
+                <article><span>Vacant</span><strong id="vacantLocations">26</strong></article>
+                <article class="update-metric"><span>Last updated</span><strong id="lastUpdated">--</strong><small id="updatedBy">--</small></article>
+            </div>
+        </section>
+
+        <section class="command-bar" aria-label="Board tools">
+            <div class="search-control">
+                <label for="searchBox">Find locomotive</label>
+                <div class="search-field">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.4A7.75 7.75 0 1 1 3.5 11.25a7.75 7.75 0 0 1 15.5 0Z"/></svg>
+                    <input id="searchBox" type="search" inputmode="numeric" autocomplete="off" placeholder="Enter loco number">
+                    <button id="searchBtn" type="button">Search</button>
+                </div>
+            </div>
+            <div class="filter-control">
+                <span>Show</span>
+                <div class="filter-group" role="group" aria-label="Filter positions">
+                    <button class="filter-button active" type="button" data-filter="all" aria-pressed="true">All</button>
+                    <button class="filter-button" type="button" data-filter="occupied" aria-pressed="false">Occupied</button>
+                    <button class="filter-button" type="button" data-filter="vacant" aria-pressed="false">Vacant</button>
+                </div>
+            </div>
+            <button id="pdfBtn" class="report-button" type="button">Export PDF</button>
+        </section>
+
+        <section id="loginPanel" class="login-panel" hidden>
+            <div class="panel-copy">
+                <p class="eyebrow">Restricted access</p>
+                <h2>Authorized Position Update</h2>
+                <p>Sign in to change locomotive positions.</p>
+            </div>
+            <label>Username<input id="adminUser" type="text" autocomplete="username" placeholder="Username"></label>
+            <label>Password<input id="adminPass" type="password" autocomplete="current-password" placeholder="Password"></label>
+            <button id="loginSubmit" type="button">Login</button>
+        </section>
+
+        <section id="adminPanel" class="admin-panel" hidden>
+            <div class="admin-heading">
+                <div><p class="eyebrow">Update mode</p><h2>Edit Position</h2><p>Saving automatically moves a listed loco from its previous location.</p></div>
+                <label for="positionSelect">Shed location<select id="positionSelect"></select></label>
+            </div>
+            <div class="table-scroll">
+                <table id="entryTable">
+                    <thead><tr><th>Order</th><th>Loco No.</th><th>Type</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="admin-actions">
+                <button id="addRowBtn" class="outline-button" type="button">+ Add Loco</button>
+                <button id="saveAllBtn" type="button">Save Position</button>
+            </div>
+        </section>
+
+        <div class="board-heading">
+            <div><p class="eyebrow">26 defined locations</p><h2>Operational Shed Layout</h2></div>
+            <div class="legend" aria-label="Area legend"><span><i class="area-key open"></i>Open area</span><span><i class="area-key roofed"></i>Roofed area (max 3)</span><span><i class="area-key wash"></i>Wash house</span></div>
+        </div>
+        <p id="boardMessage" class="board-message" role="status" aria-live="polite"></p>
+        <section id="board" class="position-board" aria-label="Shed position board"></section>
+        <aside class="shunting-note"><strong>Shunting order:</strong> numbered locos are shown from left to right. On Line 2–8, locos beyond the three roofed slots are placed in the leftmost open area.</aside>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="./tracking.js"></script>
+</body>
+</html>

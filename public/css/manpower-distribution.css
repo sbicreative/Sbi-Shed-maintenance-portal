@@ -1,0 +1,61 @@
+.manpower-picker {
+    min-width: 250px;
+}
+
+.staff-select-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.staff-select-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.staff-select {
+    min-width: 190px;
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.btn-add-manpower,
+.btn-remove-staff {
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-add-manpower {
+    background: #0f766e;
+    color: #ffffff;
+}
+
+.btn-remove-staff {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-add-manpower:hover {
+    background: #115e59;
+}
+
+.btn-remove-staff:hover {
+    background: #fecaca;
+}
+
+.btn-add-manpower:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.no-staff-message {
+    color: #991b1b;
+    font-size: 13px;
+    font-weight: 600;
+}

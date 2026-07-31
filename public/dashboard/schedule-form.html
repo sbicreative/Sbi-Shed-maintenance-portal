@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fill Schedule Form</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/schedule-form.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="logo-left">
+            <img src="../images/ir-logo.jpeg" alt="Indian Railways logo">
+        </div>
+        <div class="header-title">
+            <h1>SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM</h1>
+            <h2>LOCOMOTIVE SHED, SABARMATI</h2>
+            <p>Western Railway</p>
+        </div>
+        <div class="logo-right">
+            <img src="../images/sbi-logo.jpeg" alt="SBI Shed logo">
+        </div>
+    </header>
+
+    <nav class="page-bar">
+        <div>
+            <strong>Schedule Form</strong>
+            <span id="formStatus" class="status-pill">Loading</span>
+        </div>
+        <div class="page-actions">
+            <span id="staffName"></span>
+            <button id="dashboardBtn" type="button">
+                Staff Dashboard
+            </button>
+        </div>
+    </nav>
+
+    <main class="form-page">
+        <div id="formMessage" class="message" hidden></div>
+
+        <section class="assignment-card">
+            <div><span>Loco No.</span><strong id="locoNo">-</strong></div>
+            <div><span>Schedule</span><strong id="scheduleName">-</strong></div>
+            <div><span>Assigned Work</span><strong id="workName">-</strong></div>
+            <div><span>Assigned Date</span><strong id="assignDate">-</strong></div>
+        </section>
+
+        <section class="form-card">
+            <div class="form-heading">
+                <div>
+                    <h2 id="formTitle">Schedule Form</h2>
+                    <p id="sourceFile"></p>
+                </div>
+                <span id="completionText">0 fields filled</span>
+            </div>
+
+            <div id="templateContainer" class="document-template">
+                Loading form template...
+            </div>
+
+            <label class="remarks-field">
+                Staff Remarks
+                <textarea id="staffRemarks" rows="3"
+                    placeholder="Enter overall remarks, if any"></textarea>
+            </label>
+
+            <label class="reviewer-field">
+                Submit To Supervisor
+                <select id="supervisorSelect">
+                    <option value="">Select Supervisor</option>
+                </select>
+            </label>
+
+            <div class="submit-row">
+                <button id="saveDraftBtn" class="draft-btn" type="button">
+                    Save Draft
+                </button>
+                <button id="submitFormBtn" class="submit-btn" type="button">
+                    Submit Form
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/schedule-form.js"></script>
+</body>
+</html>

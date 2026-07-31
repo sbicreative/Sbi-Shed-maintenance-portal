@@ -1,0 +1,469 @@
+/* ==========================================
+   SBI SHED LOCO APP
+   SCHEDULE FORM REVIEW
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",sans-serif;
+}
+
+body{
+    background:#eef3f8;
+    color:#1e293b;
+}
+
+
+/* ==========================================
+   INCHARGE BAR
+========================================== */
+
+.incharge-bar{
+    min-height:58px;
+    background:#d6a625;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    align-items:center;
+    padding:8px 30px;
+    color:#172033;
+    box-shadow:0 3px 8px rgba(0,0,0,.15);
+}
+
+.bar-left{
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:.5px;
+    color:#172033;
+}
+
+.bar-center{
+    min-height:1px;
+}
+
+.bar-right{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:15px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.dashboard-btn{
+    background:#173b73;
+    color:white;
+    border:none;
+    padding:9px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.dashboard-btn:hover{
+    background:#0f2c59;
+}
+
+
+/* ==========================================
+   REVIEW TITLE
+========================================== */
+
+
+.review-title h2{
+    color:#263238;
+    font-size:24px;
+    margin-bottom:5px;
+}
+
+.review-title p{
+    color:#4b5563;
+    font-size:14px;
+}
+
+
+/* ==========================================
+   MAIN DASHBOARD
+========================================== */
+
+.review-dashboard{
+    padding:25px 30px 40px;
+}
+
+
+/* ==========================================
+   FILTER CARD
+========================================== */
+
+.filter-card{
+    background:white;
+    display:flex;
+    gap:25px;
+    padding:22px;
+    border-radius:12px;
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+    border-left:6px solid #d6a625;
+    margin-bottom:22px;
+}
+
+.filter-box{
+    flex:1;
+}
+
+.filter-box label{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:700;
+    color:#334155;
+}
+
+.filter-box input,
+.filter-box select{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid #cbd5e1;
+    border-radius:7px;
+    background:#f8fafc;
+    font-size:14px;
+    outline:none;
+}
+
+.filter-box input:focus,
+.filter-box select:focus{
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
+
+/* ==========================================
+   SUMMARY CARDS
+========================================== */
+
+.summary-cards{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+    margin-bottom:22px;
+}
+
+.summary-card{
+    background:white;
+    min-height:105px;
+    padding:18px;
+    border-radius:11px;
+    text-align:center;
+    box-shadow:0 5px 14px rgba(0,0,0,.08);
+    transition:.25s;
+}
+
+.summary-card:hover{
+    transform:translateY(-3px);
+}
+
+.summary-card h3{
+    font-size:29px;
+    margin-bottom:6px;
+}
+
+.summary-card p{
+    color:#64748b;
+    font-size:14px;
+    font-weight:600;
+}
+
+.card-loco{
+    border-top:5px solid #2563eb;
+}
+
+.card-loco h3{
+    color:#2563eb;
+}
+
+.card-work{
+    border-top:5px solid #7c3aed;
+}
+
+.card-work h3{
+    color:#7c3aed;
+}
+
+.card-approved{
+    border-top:5px solid #16a34a;
+}
+
+.card-approved h3{
+    color:#16a34a;
+}
+
+.card-returned{
+    border-top:5px solid #f97316;
+}
+
+.card-returned h3{
+    color:#f97316;
+}
+
+.card-pending{
+    border-top:5px solid #eab308;
+}
+
+.card-pending h3{
+    color:#ca8a04;
+}
+
+
+/* ==========================================
+   TABLE CARD
+========================================== */
+
+.review-table-card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+}
+
+.table-heading{
+    margin-bottom:18px;
+}
+
+.table-heading h2{
+    font-size:21px;
+    color:#1e3a8a;
+}
+
+
+/* ==========================================
+   TABLE
+========================================== */
+
+.table-container{
+    width:100%;
+    overflow-x:auto;
+    border-radius:9px;
+    border:1px solid #dbe3ee;
+}
+
+table{
+    width:100%;
+    min-width:1150px;
+    border-collapse:collapse;
+}
+
+thead{
+    background:linear-gradient(90deg,#173b73,#2563a6);
+    color:white;
+}
+
+thead th{
+    padding:14px 10px;
+    text-align:center;
+    font-size:14px;
+    font-weight:600;
+    border-right:1px solid rgba(255,255,255,.15);
+}
+
+tbody td{
+    padding:13px 10px;
+    text-align:center;
+    border-bottom:1px solid #e2e8f0;
+    font-size:14px;
+    vertical-align:middle;
+}
+
+tbody tr:nth-child(even){
+    background:#f8fafc;
+}
+
+tbody tr:hover{
+    background:#edf5ff;
+}
+
+.no-data-row td{
+    padding:35px;
+    color:#64748b;
+    font-weight:600;
+}
+
+
+/* ==========================================
+   ASSIGNED WORK BADGE
+========================================== */
+
+.work-badge{
+    display:inline-block;
+    background:#e0e7ff;
+    color:#3730a3;
+    padding:6px 11px;
+    margin:3px;
+    border-radius:15px;
+    font-size:12px;
+    font-weight:700;
+}
+
+
+/* ==========================================
+   SCHEDULE FORM BUTTON
+========================================== */
+
+.form-btn{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:8px 13px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+}
+
+.form-btn:hover{
+    background:#1d4ed8;
+}
+
+
+/* ==========================================
+   STATUS BADGES
+========================================== */
+
+.status-badge{
+    display:inline-block;
+    padding:7px 13px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.status-pending{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.status-approved{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.status-returned{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.status-completed{
+    background:#dbeafe;
+    color:#1e40af;
+}
+
+
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
+
+.action-buttons{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.edit-btn,
+.approve-btn,
+.return-btn{
+    border:none;
+    color:white;
+    padding:8px 11px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+    transition:.25s;
+}
+
+.edit-btn{
+    background:#2563eb;
+}
+
+.edit-btn:hover{
+    background:#1d4ed8;
+}
+
+.approve-btn{
+    background:#16a34a;
+}
+
+.approve-btn:hover{
+    background:#15803d;
+}
+
+.return-btn{
+    background:#f97316;
+}
+
+.return-btn:hover{
+    background:#ea580c;
+}
+
+.edit-btn:hover,
+.approve-btn:hover,
+.return-btn:hover{
+    transform:translateY(-2px);
+}
+
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:1100px){
+
+    .summary-cards{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+}
+
+@media(max-width:800px){
+
+    .incharge-bar{
+        grid-template-columns:1fr;
+        gap:8px;
+        text-align:center;
+    }
+
+    .bar-right{
+        justify-content:center;
+        flex-wrap:wrap;
+    }
+
+    .filter-card{
+        flex-direction:column;
+    }
+
+    .summary-cards{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:500px){
+
+    .review-dashboard{
+        padding:15px;
+    }
+
+    .summary-cards{
+        grid-template-columns:1fr;
+    }
+
+    .review-title{
+        padding:15px;
+    }
+
+}
+
+.status-forwarded{
+    background:#ede9fe;
+    color:#5b21b6;
+}

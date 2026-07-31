@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Incharge Dashboard</title>
+
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/incharge.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="main-header">
+
+        <div class="logo-left">
+            <img src="../images/ir-logo.jpeg" alt="IR Logo">
+        </div>
+
+        <div class="header-title">
+
+            <h1>SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM</h1>
+
+            <h2>LOCOMOTIVE SHED, SABARMATI</h2>
+
+            <p>Western Railway</p>
+
+        </div>
+
+        <div class="logo-right">
+            <img src="../images/sbi-logo.jpeg" alt="SBI Shed Logo">
+        </div>
+
+    </header>
+
+
+    <!-- ================= TOP NAVIGATION ================= -->
+
+    <nav class="top-nav">
+
+        <div>
+
+            Welcome,
+
+            <span id="userName">Incharge</span>
+
+        </div>
+
+        <div>
+
+            <span id="currentDateTime"></span>
+
+            <button
+                type="button"
+                class="portal-btn"
+                onclick="window.location.href='/'">
+
+                Main Portal
+
+            </button>
+
+            <button
+                id="logoutBtn"
+                class="logout-btn">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <!-- ================= DASHBOARD ================= -->
+
+    <div class="dashboard">
+
+
+        <!-- SUMMARY -->
+
+        <section class="summary">
+
+            <div class="card">
+
+                <i class="fa-solid fa-train"></i>
+
+                <h2 id="totalLocos">0</h2>
+
+                <p>Total Locos</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+
+                <h2 id="workingLocos">0</h2>
+
+                <p>Working Today</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-clock"></i>
+
+                <h2 id="pendingWork">0</h2>
+
+                <p>Pending Review</p>
+
+            </div>
+
+            <div class="card">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                <h2 id="completedToday">0</h2>
+
+                <p>Completed Today</p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= QUICK ACTION ================= -->
+
+        <section class="quick-actions">
+
+            <h2>Quick Actions</h2>
+
+            <div class="button-grid">
+
+                <button
+                    class="assign-btn"
+                    onclick="location.href='assign-work.html'">
+
+                    🚂 Assign Work
+
+                </button>
+
+                <button
+                    class="review-btn"
+                    onclick="location.href='review-work.html'">
+
+                    📋 Assigned Work Review
+
+                </button>
+
+                <button
+                    class="schedule-btn"
+                    onclick="location.href='schedule-review.html'">
+
+                    📝 Schedule Form Review
+
+                </button>
+
+                <button
+                    class="viewer-btn"
+                    onclick="location.href='viewer.html'">
+
+                    👁 Viewer
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= TODAY'S ACTIVITY ================= -->
+
+        <section class="activity">
+
+            <h2>Today's Activity</h2>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Loco No</th>
+
+                        <th>Schedule</th>
+
+                        <th>Department</th>
+
+                        <th>Status</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="activityTable">
+
+                    <tr>
+
+                        <td colspan="4">
+
+                            No Record Found
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </section>
+
+    </div>
+
+    <script src="../js/incharge.js"></script>
+
+</body>
+
+</html>

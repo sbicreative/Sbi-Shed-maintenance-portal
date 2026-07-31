@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Assign Work | SBI Shed</title>
+
+<link rel="stylesheet" href="css/common.css">
+<link rel="stylesheet" href="css/work-master.css">
+
+</head>
+
+<body>
+
+<!-- ===========================
+HEADER
+=========================== -->
+
+<header class="main-header">
+
+    <div class="logo-left">
+        <img src="images/IR logo.jpeg">
+    </div>
+
+    <div class="header-title">
+
+        <h1>SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM</h1>
+
+        <h2>LOCOMOTIVE SHED, SABARMATI</h2>
+
+        <p>Western Railway</p>
+
+    </div>
+
+    <div class="logo-right">
+        <img src="images/SBI shed logo.jpeg">
+    </div>
+
+</header>
+
+
+<!-- ===========================
+PAGE
+=========================== -->
+
+<div class="page-container">
+
+<div class="page-title">
+
+<h2>🚂 ASSIGN WORK</h2>
+
+</div>
+
+
+<form id="workForm">
+
+<!-- Row-1 -->
+
+<div class="row">
+
+<div class="field">
+
+<label>Date</label>
+
+<input
+type="date"
+id="assignDate">
+
+</div>
+
+
+<div class="field">
+
+<label>Department</label>
+
+<select id="department">
+
+<option value="">Select</option>
+
+<option>Mechanical</option>
+
+<option>Electrical</option>
+
+</select>
+
+</div>
+
+
+<div class="field">
+
+<label>Section</label>
+
+<select id="section">
+
+<option>Select Department</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+<!-- Row-2 -->
+
+<div class="row">
+
+<div class="field">
+
+<label>Supervisor</label>
+
+<select id="supervisor">
+
+<option>Select Supervisor</option>
+
+</select>
+
+</div>
+
+
+<div class="field">
+
+<label>Loco Type</label>
+
+<select id="locoType">
+
+<option>Select Type</option>
+
+</select>
+
+</div>
+
+
+<div class="field">
+
+<label>Loco Number</label>
+
+<select id="locoNo">
+
+<option>Select Loco</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+<!-- Row-3 -->
+
+<div class="row">
+
+<div class="field full">
+
+<label>Schedule Type</label>
+
+<select id="scheduleType">
+
+<option>Select Schedule</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+<hr>
+
+
+<h3>Assigned Work</h3>
+
+
+<table id="workTable">
+
+<thead>
+
+<tr>
+
+<th width="8%">Sr</th>
+
+<th>Assigned Work</th>
+
+<th width="10%">Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="workBody">
+
+<tr>
+
+<td>1</td>
+
+<td>
+
+<select class="workSelect">
+
+<option>Select Work</option>
+
+</select>
+
+</td>
+
+<td>
+
+<button
+type="button"
+class="addBtn">
+
++
+
+</button>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+
+<div class="remarkBox">
+
+<label>Remarks</label>
+
+<textarea
+id="remarks"
+rows="4"
+placeholder="Enter Remarks...">
+
+</textarea>
+
+</div>
+
+
+<div class="button-area">
+
+<button
+type="submit"
+class="saveBtn">
+
+💾 SAVE
+
+</button>
+
+
+<button
+type="reset"
+class="resetBtn">
+
+RESET
+
+</button>
+
+
+<button
+type="button"
+class="backBtn"
+onclick="history.back()">
+
+BACK
+
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+<script src="js/work-master.js"></script>
+
+</body>
+
+</html>

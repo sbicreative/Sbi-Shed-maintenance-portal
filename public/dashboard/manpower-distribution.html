@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Man Power Distribution - SBI Shed</title>
+
+    <!-- Same CSS as Assign Work -->
+
+    <link rel="stylesheet"
+          href="../css/assign-work.css">
+
+    <link rel="stylesheet"
+          href="../css/manpower-distribution.css">
+
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="page-header">
+
+        <div>
+
+            <h1>MAN POWER DISTRIBUTION</h1>
+
+            <p>SBI Shed Loco Maintenance Management System</p>
+
+        </div>
+
+        <a href="supervisor.html"
+           class="back-btn">
+
+            Dashboard
+
+        </a>
+
+    </div>
+
+
+    <!-- ================= FILTER ================= -->
+
+    <div class="filter-card">
+
+        <div class="filter-box">
+
+            <label>Date</label>
+
+            <input
+                type="date"
+                id="distributionDate">
+
+        </div>
+
+
+        <div class="filter-box">
+
+            <label>Type of Loco</label>
+
+            <select id="locoType">
+
+                <option value="">
+                    Select Type of Loco
+                </option>
+
+                <option value="MG">MG</option>
+
+                <option value="Alco">Alco</option>
+
+                <option value="HHP">HHP</option>
+
+                <option value="WAG9">WAG9</option>
+
+                <option value="WAP7">WAP7</option>
+
+                <option value="WAG12">WAG12</option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= ASSIGNED WORK TABLE ================= -->
+
+    <div class="work-card">
+
+        <div class="table-title">
+
+            <h2>Assigned Work</h2>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>S.No.</th>
+
+                        <th>Loco No.</th>
+
+                        <th>Schedule</th>
+
+                        <th>Assigned Work</th>
+
+                        <th>Man Power Distribution</th>
+
+                        <th>Remarks</th>
+
+                        <th>Assigned By</th>
+
+                        <th>Status</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="distributionTableBody">
+
+                    <!-- JS will load rows here -->
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ================= BUTTON AREA ================= -->
+
+        <div class="button-area">
+
+            <button
+                id="saveDistributionBtn"
+                type="button"
+                class="btn-save">
+
+                Save Distribution
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="../js/manpower-distribution.js"></script>
+
+</body>
+
+</html>

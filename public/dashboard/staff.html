@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/staff.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="logo-left">
+            <img src="../images/ir-logo.jpeg" alt="Indian Railways logo">
+        </div>
+        <div class="header-title">
+            <h1>SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM</h1>
+            <h2>LOCOMOTIVE SHED, SABARMATI</h2>
+            <p>Western Railway</p>
+        </div>
+        <div class="logo-right">
+            <img src="../images/sbi-logo.jpeg" alt="SBI Shed logo">
+        </div>
+    </header>
+
+    <nav class="top-nav" aria-label="Staff dashboard navigation">
+        <div class="welcome">
+            Welcome, <span id="userName">Staff</span>
+        </div>
+        <div class="nav-actions">
+            <span id="currentDateTime"></span>
+            <button id="logoutBtn" class="logout-btn" type="button">
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <main class="dashboard">
+        <div id="dashboardMessage" class="message" hidden></div>
+
+        <section class="summary" aria-label="Work summary">
+            <article class="summary-card assigned-card">
+                <span class="card-icon" aria-hidden="true">🧰</span>
+                <h2 id="todayAssigned">0</h2>
+                <p>Today's Assigned Work</p>
+            </article>
+            <article class="summary-card pending-card">
+                <span class="card-icon" aria-hidden="true">⏳</span>
+                <h2 id="pendingWork">0</h2>
+                <p>Pending Work</p>
+            </article>
+            <article class="summary-card completed-card">
+                <span class="card-icon" aria-hidden="true">✓</span>
+                <h2 id="completedToday">0</h2>
+                <p>Completed Today</p>
+            </article>
+            <article class="summary-card submitted-card">
+                <span class="card-icon" aria-hidden="true">📄</span>
+                <h2 id="formsSubmitted">0</h2>
+                <p>Forms Submitted</p>
+            </article>
+        </section>
+
+        <section class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="button-grid">
+                <button type="button" class="action-blue" data-scroll-work>
+                    My Assigned Work
+                </button>
+                <button type="button" class="action-green" data-open-current>
+                    Fill Schedule Form
+                </button>
+                <button type="button" class="action-orange" data-show-history>
+                    Work History
+                </button>
+                <button type="button" class="action-purple"
+                    onclick="location.href='viewer.html'">
+                    Viewer
+                </button>
+            </div>
+        </section>
+
+        <section id="assignedWorkSection" class="work-panel">
+            <div class="section-heading">
+                <div>
+                    <h2 id="workTableTitle">Today's Assigned Work</h2>
+                    <p id="workTableSubtitle">
+                        Work mapped to your employee master record
+                    </p>
+                </div>
+                <button id="refreshBtn" class="refresh-btn" type="button">
+                    Refresh
+                </button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>S.No.</th>
+                            <th>Date</th>
+                            <th>Loco No.</th>
+                            <th>Schedule</th>
+                            <th>Assigned Work</th>
+                            <th>Assigned By</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignedWorkBody">
+                        <tr>
+                            <td colspan="8">Loading assigned work...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/staff.js"></script>
+</body>
+</html>

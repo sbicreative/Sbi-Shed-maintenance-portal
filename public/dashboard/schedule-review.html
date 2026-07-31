@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Schedule Form Review</title>
+
+    <link rel="stylesheet" href="../css/common.css">
+
+    <link rel="stylesheet"
+          href="../css/schedule-review.css">
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     EXISTING SBI SHED HEADER
+========================================= -->
+
+<header class="main-header">
+
+    <div class="logo-left">
+
+        <img src="../images/ir-logo.jpeg"
+             alt="IR Logo">
+
+    </div>
+
+
+    <div class="header-title">
+
+        <h1>
+            SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM
+        </h1>
+
+        <h2>
+            LOCOMOTIVE SHED, SABARMATI
+        </h2>
+
+        <p>
+            Western Railway
+        </p>
+
+    </div>
+
+
+    <div class="logo-right">
+
+        <img src="../images/sbi-logo.jpeg"
+             alt="SBI Shed Logo">
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================================
+     SCHEDULE REVIEW TOP BAR
+========================================= -->
+
+<div class="incharge-bar">
+
+    <div class="bar-left">
+        SCHEDULE FORM REVIEW
+    </div>
+
+    <div class="bar-center"></div>
+
+    <div class="bar-right">
+
+        <span id="userName">
+            Incharge
+        </span>
+
+        <span id="currentDateTime"></span>
+
+        <button
+            id="reviewDashboardBtn"
+            class="dashboard-btn"
+            type="button">
+
+            Dashboard
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     MAIN DASHBOARD
+========================================= -->
+
+<main class="review-dashboard">
+
+
+<!-- =========================================
+     FILTER CARD
+========================================= -->
+
+<section class="filter-card">
+
+
+    <div class="filter-box">
+
+        <label>
+
+            Date
+
+        </label>
+
+        <input
+            type="date"
+            id="reviewDate">
+
+    </div>
+
+
+
+    <div class="filter-box">
+
+        <label>
+
+            Type of Loco
+
+        </label>
+
+        <select id="locoType">
+
+            <option value="">
+                Select Type of Loco
+            </option>
+
+            <option value="MG">MG</option>
+
+            <option value="ALCO">Alco</option>
+
+            <option value="HHP">HHP</option>
+
+            <option value="WAG9">WAG9</option>
+
+            <option value="WAP7">WAP7</option>
+
+            <option value="WAG12">WAG12</option>
+
+        </select>
+
+    </div>
+
+
+
+    <div class="filter-box">
+
+        <label>
+
+            Status
+
+        </label>
+
+        <select id="statusFilter">
+
+            <option value="all">
+                All
+            </option>
+
+            <option value="pending">
+                Pending
+            </option>
+
+            <option value="forwarded">
+                Forwarded
+            </option>
+
+            <option value="approved">
+                Approved
+            </option>
+
+            <option value="returned">
+                Returned
+            </option>
+
+        </select>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =========================================
+     SUMMARY CARDS
+========================================= -->
+
+<section class="summary-cards">
+
+
+    <div class="summary-card card-loco">
+
+        <h3 id="totalLocos">
+
+            0
+
+        </h3>
+
+        <p>
+
+            Total Locos
+
+        </p>
+
+    </div>
+
+
+
+    <div class="summary-card card-work">
+
+        <h3 id="totalWorks">
+
+            0
+
+        </h3>
+
+        <p>
+
+            Total Assigned Works
+
+        </p>
+
+    </div>
+
+
+
+    <div class="summary-card card-approved">
+
+        <h3 id="approvedForms">
+
+            0
+
+        </h3>
+
+        <p>
+
+            Approved Forms
+
+        </p>
+
+    </div>
+
+
+
+    <div class="summary-card card-returned">
+
+        <h3 id="returnedForms">
+
+            0
+
+        </h3>
+
+        <p>
+
+            Returned Forms
+
+        </p>
+
+    </div>
+
+
+
+    <div class="summary-card card-pending">
+
+        <h3 id="pendingForms">
+
+            0
+
+        </h3>
+
+        <p>
+
+            Pending Forms
+
+        </p>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =========================================
+     SCHEDULE REVIEW TABLE
+========================================= -->
+
+<section class="review-table-card">
+
+
+    <div class="table-heading">
+
+        <h2>
+
+            Schedule Form Review
+
+        </h2>
+
+    </div>
+
+
+
+    <div class="table-container">
+
+
+        <table>
+
+
+            <thead>
+
+
+                <tr>
+
+                    <th>
+                        Sr.
+                    </th>
+
+                    <th>
+                        Loco No.
+                    </th>
+
+                    <th>
+                        Type of Schedule
+                    </th>
+
+                    <th>
+                        Assigned Work
+                    </th>
+
+                    <th>
+                        Schedule Form
+                    </th>
+
+                    <th>
+                        Status
+                    </th>
+
+                    <th>
+                        Action
+                    </th>
+
+                </tr>
+
+
+            </thead>
+
+
+
+            <tbody id="reviewTableBody">
+
+
+                <tr class="no-data-row">
+
+                    <td colspan="7">
+
+                        No Schedule Form Found
+
+                    </td>
+
+                </tr>
+
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
+</section>
+
+
+</main>
+
+
+
+<script src="../js/schedule-review.js"></script>
+
+
+</body>
+
+</html>

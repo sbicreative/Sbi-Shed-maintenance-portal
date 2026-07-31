@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Loco Maintenance Viewer</title>
+
+    <!-- COMMON CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <!-- VIEWER CSS -->
+    <link rel="stylesheet" href="../css/viewer.css">
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     COMMON MAIN HEADER
+===================================================== -->
+
+<header class="main-header">
+
+    <div class="logo-left">
+
+        <img src="../images/ir-logo.jpeg"
+             alt="Indian Railway Logo">
+
+    </div>
+
+
+    <div class="header-title">
+
+        <h1>
+            SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM
+        </h1>
+
+        <h2>
+            LOCOMOTIVE SHED, SABARMATI
+        </h2>
+
+        <p>
+            Western Railway
+        </p>
+
+    </div>
+
+
+    <div class="logo-right">
+
+        <img src="../images/sbi-logo.jpeg"
+             alt="SBI Shed Logo">
+
+    </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     COMMON SECOND HEADER ROW
+===================================================== -->
+
+<div class="page-header-bar">
+
+
+    <div class="page-header-left">
+
+        LOCO MAINTENANCE VIEWER
+
+    </div>
+
+
+    <div class="page-header-center"></div>
+
+
+    <div class="page-header-right">
+
+        <span id="userName">
+
+            User
+
+        </span>
+
+
+        <span id="currentDateTime"></span>
+
+
+        <button
+            class="header-dashboard-btn"
+            onclick="history.back()">
+
+            Dashboard
+
+        </button>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     VIEWER MAIN CONTENT
+===================================================== -->
+
+<main class="viewer-dashboard">
+
+
+<!-- =====================================================
+     SEARCH CARD
+===================================================== -->
+
+<section class="viewer-search-card">
+
+
+    <div class="search-heading">
+
+        <h2>
+
+            Search Maintenance History
+
+        </h2>
+
+        <p>
+
+            Search approved locomotive maintenance
+            and schedule form records.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="search-row">
+
+
+        <!-- SEARCH TYPE -->
+
+        <div class="search-box">
+
+            <label>
+
+                Search By
+
+            </label>
+
+
+            <select id="searchType">
+
+                <option value="">
+
+                    Select Search Type
+
+                </option>
+
+
+                <option value="loco">
+
+                    Loco Wise
+
+                </option>
+
+
+                <option value="schedule">
+
+                    Schedule Wise
+
+                </option>
+
+
+                <option value="component">
+
+                    Component Wise
+
+                </option>
+
+            </select>
+
+        </div>
+
+
+
+        <!-- DYNAMIC SEARCH DROPDOWN -->
+
+        <div class="search-box">
+
+            <label id="searchItemLabel">
+
+                Select Item
+
+            </label>
+
+
+            <select
+                id="searchItem"
+                disabled>
+
+                <option value="">
+
+                    First Select Search Type
+
+                </option>
+
+            </select>
+
+        </div>
+
+
+
+        <!-- SEARCH BUTTON -->
+
+        <div class="search-button-box">
+
+
+            <button
+                type="button"
+                id="searchBtn"
+                class="viewer-search-btn">
+
+                Search
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     SEARCH RESULT CARD
+===================================================== -->
+
+<section class="viewer-result-card">
+
+
+    <div class="result-heading">
+
+
+        <div>
+
+            <h2>
+
+                Maintenance History
+
+            </h2>
+
+
+            <p id="resultTitle">
+
+                Select search criteria to view records.
+
+            </p>
+
+        </div>
+
+
+        <div
+            id="recordCount"
+            class="record-count">
+
+            0 Records
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         RESULT TABLE
+    ================================================== -->
+
+    <div class="viewer-table-container">
+
+
+        <table id="viewerTable">
+
+
+            <thead>
+
+
+                <tr id="viewerTableHead">
+
+                    <th>
+
+                        Sr.
+
+                    </th>
+
+
+                    <th>
+
+                        Loco No.
+
+                    </th>
+
+
+                    <th>
+
+                        Date
+
+                    </th>
+
+
+                    <th>
+
+                        Schedule
+
+                    </th>
+
+
+                    <th>
+
+                        Component / Work
+
+                    </th>
+
+
+                    <th>
+
+                        Schedule Form
+
+                    </th>
+
+                </tr>
+
+
+            </thead>
+
+
+
+            <tbody id="viewerTableBody">
+
+
+                <tr class="no-record-row">
+
+
+                    <td colspan="6">
+
+                        Select search criteria to view
+                        maintenance history.
+
+                    </td>
+
+
+                </tr>
+
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
+</section>
+
+
+</main>
+
+
+
+<!-- =====================================================
+     VIEW SCHEDULE FORM MODAL
+     Actual Form Later Connected
+===================================================== -->
+
+<div
+    id="scheduleFormModal"
+    class="viewer-modal">
+
+
+    <div class="viewer-modal-content">
+
+
+        <div class="modal-header">
+
+
+            <h2>
+
+                Schedule Form
+
+            </h2>
+
+
+            <button
+                type="button"
+                id="closeModalBtn"
+                class="modal-close-btn">
+
+                ×
+
+            </button>
+
+
+        </div>
+
+
+
+        <div
+            id="scheduleFormContent"
+            class="schedule-form-content">
+
+
+            Schedule Form Data
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- VIEWER JS -->
+
+<script src="../js/viewer.js"></script>
+
+
+</body>
+
+</html>
