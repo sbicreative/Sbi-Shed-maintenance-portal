@@ -193,6 +193,7 @@ const componentList = [
 
 
 let viewerData = [];
+let historicalData = [];
 
 
 // =====================================================
@@ -217,6 +218,8 @@ window.addEventListener(
         await loadSchedules();
 
         await loadHistory();
+
+        await loadHistoricalRecords();
 
     }
 );
@@ -288,6 +291,36 @@ async function loadHistory() {
 
     }
 
+}
+
+async function loadHistoricalRecords() {
+    try {
+        const response = await fetch("/api/historical-schedules");
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message);
+
+        historicalData = (result.records || []).map(item => ({
+            id: Number(item.id),
+            recordSource: "archive",
+            locoNo: item.loco_no,
+            date: item.schedule_date,
+            schedule: item.schedule_type || "Unclassified",
+            component: item.department,
+            formName: item.original_filename,
+            remarks: item.remarks
+        }));
+
+        const existingLocos = new Set(locoList.map(item => String(item.loco_no || item.locoNo)));
+        historicalData.forEach(item => {
+            if (!existingLocos.has(String(item.locoNo))) {
+                locoList.push({ loco_no: item.locoNo });
+                existingLocos.add(String(item.locoNo));
+            }
+        });
+    } catch (error) {
+        console.error("Historical Schedule Error", error);
+        historicalData = [];
+    }
 }
 
 
@@ -478,6 +511,15 @@ searchType.addEventListener(
 
         }
 
+        else if (type === "archive") {
+
+            searchItemLabel.textContent =
+                "Select Archived Loco No.";
+
+            loadArchiveLocoDropdown();
+
+        }
+
 
         else {
 
@@ -508,6 +550,20 @@ function resetSearchItem() {
 
     searchItem.disabled = true;
 
+}
+
+function loadArchiveLocoDropdown() {
+    const locos = [...new Set(historicalData.map(item => String(item.locoNo)))].sort(
+        (left, right) => left.localeCompare(right, undefined, { numeric: true })
+    );
+    searchItem.disabled = false;
+    searchItem.innerHTML = '<option value="">Select Archived Loco No.</option>';
+    locos.forEach(locoNo => {
+        const option = document.createElement("option");
+        option.value = locoNo;
+        option.textContent = locoNo;
+        searchItem.appendChild(option);
+    });
 }
 
 
@@ -771,6 +827,17 @@ function searchViewerData(
 
     }
 
+    else if (type === "archive") {
+
+        filteredData = historicalData.filter(item =>
+            String(item.locoNo) === String(selectedItem)
+        );
+
+        resultTitle.textContent =
+            "Old Schedule Forms of Loco " + selectedItem;
+
+    }
+
 
     renderViewerTable(filteredData);
 
@@ -878,7 +945,7 @@ function renderViewerTable(data) {
 
                     <button
                         class="view-form-btn"
-                        onclick="viewScheduleForm(${item.id})">
+                        onclick="viewScheduleForm(${item.id}, '${item.recordSource || "current"}')">
 
                         View Form
 
@@ -921,7 +988,12 @@ function formatDate(dateValue) {
 // VIEW SCHEDULE FORM
 // =====================================================
 
-function viewScheduleForm(id) {
+function viewScheduleForm(id, recordSource) {
+
+    if (recordSource === "archive") {
+        window.open(`/api/historical-schedules/${id}/view`, "_blank", "noopener");
+        return;
+    }
 
     const item =
         viewerData.find(

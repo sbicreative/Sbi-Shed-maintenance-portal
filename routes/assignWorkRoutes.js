@@ -3,6 +3,56 @@ const router = express.Router();
 
 const supabase = require("../config/supabase");
 
+router.get("/summary", async (req, res) => {
+    try {
+        const assignDate = String(req.query.assign_date || "").trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(assignDate)) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid assign_date is required."
+            });
+        }
+
+        let { data, error } = await supabase
+            .from("assign_work_header")
+            .select("loco_id,temporary_loco_id")
+            .eq("assign_date", assignDate);
+
+        if (error && /temporary_loco_id/i.test(error.message || "")) {
+            const fallback = await supabase
+                .from("assign_work_header")
+                .select("loco_id")
+                .eq("assign_date", assignDate);
+            data = fallback.data;
+            error = fallback.error;
+        }
+
+        if (error) throw error;
+
+        const uniqueLocos = new Set(
+            (data || [])
+                .map(item => item.loco_id
+                    ? `master:${item.loco_id}`
+                    : item.temporary_loco_id
+                        ? `temporary:${item.temporary_loco_id}`
+                        : null
+                )
+                .filter(Boolean)
+        );
+
+        res.json({
+            success: true,
+            assign_date: assignDate,
+            working_locos: uniqueLocos.size
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 // ======================================================
 // ASSIGN WORK
 // Header = Loco + Schedule + Supervisor + Date
@@ -16,6 +66,7 @@ router.post("/", async (req, res) => {
         const {
             assign_date,
             loco_id,
+            temporary_loco,
             schedule_id,
             supervisor_id,
             created_by,
@@ -28,7 +79,7 @@ router.post("/", async (req, res) => {
 
         if (
             !assign_date ||
-            !loco_id ||
+            (!loco_id && !temporary_loco?.loco_no) ||
             !schedule_id ||
             !supervisor_id ||
             !created_by
@@ -54,6 +105,35 @@ router.post("/", async (req, res) => {
 
         }
 
+        let temporaryLocoId = null;
+
+        if (!loco_id) {
+            const locoNo = String(temporary_loco.loco_no).trim();
+            const { data: temporaryData, error: temporaryError } =
+                await supabase
+                    .from("temporary_loco_master")
+                    .upsert({
+                        loco_no: locoNo,
+                        loco_type: String(temporary_loco.loco_type || "").trim() || null,
+                        last_position: String(temporary_loco.position || "").trim() || null,
+                        tracking_status: String(temporary_loco.status || "").trim() || null,
+                        is_in_shed: true,
+                        tracking_updated_at: temporary_loco.updated_at || null,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: "loco_no" })
+                    .select("id")
+                    .single();
+
+            if (temporaryError) {
+                return res.status(500).json({
+                    success: false,
+                    message: temporaryError.message
+                });
+            }
+
+            temporaryLocoId = temporaryData.id;
+        }
+
         // ==============================================
         // Create Assignment Header
         // ==============================================
@@ -66,7 +146,8 @@ router.post("/", async (req, res) => {
                 .insert([{
 
                     assign_date,
-                    loco_id,
+                    loco_id: loco_id || null,
+                    temporary_loco_id: temporaryLocoId,
                     schedule_id,
                     supervisor_id,
                     created_by

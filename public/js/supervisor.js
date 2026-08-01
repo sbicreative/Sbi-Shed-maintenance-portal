@@ -13,7 +13,85 @@ if (!user) {
         "/dashboard/login.html";
 
 }
-const supervisorId = user.id;
+const supervisorId =
+    user.supervisor_master_id || user.id;
+
+function localDateValue() {
+    const now = new Date();
+    return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+    ].join("-");
+}
+
+async function loadDashboardSummary() {
+    try {
+        const response = await fetch(
+            `/api/supervisors/dashboard-summary/${supervisorId}` +
+            `?assign_date=${localDateValue()}`
+        );
+        const summary = await response.json();
+        if (!response.ok) {
+            throw new Error(summary.message || "Unable to load summary.");
+        }
+        document.getElementById("totalAssignedLocos").textContent =
+            summary.total_assigned_locos ?? 0;
+        document.getElementById("availableStaff").textContent =
+            summary.available_staff ?? 0;
+        document.getElementById("pendingWork").textContent =
+            summary.pending_work ?? 0;
+        document.getElementById("completedToday").textContent =
+            summary.completed_today ?? 0;
+    } catch (error) {
+        console.error("Supervisor Summary Error:", error);
+        await loadDashboardSummaryFallback();
+    }
+}
+
+async function loadDashboardSummaryFallback() {
+    try {
+        const date = localDateValue();
+        const params = new URLSearchParams({
+            department: user.department || "",
+            section: user.section || ""
+        });
+        const [workResponse, staffResponse] = await Promise.all([
+            fetch(
+                `/api/supervisors/assigned-work/${supervisorId}` +
+                `?assign_date=${date}`
+            ),
+            fetch(`/api/employees?${params.toString()}`)
+        ]);
+        const [works, staff] = await Promise.all([
+            workResponse.json(),
+            staffResponse.json()
+        ]);
+        if (!workResponse.ok || !staffResponse.ok) {
+            throw new Error("Dashboard fallback data unavailable.");
+        }
+
+        const rows = Array.isArray(works) ? works : [];
+        const locos = new Set(rows.map(item =>
+            item.assign_work_header?.loco_master?.loco_no ||
+            item.assign_work_header?.temporary_loco_master?.loco_no
+        ).filter(Boolean));
+        document.getElementById("totalAssignedLocos").textContent =
+            locos.size;
+        document.getElementById("availableStaff").textContent =
+            Array.isArray(staff) ? staff.length : 0;
+        document.getElementById("pendingWork").textContent =
+            rows.filter(item =>
+                String(item.status).toLowerCase() !== "completed"
+            ).length;
+        document.getElementById("completedToday").textContent =
+            rows.filter(item =>
+                String(item.status).toLowerCase() === "completed"
+            ).length;
+    } catch (error) {
+        console.error("Supervisor Summary Fallback Error:", error);
+    }
+}
 
 // ================= USER NAME =================
 
@@ -262,12 +340,9 @@ document
 //-------------------------------------
 
 window.onload = function () {
-
-    showHome();
-
-    updateSerial();
-
     loadAssignedWork();
+    loadDashboardSummary();
+    setInterval(loadDashboardSummary, 30000);
 
 }
 async function loadAssignedWork() {
@@ -276,7 +351,7 @@ async function loadAssignedWork() {
 
         const response =
     await fetch(
-        `/api/supervisors/assigned-work/${user.id}`
+        `/api/supervisors/assigned-work/${supervisorId}`
     );
 
         const data =
@@ -307,7 +382,8 @@ async function loadAssignedWork() {
             row.innerHTML = `
 
                 <td>
-                    ${item.assign_work_header?.loco_id || ""}
+                    ${item.assign_work_header?.loco_master?.loco_no ||
+                    item.assign_work_header?.temporary_loco_master?.loco_no || ""}
                 </td>
 
                 <td>
@@ -343,7 +419,7 @@ async function loadAssignedWork() {
 
         const response =
     await fetch(
-        `/api/supervisors/assigned-work/${user.id}`
+        `/api/supervisors/assigned-work/${supervisorId}`
     );
         const data =
             await response.json();
@@ -375,7 +451,8 @@ async function loadAssignedWork() {
             row.innerHTML = `
 
                 <td>
-                    ${item.assign_work_header.loco_id}
+                    ${item.assign_work_header.loco_master?.loco_no ||
+                    item.assign_work_header.temporary_loco_master?.loco_no || ""}
                 </td>
 
                 <td>

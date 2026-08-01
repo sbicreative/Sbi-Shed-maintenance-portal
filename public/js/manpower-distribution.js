@@ -169,7 +169,9 @@ async function loadUnavailableStaff() {
 
     const params =
         new URLSearchParams({
-            assign_date: assignDate
+            assign_date: assignDate,
+            supervisor_id:
+                user.supervisor_master_id || user.id
         });
 
     const response =
@@ -331,7 +333,8 @@ async function loadAssignedWork() {
                     </td>
 
                     <td>
-                        ${header.loco_id || "-"}
+                        ${header.loco_master?.loco_no ||
+                        header.temporary_loco_master?.loco_no || "-"}
                     </td>
 
                     <td>
@@ -590,13 +593,8 @@ function refreshStaffAvailability() {
 
             if (!staffId) return;
 
-            const selectedElsewhere =
-                (selectedCounts.get(staffId) || 0) >
-                (ownStaffId === staffId ? 1 : 0);
-
             const unavailable =
-                unavailableStaffIds.has(staffId) ||
-                selectedElsewhere;
+                unavailableStaffIds.has(staffId);
 
             option.disabled =
                 unavailable &&
@@ -683,16 +681,6 @@ async function saveDistribution() {
             });
         });
 
-    }
-
-    if (
-        new Set(allSelectedStaffIds).size !==
-        allSelectedStaffIds.length
-    ) {
-        alert(
-            "Same staff cannot be selected for more than one work on the selected date."
-        );
-        return;
     }
 
     if (assignments.length === 0) {

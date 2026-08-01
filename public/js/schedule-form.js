@@ -180,7 +180,8 @@ async function loadScheduleForm() {
         document.getElementById("staffName").textContent =
             assignment.employee.name;
         document.getElementById("locoNo").textContent =
-            header.loco_master?.loco_no || "-";
+            header.loco_master?.loco_no ||
+            header.temporary_loco_master?.loco_no || "-";
         document.getElementById("scheduleName").textContent =
             header.schedule_master?.schedule_name || "-";
         document.getElementById("workName").textContent =
@@ -203,7 +204,10 @@ async function loadScheduleForm() {
         const html =
             template.template_schema?.document_html || "";
 
-        if (!html) {
+        const isPdf =
+            template.template_schema?.source_type === "pdf";
+
+        if (!html && !isPdf) {
             throw new Error(
                 "This source is registered, but its fillable web template is not configured yet."
             );
@@ -211,6 +215,17 @@ async function loadScheduleForm() {
 
         const container =
             document.getElementById("templateContainer");
+        const templateContent = isPdf
+            ? `<object class="schedule-pdf-reference"
+                    data="/api/schedule-forms/template/${template.id}/source"
+                    type="application/pdf">
+                    <p>PDF preview unavailable.
+                        <a href="/api/schedule-forms/template/${template.id}/source"
+                            target="_blank" rel="noopener">Open source PDF</a>
+                    </p>
+                </object>`
+            : safeTemplateHtml(html);
+
         container.innerHTML = `
             <div class="form-document-header">
                 <img src="../images/IR-logo.jpeg"
@@ -222,9 +237,13 @@ async function loadScheduleForm() {
                 <img src="../images/SBI-logo.jpeg"
                     alt="SBI Shed logo">
             </div>
-            ${safeTemplateHtml(html)}
+            ${templateContent}
         `;
-        createAnswerFields(submission?.form_answers || {});
+        if (!isPdf) {
+            createAnswerFields(submission?.form_answers || {});
+        } else {
+            updateCompletion();
+        }
 
         document.getElementById("staffRemarks").value =
             submission?.staff_remarks || "";

@@ -13,18 +13,25 @@ router.get("/unavailable-staff", async (req, res) => {
 
         const assignDate =
             String(req.query.assign_date || "").trim();
+        const supervisorId =
+            Number(req.query.supervisor_id);
 
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(assignDate)) {
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(assignDate) ||
+            !supervisorId
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "A valid assign_date is required."
+                message:
+                    "A valid assign_date and supervisor_id are required."
             });
         }
 
         const { data, error } = await supabase
             .from("manpower_distribution")
-            .select("staff_id")
-            .eq("assigned_date", assignDate);
+            .select("staff_id,assigned_by")
+            .eq("assigned_date", assignDate)
+            .neq("assigned_by", supervisorId);
 
         if (error) {
             return res.status(500).json({
@@ -44,6 +51,7 @@ router.get("/unavailable-staff", async (req, res) => {
         res.json({
             success: true,
             assign_date: assignDate,
+            supervisor_id: supervisorId,
             staff_ids: staffIds
         });
 
@@ -135,6 +143,10 @@ router.get("/staff/:staffId", async (req, res) => {
                         assign_date,
                         loco_master (
                             loco_no
+                        ),
+                        temporary_loco_master (
+                            loco_no,
+                            loco_type
                         ),
                         schedule_master (
                             schedule_name
@@ -303,6 +315,10 @@ router.get("/", async (req, res) => {
                     loco_master (
                         loco_no
                     ),
+                    temporary_loco_master (
+                        loco_no,
+                        loco_type
+                    ),
 
                     schedule_master (
                         schedule_name
@@ -407,7 +423,7 @@ router.post("/", async (req, res) => {
             error: conflictCheckError
         } = await supabase
             .from("manpower_distribution")
-            .select("id")
+            .select("id,assigned_by,assign_work_detail_id")
             .eq("staff_id", staffId)
             .eq("assigned_date", assignDate)
             .limit(1);
@@ -419,12 +435,29 @@ router.post("/", async (req, res) => {
             });
         }
 
-        if ((existingAssignment || []).length > 0) {
+        const ownedByAnother = (existingAssignment || []).find(
+            item => Number(item.assigned_by) !== assignedBy
+        );
+        const duplicateWork = (existingAssignment || []).find(
+            item => Number(item.assigned_by) === assignedBy &&
+                Number(item.assign_work_detail_id) === detailId
+        );
+
+        if (ownedByAnother) {
             return res.status(409).json({
                 success: false,
-                code: "STAFF_ALREADY_ASSIGNED",
+                code: "STAFF_LOCKED_TO_SUPERVISOR",
                 message:
-                    `This staff member is already assigned to another work on ${assignDate}.`
+                    `This staff member is assigned to another supervisor on ${assignDate}.`
+            });
+        }
+
+        if (duplicateWork) {
+            return res.status(409).json({
+                success: false,
+                code: "STAFF_ALREADY_ON_WORK",
+                message:
+                    "This staff member is already assigned to this work."
             });
         }
 
@@ -450,19 +483,27 @@ router.post("/", async (req, res) => {
 
             const isUniqueConflict =
                 error.code === "23505";
+            const isSupervisorLock =
+                error.code === "23514";
 
             return res.status(
-                isUniqueConflict ? 409 : 500
+                isUniqueConflict || isSupervisorLock
+                    ? 409
+                    : 500
             ).json({
 
                 success: false,
                 code:
                     isUniqueConflict
                         ? "STAFF_ALREADY_ASSIGNED"
+                        : isSupervisorLock
+                            ? "STAFF_LOCKED_TO_SUPERVISOR"
                         : undefined,
                 message:
                     isUniqueConflict
-                        ? `This staff member is already assigned to another work on ${assignDate}.`
+                        ? "This staff member is already assigned to this work."
+                        : isSupervisorLock
+                            ? `This staff member is assigned to another supervisor on ${assignDate}.`
                         : error.message
 
             });

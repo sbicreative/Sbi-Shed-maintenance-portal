@@ -11,14 +11,29 @@ router.get("/", async (req, res) => {
 
     try {
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from("schedule_master")
             .select(`
                 id,
                 schedule_name,
-                department_id
+                department_id,
+                section_id,
+                section_master (
+                    id,
+                    section_name
+                )
             `)
+            .order("section_id")
             .order("schedule_name");
+
+        if (error && /section_id/i.test(error.message || "")) {
+            const fallback = await supabase
+                .from("schedule_master")
+                .select("id,schedule_name,department_id")
+                .order("schedule_name");
+            data = fallback.data;
+            error = fallback.error;
+        }
 
         if (error) {
 

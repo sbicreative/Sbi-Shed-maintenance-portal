@@ -11,6 +11,64 @@ const masterRoot = path.join(
 
 const templates = [
     {
+        code: "EL_INCOMING_OUTGOING",
+        name: "EL Incoming and Outgoing Inspection",
+        section: "EL",
+        file: path.join(
+            "El schedule form",
+            "EL-3Phase WAG9 IAIBIC Incoming and Outgoing Inspection_22.03.2025_New.docx"
+        ),
+        workNames: ["IRC"],
+        scheduleTypes: ["IA", "IB", "IC"]
+    },
+    {
+        code: "EL_TI_3_PHASE",
+        name: "Electrical TI - 3 Phase Schedule",
+        section: "EL",
+        file: path.join(
+            "El schedule form",
+            "Electric loco TI sch. form_EL.docx"
+        ),
+        workNames: ["TI SCHEDULE"],
+        scheduleTypes: ["TI-3 PHASE"]
+    },
+    {
+        code: "EL_TI_CONVENTIONAL",
+        name: "Electrical TI - Conventional Schedule",
+        section: "EL",
+        file: path.join(
+            "El schedule form",
+            "Ele-Trip Sch Form Conventional l.pdf"
+        ),
+        workNames: ["TI CONVENTIONAL SCHEDULE"],
+        scheduleTypes: ["TI CONVENTIONAL"],
+        sourceType: "pdf"
+    },
+    {
+        code: "ML_TI_3_PHASE",
+        name: "Mechanical TI - 3 Phase Schedule",
+        section: "ML",
+        file: path.join(
+            "ML schedule form",
+            "TI - 3 Phase - mech.pdf"
+        ),
+        workNames: ["TI SCHEDULE"],
+        scheduleTypes: ["TI-3 PHASE"],
+        sourceType: "pdf"
+    },
+    {
+        code: "ML_TI_CONVENTIONAL",
+        name: "Mechanical TI - Conventional Schedule",
+        section: "ML",
+        file: path.join(
+            "ML schedule form",
+            "TI - Conventional-mech.pdf"
+        ),
+        workNames: ["TI CONVENTIONAL SCHEDULE"],
+        scheduleTypes: ["TI CONVENTIONAL"],
+        sourceType: "pdf"
+    },
+    {
         code: "EL_AUXILIARY_MACHINE",
         name: "Auxiliary Machines Schedule",
         section: "EL",
@@ -257,16 +315,15 @@ async function buildTemplateSchema(template, fullPath) {
 async function resolveWorkMasterId(template) {
     const { data, error } = await supabase
         .from("work_master")
-        .select("id,work_name")
+        .select("id,work_name,section_id")
         .in("work_name", template.workNames)
         .order("id", { ascending: true });
 
     if (error) throw error;
 
+    const sectionId = template.section === "ML" ? 8 : 1;
     const sectionMatches = (data || []).filter(work =>
-        template.section === "ML"
-            ? Number(work.id) >= 268
-            : Number(work.id) < 268
+        Number(work.section_id) === sectionId
     );
 
     const match = sectionMatches[0] || (data || [])[0];

@@ -36,6 +36,8 @@ const locoHistoryRoutes =
     require("./routes/locoHistoryRoutes");
 const trackingRoutes =
     require("./routes/trackingRoutes");
+const historicalScheduleRoutes =
+    require("./routes/historicalScheduleRoutes");
     const employeeRoutes =
 require("./routes/employeeRoutes");
 
@@ -118,6 +120,10 @@ app.use(
 app.use(
     "/api/tracking",
     trackingRoutes
+);
+app.use(
+    "/api/historical-schedules",
+    historicalScheduleRoutes
 );
 app.use(
     "/api/employees",

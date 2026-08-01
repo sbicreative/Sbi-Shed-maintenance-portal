@@ -28,6 +28,15 @@ let workList = [];
 
 let supervisorList = [];
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 
 // ==========================================
 // PAGE LOAD
@@ -89,34 +98,23 @@ async function loadSchedules() {
 
         }
 
-        scheduleList =
-            allSchedules.filter(item => {
+        const normalizedDepartment = String(user.department || "")
+            .trim().toLowerCase();
+        const normalizedSection = String(user.section || "")
+            .trim().toLowerCase();
+        const departmentId = normalizedDepartment === "electrical"
+            ? 1
+            : normalizedDepartment === "mechanical"
+                ? 2
+                : null;
 
-                if (
-                    user.department ===
-                    "Electrical"
-                ) {
-
-                    return (
-                        Number(item.department_id) === 1
-                    );
-
-                }
-
-                if (
-                    user.department ===
-                    "Mechanical"
-                ) {
-
-                    return (
-                        Number(item.department_id) === 2
-                    );
-
-                }
-
-                return false;
-
-            });
+        scheduleList = allSchedules.filter(item => {
+            const sectionName = String(
+                item.section_master?.section_name || ""
+            ).trim().toLowerCase();
+            return Number(item.department_id) === departmentId &&
+                (!item.section_id || sectionName === normalizedSection);
+        });
 
     }
 
@@ -268,40 +266,61 @@ locoType.addEventListener(
 
         try {
 
-            const res =
-                await fetch("/api/locos");
+            const [masterRes, trackingRes] = await Promise.all([
+                fetch("/api/locos"),
+                fetch("/api/tracking/locos")
+            ]);
+            const [masterData, trackingData] = await Promise.all([
+                masterRes.json(),
+                trackingRes.json()
+            ]);
 
-            const data =
-                await res.json();
-
-            if (!res.ok) {
+            if (!masterRes.ok || !trackingRes.ok) {
 
                 throw new Error(
-                    data.message ||
-                    "Unable to load locos."
+                    masterData.message || trackingData.message ||
+                    "Unable to load locos currently in the shed."
                 );
 
             }
 
-            locoList =
-                data.filter(item => {
+            const masterByNumber = new Map(
+                masterData.map(item => [
+                    String(item.loco_no).trim().toUpperCase(),
+                    item
+                ])
+            );
 
-                    const type =
-                        item
-                            .loco_type_master
-                            ?.loco_type;
-
-                    return (
-                        String(type).trim() ===
-                        String(locoType.value).trim()
+            locoList = trackingData.locos
+                .map(item => {
+                    const master = masterByNumber.get(
+                        String(item.loco_no).trim().toUpperCase()
                     );
-
+                    const trackingType = String(item.loco_type || "").trim();
+                    return {
+                        ...item,
+                        loco_type: trackingType && trackingType !== "-"
+                            ? trackingType
+                            : master?.loco_type_master?.loco_type || "-",
+                        source: master ? "master" : "temporary",
+                        id: master?.id || null
+                    };
+                })
+                .filter(item => {
+                    if (locoType.value === "External") {
+                        return item.source === "temporary";
+                    }
+                    return (
+                        item.source === "master" &&
+                        String(item.loco_type).trim().toLowerCase() ===
+                        String(locoType.value).trim().toLowerCase()
+                    );
                 });
 
             if (locoList.length === 0) {
 
                 alert(
-                    "No loco found for selected type."
+                    "No loco of selected type is currently available in shed."
                 );
 
                 return;
@@ -360,9 +379,9 @@ function getLocoOptions() {
     return locoList
         .map(item => `
 
-            <option value="${item.id}">
+            <option value="${item.source}:${item.id || encodeURIComponent(item.loco_no)}">
 
-                ${item.loco_no}
+                ${escapeHtml(item.loco_no)} — ${escapeHtml(item.position || "Position not set")}${item.source === "temporary" ? " (Other Shed)" : ""}
 
             </option>
 
@@ -833,10 +852,9 @@ document
 
                 for (const row of rows) {
 
-                    const locoId =
-                        row.querySelector(
-                            ".locoDropdown"
-                        ).value;
+                    const locoValue = row.querySelector(
+                        ".locoDropdown"
+                    ).value;
 
                     const scheduleId =
                         row.querySelector(
@@ -900,7 +918,7 @@ document
                         );
 
                     if (
-                        !locoId ||
+                        !locoValue ||
                         !scheduleId ||
                         !supervisorId ||
                         uniqueWorks.length === 0
@@ -912,13 +930,32 @@ document
 
                     }
 
+                    const selectedLoco = locoList.find(item =>
+                        `${item.source}:${item.id || encodeURIComponent(item.loco_no)}` === locoValue
+                    );
+
+                    if (!selectedLoco) {
+                        throw new Error("Selected loco is no longer available in shed.");
+                    }
+
                     const assignment = {
 
                         assign_date:
                             assignDate.value,
 
-                        loco_id:
-                            Number(locoId),
+                        loco_id: selectedLoco.source === "master"
+                            ? Number(selectedLoco.id)
+                            : null,
+
+                        temporary_loco: selectedLoco.source === "temporary"
+                            ? {
+                                loco_no: selectedLoco.loco_no,
+                                loco_type: selectedLoco.loco_type,
+                                position: selectedLoco.position,
+                                status: selectedLoco.status,
+                                updated_at: selectedLoco.updated_at
+                            }
+                            : null,
 
                         schedule_id:
                             Number(scheduleId),

@@ -78,6 +78,40 @@ updateDateTime();
 
 setInterval(updateDateTime, 1000);
 
+async function loadDashboardSummary() {
+    const now = new Date();
+    const today = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+    ].join("-");
+
+    try {
+        const [trackingResponse, workResponse] = await Promise.all([
+            fetch("/api/tracking/summary"),
+            fetch(`/api/assign-work/summary?assign_date=${today}`)
+        ]);
+        const [tracking, work] = await Promise.all([
+            trackingResponse.json(),
+            workResponse.json()
+        ]);
+
+        if (!trackingResponse.ok || !workResponse.ok) {
+            throw new Error(
+                tracking.message || work.message ||
+                "Unable to load dashboard summary."
+            );
+        }
+
+        document.getElementById("totalLocos").textContent =
+            tracking.total_locos ?? 0;
+        document.getElementById("workingLocos").textContent =
+            work.working_locos ?? 0;
+    } catch (error) {
+        console.error("Dashboard Summary Error:", error);
+    }
+}
+
 
 // ======================================
 // PAGE SPECIFIC CODE
@@ -88,6 +122,8 @@ setInterval(updateDateTime, 1000);
 // Viewer dashboard code below
 
 document.addEventListener("DOMContentLoaded", () => {
+    loadDashboardSummary();
+    setInterval(loadDashboardSummary, 30000);
     const user =
     JSON.parse(
         localStorage.getItem("user")
