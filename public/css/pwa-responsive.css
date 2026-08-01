@@ -17,6 +17,24 @@ input, select, textarea { max-width: 100%; }
 }
 
 @media (max-width: 768px) {
+    .main-header {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 70px !important;
+        display: grid !important;
+        grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+        text-align: center !important;
+    }
+    .main-header .logo-left, .main-header .logo-right { width: 44px !important; }
+    .main-header .logo-left img, .main-header .logo-right img,
+    .main-header .header-logo img { width: 42px !important; height: 42px !important; object-fit: contain; }
+    .main-header .header-title { min-width: 0; padding: 0 4px !important; }
+    .main-header .header-title h1 { margin: 0 !important; font-size: 14px !important; line-height: 1.16 !important; letter-spacing: .2px !important; }
+    .main-header .header-title h2, .main-header .header-title h3 { margin: 3px 0 0 !important; font-size: 10px !important; line-height: 1.15 !important; }
+    .main-header .header-title p { margin: 2px 0 0 !important; font-size: 8px !important; line-height: 1.1 !important; }
     button, .btn, a.button, input[type="button"], input[type="submit"] { min-height: 42px; }
     input, select, textarea { font-size: 16px; }
     h1, h2, h3, p, td, th, label, button, a { overflow-wrap: anywhere; }

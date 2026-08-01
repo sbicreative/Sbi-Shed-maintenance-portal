@@ -95,6 +95,20 @@ font-weight:bold;
 
 }
 
+@media (max-width:600px){
+    .header{height:auto;min-height:70px;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;padding:8px 10px;}
+    .logo-left img,.logo-right img{width:42px;height:42px;object-fit:contain;border-radius:7px;}
+    .title h1{font-size:14px;line-height:1.18;}
+    .title h3{margin:4px 0 0;font-size:9px;line-height:1.2;}
+    .container{margin-top:18px;padding:0 10px;}
+    .login-card{width:100%;max-width:360px;padding:20px 18px;border-radius:10px;}
+    .login-card h2{margin:3px 0 20px;font-size:22px;}
+    input{margin-bottom:14px;padding:9px 10px;}
+    button{min-height:40px;padding:9px;font-size:14px;}
+    .login-card br{line-height:.55;}
+    a{font-size:14px;}
+}
+
 input{
 
 width:100%;

@@ -138,10 +138,21 @@ function renderLine(row) {
 
     const occupied = adiItems.length + kllItems.length + washItems.length + ttItems.length;
     return `<section class="line-section ${row.wash ? "has-wash" : ""} ${row.tt ? "has-tt" : ""}" data-line="${safe(row.line)}" data-occupied="${occupied > 0}">
-        <div class="line-track">
+        <div class="line-track desktop-line-detail">
             ${adiMarkup}
             <div class="line-marker"><span>LINE</span><strong>${safe(row.line)}</strong></div>
             ${rightSideMarkup}
+        </div>
+        <div class="mobile-line-summary">
+            <div class="mobile-line-title"><span>LINE</span><strong>${safe(row.line)}</strong></div>
+            <div class="mobile-side-row mobile-adi-row">
+                <div class="mobile-side-label">ADI SIDE</div>
+                <div class="mobile-side-content">${adiMarkup}</div>
+            </div>
+            <div class="mobile-side-row mobile-kll-row">
+                <div class="mobile-side-label">KLL SIDE</div>
+                <div class="mobile-side-content">${rightSideMarkup}</div>
+            </div>
         </div>
     </section>`;
 }

@@ -397,6 +397,27 @@ table tr:hover{
 
 }
 
+@media(max-width:600px){
+    .top-nav{display:grid;grid-template-columns:1fr;gap:7px;padding:8px 10px;text-align:center;}
+    .top-nav>div{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:12px;}
+    .top-nav span{font-size:12px;}
+    .top-nav button{min-height:34px;margin:0;padding:7px 11px;font-size:11px;}
+    .portal-btn{margin-left:0;}
+    .dashboard{width:calc(100% - 16px);margin:12px auto;}
+    .summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px;}
+    .card{min-height:122px;padding:12px 8px;border-radius:10px;}
+    .card:nth-child(n){border-left-width:5px;}
+    .card i{font-size:25px;margin-bottom:5px;}
+    .card h2{margin:3px 0;font-size:24px;}
+    .card p{font-size:11px;line-height:1.2;}
+    .quick-actions,.activity{padding:14px 11px;margin-bottom:14px;border-radius:10px;}
+    .quick-actions h2,.activity h2{margin-bottom:11px;font-size:18px;}
+    .button-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .button-grid button{min-height:45px;padding:9px 7px;font-size:11px;line-height:1.2;}
+    table th{padding:9px;font-size:11px;}
+    table td{padding:9px;font-size:11px;}
+}
+
 .button-grid{
 
     grid-template-columns:1fr;
