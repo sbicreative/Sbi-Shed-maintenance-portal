@@ -25,9 +25,57 @@
         document.documentElement.classList.toggle("is-offline", offline);
     }
 
+    function prepareResponsiveTable(table) {
+        if (!table || table.dataset.mobileLayout === "single") return;
+
+        const headers = Array.from(table.querySelectorAll("thead th"))
+            .map(header => header.textContent.replace(/\s+/g, " ").trim());
+
+        if (table.dataset.mobileLayout === "manpower") {
+            table.classList.add("mobile-two-row-table", "mobile-manpower-table");
+        } else if (headers.length >= 2 && headers.length <= 6) {
+            table.classList.add("mobile-compact-table");
+            return;
+        } else {
+            if (headers.length <= 1) return;
+            table.classList.add("mobile-two-row-table");
+        }
+
+        table.querySelectorAll("tbody tr").forEach(row => {
+            const cells = Array.from(row.children).filter(cell => cell.tagName === "TD");
+            row.classList.toggle(
+                "mobile-full-row",
+                cells.length <= 1 || cells.some(cell => Number(cell.colSpan) > 1)
+            );
+            cells.forEach((cell, index) => {
+                if (!cell.dataset.mobileLabel) {
+                    cell.dataset.mobileLabel = headers[index] || `Column ${index + 1}`;
+                }
+            });
+        });
+    }
+
+    function prepareResponsiveTables(root = document) {
+        if (root.matches?.("table")) prepareResponsiveTable(root);
+        root.querySelectorAll?.("table").forEach(prepareResponsiveTable);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(banner);
         updateConnectionStatus();
+        prepareResponsiveTables();
+
+        const tableObserver = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.target.closest?.("table")) {
+                    prepareResponsiveTable(mutation.target.closest("table"));
+                }
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) prepareResponsiveTables(node);
+                });
+            });
+        });
+        tableObserver.observe(document.body, { childList: true, subtree: true });
 
         const installButton = document.createElement("button");
         installButton.id = "installAppButton";
