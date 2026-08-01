@@ -665,6 +665,117 @@ flex-direction:column;
 
 }
 
+/* Keep every Work Assignment column visible in one phone-width view. */
+.dashboard{
+padding:7px;
+}
+
+.filter-card{
+padding:11px;
+gap:9px;
+margin-bottom:10px;
+border-radius:9px;
+}
+
+.work-card{
+padding:8px 5px 10px;
+border-top-width:4px;
+border-radius:9px;
+}
+
+.table-title{
+flex-direction:row;
+align-items:center;
+gap:7px;
+margin-bottom:8px;
+}
+
+.table-title h2{
+font-size:17px;
+}
+
+.add-loco-btn{
+min-height:34px;
+padding:6px 9px;
+font-size:10px;
+white-space:nowrap;
+}
+
+.table-container{
+overflow-x:hidden;
+border-radius:6px;
+}
+
+.table-container table{
+width:100%;
+min-width:0;
+table-layout:fixed;
+}
+
+.table-container th,
+.table-container td{
+padding:4px 1px;
+font-size:7px;
+line-height:1.12;
+overflow-wrap:anywhere;
+}
+
+.table-container th:nth-child(1){width:7%;}
+.table-container th:nth-child(2){width:18%;}
+.table-container th:nth-child(3){width:17%;}
+.table-container th:nth-child(4){width:23%;}
+.table-container th:nth-child(5){width:23%;}
+.table-container th:nth-child(7){width:12%;}
+
+.table-container th:nth-child(6),
+.table-container td:nth-child(6){
+display:none;
+}
+
+.table-container td input,
+.table-container td select{
+width:100%;
+min-width:0;
+min-height:26px;
+padding:2px 1px;
+border-radius:3px;
+font-size:7px;
+line-height:1.1;
+}
+
+.table-container .remarks{
+min-width:0;
+}
+
+.table-container .work-list{
+gap:3px;
+}
+
+.table-container .work-row{
+gap:2px;
+}
+
+.table-container .add-work-btn,
+.table-container .remove-work-btn{
+flex:0 0 20px;
+width:20px;
+height:26px;
+min-height:26px;
+padding:0;
+border-radius:3px;
+font-size:12px;
+}
+
+.table-container .delete-loco-btn{
+width:100%;
+min-height:26px;
+padding:3px 1px;
+border-radius:3px;
+font-size:7px;
+line-height:1.05;
+overflow-wrap:anywhere;
+}
+
 }
 
 /* ================= ANIMATION ================= */
