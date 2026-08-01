@@ -117,21 +117,28 @@ body.modal-open { overflow: hidden; }
     .photo-hero { min-height: 430px; border-radius: 14px; }
     .photo-hero > img { object-position: 58% center; }
     .hero-content { padding: 21px 15px; }
-    .hero-content h2 { max-width: 270px; margin: 6px 0 8px; font-size: clamp(24px, 7.2vw, 28px); line-height: 1.08; }
+    .hero-content h2 { max-width: 340px; margin: 6px 0 8px; font-size: clamp(20px, 5.8vw, 23px); line-height: 1.12; }
+    .hero-content h2 span { display: block; white-space: nowrap; }
     .hero-text { font-size: 13px; }
-    .shed-count-card { left: 10px; bottom: 10px; width: min(190px, calc(100% - 20px)); padding: 8px 11px; border-radius: 11px; }
-    .shed-count-card p { margin: 3px 0 1px; font-size: 8px; }
-    .shed-count-card strong { font-size: 24px; }
-    .shed-count-card small { margin-top: 2px; font-size: 9px; }
+    .shed-count-card { left: auto; right: 9px; bottom: 78px; width: 132px; padding: 6px 8px; border-radius: 9px; }
+    .shed-count-card p { margin: 1px 0; font-size: 6px; letter-spacing: .04em; }
+    .shed-count-card strong { font-size: 18px; }
+    .shed-count-card small { margin-top: 1px; font-size: 7px; line-height: 1.15; }
     .live-indicator { width: 8px; height: 8px; box-shadow: 0 0 0 4px rgba(46,155,100,.15); }
-    .hero-actions { left: 14px; right: 14px; bottom: 94px; gap: 8px 12px; }
+    .hero-actions { left: 14px; right: auto; bottom: 78px; flex-direction: column; align-items: flex-start; gap: 5px; }
     .primary-login { min-width: 108px; padding: 9px 16px; font-size: 12px; }
     .public-board-link { font-size: 11px; }
     .fleet-journey { margin-top: 16px; padding: 23px 12px 18px; border-radius: 16px; }
-    .section-heading h2 { font-size: 23px; }
-    .section-heading > p:last-child { font-size: 15px; }
-    .fleet-track { grid-template-columns: repeat(6, 130px); gap: 10px; margin-top: 28px; }
-    .fleet-stop { min-height: 135px; padding: 36px 11px 13px; }
+    .section-heading h2 { font-size: 20px; }
+    .section-heading > p:last-child { font-size: 12px; }
+    .fleet-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px; overflow: visible; padding: 5px 0 0; }
+    .track-line { display: none; }
+    .fleet-stop { min-height: 105px; padding: 29px 5px 9px; border-radius: 10px; }
+    .fleet-stop::before { top: 9px; width: 13px; height: 13px; border-width: 3px; }
+    .fleet-stop .era { min-height: 22px; font-size: 7px; line-height: 1.15; }
+    .fleet-stop strong { font-size: 14px; line-height: 1.1; }
+    .fleet-stop p { margin-top: 4px; font-size: 8px; line-height: 1.25; }
+    .fleet-note { margin-top: 9px; font-size: 9px; }
     .login-modal { padding: 8px; }
     .login-dialog { max-height: calc(100dvh - 16px); padding: 20px 13px 15px; border-radius: 15px; }
     .modal-close { top: 7px; right: 9px; width: 32px; height: 32px; font-size: 22px; }
