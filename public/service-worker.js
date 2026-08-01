@@ -4,7 +4,7 @@ const APP_SHELL = [
     "/dashboard/login.html", "/dashboard/assign-work.html", "/dashboard/incharge.html",
     "/dashboard/manpower-distribution.html", "/dashboard/schedule-form.html",
     "/dashboard/supervisor.html", "/dashboard/viewer.html", "/dashboard/staff.html",
-    "/css/portal.css", "/tracking/tracking.css", "/tracking/tracking.js",
+    "/css/portal.css", "/css/pwa-responsive.css", "/tracking/tracking.css", "/tracking/tracking.js",
     "/js/portal.js", "/js/pwa.js", "/manifest.webmanifest",
     "/images/app-icon.svg", "/images/IR-logo.jpeg", "/images/SBI-logo.jpeg", "/images/sbi-shed-hero.jpeg"
 ];

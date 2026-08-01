@@ -1,0 +1,36 @@
+/* Shared responsive safeguards. Page-specific colours and layouts remain authoritative. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { max-width: 100%; }
+img, svg, video, canvas { max-width: 100%; }
+button, a, input, select, textarea { touch-action: manipulation; }
+input, select, textarea { max-width: 100%; }
+.table-container, .viewer-table-container, .table-wrapper, .table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+.modal-content, .viewer-modal-content, [role="dialog"] {
+    max-width: min(96vw, 100%);
+    max-height: 92dvh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    button, .btn, a.button, input[type="button"], input[type="submit"] { min-height: 42px; }
+    input, select, textarea { font-size: 16px; }
+    h1, h2, h3, p, td, th, label, button, a { overflow-wrap: anywhere; }
+    .table-container, .viewer-table-container, .table-wrapper, .table-responsive {
+        border-radius: 10px;
+        scrollbar-width: thin;
+    }
+    .modal-content, .viewer-modal-content, [role="dialog"] { margin: 10px; }
+}
+
+@media (max-width: 420px) {
+    .modal-content, .viewer-modal-content, [role="dialog"] {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        margin: 8px !important;
+    }
+}

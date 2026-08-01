@@ -1,4 +1,11 @@
 (function () {
+    if (!document.querySelector('link[data-pwa-responsive]')) {
+        const responsiveStyles = document.createElement("link");
+        responsiveStyles.rel = "stylesheet";
+        responsiveStyles.href = "/css/pwa-responsive.css";
+        responsiveStyles.dataset.pwaResponsive = "true";
+        document.head.appendChild(responsiveStyles);
+    }
     let installPrompt;
     const banner = document.createElement("div");
     banner.id = "connectionStatus";
