@@ -1,0 +1,25 @@
+{
+  "name": "SBI Shed Maintenance Portal",
+  "short_name": "SBI Shed",
+  "description": "Integrated maintenance and locomotive tracking portal for Locomotive Shed, Sabarmati.",
+  "start_url": "/portal.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f1e8",
+  "theme_color": "#1f4b36",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/images/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/SBI-logo.jpeg",
+      "sizes": "1476x1600",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

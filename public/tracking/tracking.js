@@ -27,6 +27,7 @@ const searchBox = document.getElementById("searchBox");
 let positionData = [];
 let activeFilter = "all";
 let isAdmin = sessionStorage.getItem("trackingAdmin") === "true";
+const TRACKING_CACHE_KEY = "sbi-shed:last-known-loco-positions";
 
 function safe(value) {
     const node = document.createElement("span");
@@ -178,12 +179,35 @@ function updateSummary() {
 
 async function loadData() {
     message.textContent = "Loading live positions...";
-    const { data, error } = await positionDb.from("loco_positions").select("*").order("updated_at", { ascending: false });
+    let data;
+    let error;
+    try {
+        ({ data, error } = await positionDb.from("loco_positions").select("*").order("updated_at", { ascending: false }));
+    } catch (requestError) {
+        error = requestError;
+    }
     if (error) {
-        message.textContent = `Unable to load live positions: ${error.message}`;
+        try {
+            const cached = JSON.parse(localStorage.getItem(TRACKING_CACHE_KEY) || "null");
+            if (cached?.records?.length) {
+                positionData = cached.records;
+                updateSummary();
+                renderBoard();
+                message.textContent = `Offline saved view — last live sync ${new Date(cached.savedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}. Read-only until connection returns.`;
+                return;
+            }
+        } catch (cacheError) {
+            console.warn("Unable to read saved tracking data", cacheError);
+        }
+        message.textContent = `Unable to load live positions: ${error.message || "No network connection and no saved tracking data."}`;
         return;
     }
     positionData = data || [];
+    try {
+        localStorage.setItem(TRACKING_CACHE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), records: positionData }));
+    } catch (cacheError) {
+        console.warn("Unable to save tracking data for offline viewing", cacheError);
+    }
     updateSummary();
     renderBoard();
     message.textContent = "";
