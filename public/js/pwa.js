@@ -33,6 +33,8 @@
 
         if (table.dataset.mobileLayout === "manpower") {
             table.classList.add("mobile-two-row-table", "mobile-manpower-table");
+        } else if (table.dataset.mobileLayout === "staff-work") {
+            table.classList.add("mobile-two-row-table", "mobile-staff-work-table");
         } else if (headers.length >= 2 && headers.length <= 6) {
             table.classList.add("mobile-compact-table");
             return;

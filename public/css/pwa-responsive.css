@@ -272,6 +272,19 @@ input, select, textarea { max-width: 100%; }
         min-width: 28px !important;
         padding-inline: 5px !important;
     }
+
+    /* Staff work: four identity cells, then four clearly separated work cells. */
+    table.mobile-staff-work-table tbody tr:not(.mobile-full-row) {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        row-gap: 10px !important;
+    }
+    table.mobile-staff-work-table td {
+        grid-column: span 1 !important;
+    }
+    table.mobile-staff-work-table td:nth-child(n+5) {
+        border-top: 2px solid #8eb5e4 !important;
+        background: #f4f8fd !important;
+    }
 }
 
 @media (max-width: 420px) {
