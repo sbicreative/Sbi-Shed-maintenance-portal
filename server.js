@@ -3,6 +3,9 @@ const path = require("path");
 
 const app = express();
 
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+
 // ======================================================
 // ROUTES
 // ======================================================
@@ -53,6 +56,14 @@ app.use(
         extended: true
     })
 );
+
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        service: "sbi-shed-maintenance-portal",
+        uptime_seconds: Math.floor(process.uptime())
+    });
+});
 
 
 // ======================================================
@@ -146,10 +157,11 @@ app.get("/", (req, res) => {
 
 const PORT = Number(process.env.PORT) || 3000;
 
-app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+function startServer() {
+    const server = app.listen(
+        PORT,
+        "0.0.0.0",
+        () => {
 
         console.log(
             "======================================"
@@ -168,12 +180,29 @@ app.listen(
         );
 
         console.log(
-            `Railnet : http://10.1.0.69:${PORT}`
-        );
-
-        console.log(
             "======================================"
         );
 
-    }
-);
+        }
+    );
+
+    const shutdown = signal => {
+        console.log(`${signal} received; closing HTTP server.`);
+        server.close(error => {
+            if (error) {
+                console.error(error);
+                process.exitCode = 1;
+            }
+        });
+    };
+
+    process.once("SIGTERM", () => shutdown("SIGTERM"));
+    process.once("SIGINT", () => shutdown("SIGINT"));
+    return server;
+}
+
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = { app, startServer };

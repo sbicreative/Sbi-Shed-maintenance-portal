@@ -3,8 +3,10 @@ const { createClient } = require("@supabase/supabase-js");
 
 const router = express.Router();
 const trackingDb = createClient(
-    "https://cgbnuyltwqdazyejottk.supabase.co",
-    "sb_publishable_QA6Obxmmpy7GT9NOWtwHIQ_yNs91LID"
+    process.env.TRACKING_SUPABASE_URL ||
+        "https://cgbnuyltwqdazyejottk.supabase.co",
+    process.env.TRACKING_SUPABASE_ANON_KEY ||
+        "sb_publishable_QA6Obxmmpy7GT9NOWtwHIQ_yNs91LID"
 );
 
 router.get("/locos", async (req, res) => {
