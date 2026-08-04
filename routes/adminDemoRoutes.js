@@ -1,6 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
-const supabase = require("../config/supabase");
+const supabase = require("../config/adminSupabase");
 const { requireAdmin, requireCsrf } = require("../lib/adminAuth");
 
 const router = express.Router();
