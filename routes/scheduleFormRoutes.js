@@ -415,6 +415,7 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
         const update = {};
 
         if (
+            role !== "supervisor" &&
             formAnswers &&
             typeof formAnswers === "object" &&
             !Array.isArray(formAnswers)

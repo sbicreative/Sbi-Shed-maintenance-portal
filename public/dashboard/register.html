@@ -2,128 +2,106 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>SBI Shed - Employee Registration</title>
-
-    <link rel="stylesheet" href="../css/register.css">
-
+    <link rel="stylesheet" href="../css/register.css?v=20260804-1">
 </head>
 
 <body>
+    <header class="registration-header">
+        <img src="../images/ir-logo.jpeg" alt="Indian Railways" class="registration-logo">
+        <div class="registration-brand">
+            <p>Western Railway</p>
+            <h1>Locomotive Shed, Sabarmati</h1>
+            <span>Maintenance Management System</span>
+        </div>
+        <img src="../images/sbi-logo.jpeg" alt="Sabarmati Shed" class="registration-logo">
+    </header>
 
-    <div class="container">
+    <main class="registration-page">
+        <section class="registration-intro" aria-labelledby="registrationTitle">
+            <p class="eyebrow">Employee access request</p>
+            <h2 id="registrationTitle">Create your maintenance portal profile</h2>
+            <p>Enter official employee details. Your department and section selection determines the maintenance workflow available after approval.</p>
 
-        <div class="card">
+            <div class="registration-points">
+                <div><span>1</span><p><strong>Official identity</strong><small>Name, CUG mobile and PF number</small></p></div>
+                <div><span>2</span><p><strong>Work mapping</strong><small>Department, section and designation</small></p></div>
+                <div><span>3</span><p><strong>Role approval</strong><small>Access is assigned according to duty</small></p></div>
+            </div>
 
-            <h1>SBI SHED LOCO MANAGEMENT SYSTEM</h1>
+            <a class="portal-return" href="../portal.html">&larr; Return to Main Portal</a>
+        </section>
 
-            <h2>Employee Registration</h2>
+        <section class="registration-card">
+            <div class="form-heading">
+                <p class="eyebrow">New registration</p>
+                <h2>Employee Details</h2>
+                <p>Fields marked with * are required.</p>
+            </div>
 
             <form id="registerForm">
+                <div class="form-grid">
+                    <div class="form-group form-group-wide">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" autocomplete="name" placeholder="Enter name as per official record" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="name" required>
+                    <div class="form-group">
+                        <label for="mobile">Mobile No. (CUG) *</label>
+                        <input type="tel" id="mobile" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="10-digit CUG number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pf_no">PF Number *</label>
+                        <input type="text" id="pf_no" autocomplete="off" placeholder="Enter PF number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="department">Department *</label>
+                        <select id="department" required>
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="section">Section *</label>
+                        <select id="section" required>
+                            <option value="">Select Department First</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="designation">Designation *</label>
+                        <select id="designation" required>
+                            <option value="">Select Department First</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Portal Role *</label>
+                        <select id="role" required>
+                            <option value="">Select Role</option>
+                            <option>Incharge</option>
+                            <option>Supervisor</option>
+                            <option>Staff</option>
+                            <option>Viewer</option>
+                            <option>Admin</option>
+                            <option>Officer</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Mobile No (CUG)</label>
-                    <input type="text" id="mobile" maxlength="10" required>
-                </div>
-
-                <div class="form-group">
-                    <label>PF No</label>
-                    <input type="text" id="pf_no" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Department</label>
-
-                    <select id="department" required>
-
-                       <option value="">Loading...</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label>Section</label>
-
-                    <select id="section" required>
-
-                        <option value="">Select Department First</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label>Designation</label>
-
-                    <select id="designation" required>
-
-                        <option value="">Select Department First</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label>Role</label>
-
-                    <select id="role" required>
-
-                        <option value="">Select Role</option>
-
-                        <option>Incharge</option>
-
-                        <option>Supervisor</option>
-
-                        <option>Staff</option>
-
-                        <option>Viewer</option>
-
-                        <option>Admin</option>
-
-                        <option>Officer</option>
-
-                    </select>
-
-                </div>
-
-                <button type="submit">
-
-                    Register
-
-                </button>
-
+                <button type="submit" class="register-button">Submit Registration</button>
             </form>
 
-            <p>
+            <p class="login-prompt">Already registered? <a href="login.html">Login to Maintenance Portal</a></p>
+        </section>
+    </main>
 
-                Already Registered?
-
-                <a href="login.html">
-
-                    Login Here
-
-                </a>
-
-            </p>
-
-        </div>
-
-    </div>
-
+    <footer class="registration-footer">SBI Shed Maintenance Portal &middot; Western Railway</footer>
     <script src="../js/register.js"></script>
-
 </body>
 
 </html>

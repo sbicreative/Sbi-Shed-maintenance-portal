@@ -71,6 +71,16 @@ function collectReviewAnswers() {
     return answers;
 }
 
+function lockSubmittedAnswers() {
+    document.querySelectorAll("[data-answer-key]")
+        .forEach(field => {
+            field.readOnly = true;
+            field.setAttribute("aria-readonly", "true");
+            field.title =
+                "Submitted staff answer (read-only for Supervisor)";
+        });
+}
+
 async function loadIncharges(department) {
     const response = await fetch(
         `/api/schedule-forms/incharges?department=${encodeURIComponent(department)}`
@@ -105,7 +115,7 @@ function renderActionButtons(status) {
         document.getElementById("inchargeField").hidden = false;
         actions.innerHTML = `
             <button class="draft-btn" type="button" data-action="save">
-                Save Edit
+                Save Remarks
             </button>
             <button class="draft-btn" type="button" data-action="return">
                 Return to Staff
@@ -185,6 +195,7 @@ async function loadReviewForm() {
     populateReviewFields(form.form_answers || {});
 
     if (reviewerRole === "supervisor") {
+        lockSubmittedAnswers();
         await loadIncharges(
             assignment.employee.department
         );
@@ -221,6 +232,16 @@ async function performReviewAction(action, button) {
     showReviewMessage("Saving review action...");
 
     try {
+        const requestBody = {
+            action,
+            remarks,
+            incharge_id: inchargeId
+        };
+
+        if (reviewerRole !== "supervisor") {
+            requestBody.form_answers = collectReviewAnswers();
+        }
+
         const response = await fetch(
             `/api/schedule-forms/review/${formId}/${reviewerRole}/${reviewerId}`,
             {
@@ -228,12 +249,7 @@ async function performReviewAction(action, button) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    action,
-                    remarks,
-                    incharge_id: inchargeId,
-                    form_answers: collectReviewAnswers()
-                })
+                body: JSON.stringify(requestBody)
             }
         );
         const result = await response.json();

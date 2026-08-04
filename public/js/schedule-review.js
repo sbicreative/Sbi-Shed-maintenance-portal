@@ -96,7 +96,7 @@ function renderReviewRows() {
                     <button class="form-btn"
                         type="button"
                         data-review-form="${item.id}">
-                        ${item.status === "Approved" ? "View" : "Review / Edit"}
+                        ${item.status === "Approved" ? "View" : "Review"}
                     </button>
                 </td>
             </tr>
