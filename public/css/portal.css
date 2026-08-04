@@ -112,8 +112,8 @@ body.modal-open { overflow: hidden; }
     .hero-content { width: 100%; padding: 54px 30px; }
     .hero-content h2 { white-space: normal; }
     .hero-shade { background: linear-gradient(90deg, rgba(19,33,25,.88), rgba(19,33,25,.45)); }
-    .hero-actions { left: 25px; bottom: 170px; }
-    .shed-count-card { left: 25px; right: auto; bottom: 24px; }
+    .hero-actions { left: 25px; right: auto; bottom: 24px; width: 190px; }
+    .shed-count-card { left: auto; right: 25px; bottom: 24px; width: 210px; padding: 17px; }
     .fleet-track { grid-template-columns: repeat(6, 150px); }
     .login-options { grid-template-columns: 1fr; }
 }
