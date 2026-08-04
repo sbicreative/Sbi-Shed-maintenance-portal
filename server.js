@@ -1,3 +1,4 @@
+require("./config/loadEnv");
 const express = require("express");
 const path = require("path");
 
@@ -41,8 +42,11 @@ const trackingRoutes =
     require("./routes/trackingRoutes");
 const historicalScheduleRoutes =
     require("./routes/historicalScheduleRoutes");
-    const employeeRoutes =
+const employeeRoutes =
 require("./routes/employeeRoutes");
+const adminAuthRoutes = require("./routes/adminAuthRoutes");
+const adminMasterRoutes = require("./routes/adminMasterRoutes");
+const adminDemoRoutes = require("./routes/adminDemoRoutes");
 
 
 // ======================================================
@@ -85,6 +89,9 @@ app.use(
     "/api/auth",
     authRoutes
 );
+app.use("/api/admin/auth", adminAuthRoutes);
+app.use("/api/admin/masters", adminMasterRoutes);
+app.use("/api/admin/demo", adminDemoRoutes);
 
 app.use(
     "/api",

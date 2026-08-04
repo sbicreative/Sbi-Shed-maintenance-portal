@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Admin Dashboard | SBI Shed</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/admin-master-cards.css">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="admin-brand"><img src="../images/IR-logo.jpeg" alt="Indian Railways"><div><p>Locomotive Shed Sabarmati</p><h1>Admin Control Centre</h1></div></div>
+        <div class="session-actions"><span id="adminIdentity">Checking session...</span><button id="logoutBtn" type="button">Logout</button></div>
+    </header>
+    <main class="admin-shell">
+        <aside class="admin-nav">
+            <button class="nav-button active" data-view="overview">Overview</button>
+            <p>Master Data</p>
+            <button class="nav-button" data-resource="departments">Departments</button><button class="nav-button" data-resource="sections">Sections</button>
+            <button class="nav-button" data-resource="designations">Designations</button><button class="nav-button" data-resource="employees">Employees</button>
+            <button class="nav-button" data-resource="supervisors">Supervisors</button><button class="nav-button" data-resource="users">Users &amp; Roles</button>
+            <button class="nav-button" data-resource="loco-types">Loco Types</button><button class="nav-button" data-resource="locos">Loco Master</button>
+            <button class="nav-button" data-resource="schedules">Schedule Master</button><button class="nav-button" data-resource="works">Work Master</button>
+        </aside>
+        <section class="admin-content">
+            <p id="pageMessage" class="page-message" role="status"></p>
+            <div id="overviewView">
+                <div class="welcome-panel"><p class="eyebrow">Secure administration</p><h2>Master Data &amp; Demo Controls</h2><p>Schedule form templates, submissions and historical schedule records are deliberately excluded from this editor.</p></div>
+                <div class="summary-grid"><article><span>Editable masters</span><strong>10</strong></article><article><span>Session security</span><strong>Server-side</strong></article><article><span>Schedule forms</span><strong>Protected</strong></article></div>
+                <section class="panel master-control-panel">
+                    <div class="panel-heading"><div><p class="eyebrow">Direct access</p><h2>Master Table Controls</h2><p>Master select karke records dekhein, add karein, update karein ya delete karein.</p></div></div>
+                    <div class="master-card-grid">
+                        <button class="master-card" data-open-resource="departments"><span class="master-icon">DP</span><span><strong>Department Master</strong><small>Departments manage karein</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="sections"><span class="master-icon">SC</span><span><strong>Section Master</strong><small>Department-wise sections</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="designations"><span class="master-icon">DG</span><span><strong>Designation Master</strong><small>Designation list manage karein</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="employees"><span class="master-icon">EM</span><span><strong>Employee Master</strong><small>Staff master records</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="supervisors"><span class="master-icon">SP</span><span><strong>Supervisor Master</strong><small>Supervisor and incharge records</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="users"><span class="master-icon">UR</span><span><strong>Users &amp; Roles</strong><small>Login mapping and roles</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="loco-types"><span class="master-icon">LT</span><span><strong>Loco Type Master</strong><small>Loco classifications</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="locos"><span class="master-icon">LM</span><span><strong>Loco Master</strong><small>Loco numbers and status</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="schedules"><span class="master-icon">SM</span><span><strong>Schedule Master</strong><small>Maintenance schedules</small></span><b>Open →</b></button>
+                        <button class="master-card" data-open-resource="works"><span class="master-icon">WM</span><span><strong>Work Master</strong><small>Section and schedule work</small></span><b>Open →</b></button>
+                    </div>
+                    <p class="protected-note"><strong>Protected:</strong> Schedule Form templates, filled forms and submitted data are not editable here.</p>
+                </section>
+                <section class="panel"><div class="panel-heading"><div><p class="eyebrow">Controlled workflow</p><h2>Demo Session</h2></div><span id="demoBadge" class="badge">Loading</span></div>
+                    <div id="startDemoControls" class="demo-row"><label>Demo date<input id="demoDate" type="date"></label><button id="startDemoBtn" type="button">Start Demo Session</button></div>
+                    <div id="activeDemoControls" hidden><p id="demoDetails"></p><button id="previewResetBtn" class="secondary" type="button">Preview End &amp; Reset</button><div id="resetPreview" class="reset-preview" hidden></div></div>
+                </section>
+                <section class="panel"><div class="panel-heading"><div><p class="eyebrow">Permanent record</p><h2>Reset Audit Log</h2></div></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Result</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
+            </div>
+            <div id="masterView" hidden>
+                <div class="panel-heading"><div><p class="eyebrow">Authorized editor</p><h2 id="resourceTitle">Master Data</h2></div><button id="addRecordBtn" type="button">Add Record</button></div>
+                <div class="table-wrap"><table><thead id="masterHead"></thead><tbody id="masterBody"></tbody></table></div>
+            </div>
+        </section>
+    </main>
+    <dialog id="recordDialog"><form id="recordForm"><div class="dialog-title"><h2 id="recordDialogTitle">Edit record</h2><button type="button" data-close>×</button></div><div id="recordFields" class="record-fields"></div><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save Record</button></div></form></dialog>
+    <footer>An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
+    <script src="../js/admin.js"></script>
+    <script src="../js/admin-master-cards.js"></script>
+</body></html>

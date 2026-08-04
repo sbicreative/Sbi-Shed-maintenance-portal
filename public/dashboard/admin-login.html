@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | SBI Shed</title>
+    <link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo-left"><img src="../images/IR-logo.jpeg" alt="Indian Railways"></div>
+        <div class="title"><h1>SBI SHED LOCO MAINTENANCE MANAGEMENT SYSTEM</h1><h3>Locomotive Shed, Sabarmati | Western Railway</h3></div>
+        <div class="logo-right"><img src="../images/SBI-logo.jpeg" alt="SBI Shed"></div>
+    </header>
+    <main class="container">
+        <section class="login-card">
+            <h2>Admin Login</h2>
+            <p class="login-note">Authorized administrator access only. Admin registration is not available.</p>
+            <form id="adminLoginForm">
+                <label for="adminUsername">Admin ID</label>
+                <input id="adminUsername" name="username" autocomplete="username" required>
+                <label for="adminPassword">Password</label>
+                <input id="adminPassword" name="password" type="password" autocomplete="current-password" required>
+                <button type="submit">LOGIN AS ADMIN</button>
+                <p id="adminLoginMessage" class="login-message" role="status"></p>
+            </form>
+            <a href="login.html">Back to User Login</a>
+        </section>
+    </main>
+    <footer class="credit-footer">An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
+    <script src="../js/admin-login.js"></script>
+</body>
+</html>

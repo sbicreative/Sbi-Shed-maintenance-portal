@@ -85,6 +85,14 @@ router.post("/register", async (req, res) => {
         } = req.body;
 
         const normalizedPf = normalizePfNumber(pf_no);
+        const normalizedRole = normalizeText(role);
+
+        if (!["staff", "supervisor", "incharge", "viewer", "officers"].includes(normalizedRole)) {
+            return res.status(403).json({
+                success: false,
+                message: "This role cannot be created through public registration."
+            });
+        }
 
         if (!normalizedPf) {
             return res.status(400).json({
@@ -167,7 +175,7 @@ router.post("/register", async (req, res) => {
                 department,
                 section,
                 designation,
-                role,
+                role: normalizedRole,
                 ...mapping
             }]);
 
@@ -329,11 +337,22 @@ switch (dashboardRole) {
         dashboard = "/dashboard/login.html";
 }
 
+const safeUser = {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    department: user.department,
+    section: user.section,
+    designation: user.designation,
+    employee_master_id: user.employee_master_id,
+    supervisor_master_id: user.supervisor_master_id
+};
+
 res.json({
 
     success: true,
 
-    user,
+    user: safeUser,
 
     dashboard
 
