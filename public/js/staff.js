@@ -196,7 +196,17 @@ function renderWorkTable() {
 
     if (items.length === 0) {
         body.innerHTML = `
-            <tr>
+            <tr class="empty-work-grid" aria-label="Empty assigned work record">
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr class="empty-work-message">
                 <td colspan="8">
                     ${showHistory
                         ? "No work history found."

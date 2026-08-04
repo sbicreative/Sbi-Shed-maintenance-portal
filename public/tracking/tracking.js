@@ -110,10 +110,15 @@ function renderBoard() {
 }
 
 function updateSummary() {
-    const occupied = new Set(positionData.map(item => item.position).filter(position => positions.includes(position))).size;
+    const stableLocos = positionData.filter(item =>
+        String(item.status || "").trim().toLowerCase() === "stable"
+    ).length;
+    const maintenanceLocos = positionData.filter(item =>
+        String(item.status || "").trim().toLowerCase() === "maintenance"
+    ).length;
     document.getElementById("totalLocos").textContent = positionData.length;
-    document.getElementById("occupiedLocations").textContent = occupied;
-    document.getElementById("vacantLocations").textContent = positions.length - occupied;
+    document.getElementById("stableLocos").textContent = stableLocos;
+    document.getElementById("maintenanceLocos").textContent = maintenanceLocos;
     if (!positionData.length) {
         document.getElementById("lastUpdated").textContent = "No entries";
         document.getElementById("updatedBy").textContent = "--";

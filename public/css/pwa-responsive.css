@@ -285,6 +285,162 @@ input, select, textarea { max-width: 100%; }
         border-top: 2px solid #8eb5e4 !important;
         background: #f4f8fd !important;
     }
+
+    /* Staff dashboard: compact reference-style actions and readable work cards. */
+    .staff-dashboard-page .quick-actions,
+    .staff-dashboard-page .work-panel {
+        padding: 14px !important;
+        border: 1px solid #dce6f1 !important;
+        border-radius: 14px !important;
+        background: #fff !important;
+        box-shadow: 0 5px 16px rgba(20, 61, 104, .12) !important;
+    }
+    .staff-dashboard-page .quick-actions h2,
+    .staff-dashboard-page .work-panel h2 { color: #0d4da6 !important; }
+    .staff-dashboard-page .quick-actions .button-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 9px !important;
+    }
+    .staff-dashboard-page .quick-actions .button-grid button {
+        min-height: 46px !important;
+        padding: 8px 6px !important;
+        border-radius: 8px !important;
+        color: #fff !important;
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+    }
+    .staff-dashboard-page .quick-actions .action-blue { background: #1554b3 !important; }
+    .staff-dashboard-page .quick-actions .action-green { background: #2e8735 !important; }
+    .staff-dashboard-page .quick-actions .action-orange { background: #ef6c00 !important; }
+    .staff-dashboard-page .quick-actions .action-purple { background: #7220a3 !important; }
+    .staff-dashboard-page .top-nav {
+        min-height: 52px !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto auto !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 6px 10px !important;
+        text-align: left !important;
+    }
+    .staff-dashboard-page .top-nav .welcome {
+        min-width: 0 !important;
+        font-size: 11px !important;
+        line-height: 1.15 !important;
+    }
+    .staff-dashboard-page .top-nav .nav-actions {
+        display: contents !important;
+    }
+    .staff-dashboard-page .top-nav #currentDateTime {
+        font-size: 11px !important;
+        white-space: nowrap !important;
+    }
+    .staff-dashboard-page .top-nav .logout-btn {
+        justify-self: end !important;
+        min-height: 34px !important;
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+    }
+    .staff-dashboard-page .work-panel .section-heading {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+        text-align: left !important;
+    }
+    .staff-dashboard-page .work-panel .section-heading h2 {
+        margin: 0 0 4px !important;
+        font-size: 18px !important;
+    }
+    .staff-dashboard-page .work-panel .section-heading p {
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+    }
+    .staff-dashboard-page .work-panel .refresh-btn {
+        width: auto !important;
+        min-width: 68px !important;
+        min-height: 36px !important;
+        padding: 7px 10px !important;
+        background: #1554b3 !important;
+        color: #fff !important;
+        font-size: 11px !important;
+    }
+    .staff-dashboard-page .work-panel .table-wrap {
+        width: 100% !important;
+        overflow: visible !important;
+        border: 0 !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table thead {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody {
+        display: grid !important;
+        width: 100% !important;
+        gap: 12px !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody tr:not(.mobile-full-row) {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        gap: 8px 5px !important;
+        padding: 8px !important;
+        border: 1px solid #c8d9eb !important;
+        border-top: 4px solid #1554b3 !important;
+        border-radius: 10px !important;
+        background: #fff !important;
+        box-shadow: 0 3px 10px rgba(13, 77, 166, .10) !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table td,
+    .staff-dashboard-page table.mobile-staff-work-table td:nth-child(n+5) {
+        display: flex !important;
+        min-width: 0 !important;
+        min-height: 76px !important;
+        padding: 0 5px 7px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        gap: 7px !important;
+        border: 1px solid #cddbea !important;
+        border-radius: 7px !important;
+        background: #fff !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        overflow: hidden !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table td::before {
+        content: attr(data-mobile-label) !important;
+        display: flex !important;
+        min-height: 28px !important;
+        margin: 0 -5px !important;
+        padding: 5px 3px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #1554b3 !important;
+        color: #fff !important;
+        font-size: 8px !important;
+        font-weight: 800 !important;
+        line-height: 1.05 !important;
+        text-transform: none !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody tr.mobile-full-row td {
+        display: block !important;
+        width: 100% !important;
+        min-height: 48px !important;
+        padding: 14px 8px !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody tr.mobile-full-row td::before {
+        display: none !important;
+    }
 }
 
 @media (max-width: 420px) {
@@ -293,4 +449,20 @@ input, select, textarea { max-width: 100%; }
         max-width: calc(100vw - 16px) !important;
         margin: 8px !important;
     }
+}
+
+/* Staff reference colours must win over the shared maintenance theme. */
+.staff-dashboard-page .quick-actions h2,
+.staff-dashboard-page .work-panel h2 {
+    color: #0d4da6 !important;
+}
+.staff-dashboard-page .quick-actions .action-blue { background: #1554b3 !important; }
+.staff-dashboard-page .quick-actions .action-green { background: #2e8735 !important; }
+.staff-dashboard-page .quick-actions .action-orange { background: #ef6c00 !important; }
+.staff-dashboard-page .quick-actions .action-purple { background: #7220a3 !important; }
+.staff-dashboard-page .work-panel table thead,
+.staff-dashboard-page .work-panel table thead tr,
+.staff-dashboard-page .work-panel table thead th {
+    background: #1554b3 !important;
+    color: #fff !important;
 }

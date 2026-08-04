@@ -24,12 +24,12 @@
             <div class="hero-copy">
                 <p class="eyebrow">Live shed overview</p>
                 <h2 id="boardTitle">Loco Position Board</h2>
-                <p>Track position, shed area and shunting order across all 26 locations.</p>
+                <p>Track position, shed area and shunting order across all 27 locations.</p>
             </div>
             <div class="metrics" aria-label="Tracking summary">
                 <article><span>Total locos</span><strong id="totalLocos">0</strong></article>
-                <article><span>Occupied</span><strong id="occupiedLocations">0</strong></article>
-                <article><span>Vacant</span><strong id="vacantLocations">26</strong></article>
+                <article><span>Stable Locos</span><strong id="stableLocos">0</strong></article>
+                <article><span>Locos in Maintenance</span><strong id="maintenanceLocos">0</strong></article>
                 <article class="update-metric"><span>Last updated</span><strong id="lastUpdated">--</strong><small id="updatedBy">--</small></article>
             </div>
         </section>
@@ -83,12 +83,12 @@
         </section>
 
         <div class="board-heading">
-            <div><p class="eyebrow">26 defined locations</p><h2>Operational Shed Layout</h2></div>
-            <div class="legend" aria-label="Area legend"><span><i class="area-key open"></i>Open area</span><span><i class="area-key roofed"></i>Roofed area (max 3)</span><span><i class="area-key wash"></i>Wash house</span></div>
+            <div><p class="eyebrow">27 defined locations</p><h2>Operational Shed Layout</h2></div>
+            <div class="legend" aria-label="Area legend"><span><i class="area-key open"></i>Open area</span><span><i class="area-key roofed"></i>Roofed area</span><span><i class="area-key wash"></i>Wash house</span><span><i class="area-key tt"></i>Tyre turning</span></div>
         </div>
         <p id="boardMessage" class="board-message" role="status" aria-live="polite"></p>
         <section id="board" class="position-board" aria-label="Shed position board"></section>
-        <aside class="shunting-note"><strong>Shunting order:</strong> numbering starts at 1 inside the roofed area. On Line 2–8, additional open-area locos continue from 4 onward and are shown in the leftmost bay.</aside>
+        <aside class="shunting-note"><strong>Shunting order:</strong> ADI numbering runs right to left, starting at 1 inside the roofed area. KLL numbering runs left to right; on E1/E2, positions 1–2 are roofed and 3 onward are open.</aside>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
