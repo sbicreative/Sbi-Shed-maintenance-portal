@@ -293,15 +293,16 @@ async function loadAssignedWork() {
         ) {
 
             tbody.innerHTML = `
-
-                <tr>
-
-                    <td colspan="8">
-                        No Assigned Work Found
-                    </td>
-
+                <tr class="empty-assigned-work-row" aria-label="No assigned work found">
+                    <td><span class="empty-column-label">S.No.</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Loco No.</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Schedule</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Assigned Work</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Man Power Distribution</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Remarks</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Assigned By</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Status</span><span class="empty-column-box"></span></td>
                 </tr>
-
             `;
 
             return;

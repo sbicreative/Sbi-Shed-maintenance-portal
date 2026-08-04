@@ -7,16 +7,16 @@ const layout = [
     { line: "7", adi: "LINE 7 ADI", kll: "LINE 7 KLL", splitAdi: true },
     { line: "6", adi: "LINE 6 ADI", kll: "LINE 6 KLL", wash: "NEW WASH HOUSE 2", washLabel: "NEW WASH HOUSE 2", splitAdi: true },
     { line: "5", adi: "LINE 5 ADI", kll: "LINE 5 KLL", wash: "NEW WASH HOUSE 1", washLabel: "NEW WASH HOUSE 1", splitAdi: true },
-    { line: "4", adi: "LINE 4 ADI", kll: "LINE 4 KLL", tt: "TT", allAdiOpen: true },
+    { line: "4", adi: "LINE 4 ADI", kll: "LINE 4 KLL", splitAdi: true },
     { line: "3", adi: "LINE 3 ADI", kll: "LINE 3 KLL", wash: "OLD WASH HOUSE 2", washLabel: "OLD WASH HOUSE 2", splitAdi: true },
     { line: "2", adi: "LINE 2 ADI", kll: "LINE 2 KLL", wash: "OLD WASH HOUSE 1", washLabel: "OLD WASH HOUSE 1", splitAdi: true },
     { line: "1", adi: "LINE 1 ADI", kll: "LINE 1 KLL" },
     { line: "0", adi: "LINE 0 ADI", kll: "LINE 0 KLL" },
-    { line: "E1", adi: "E1 ADI", kll: "E1 KLL", splitKll: true },
-    { line: "E2", adi: "E2 ADI", kll: "E2 KLL", splitKll: true }
+    { line: "E1", adi: "E1 ADI", kll: "E1 KLL" },
+    { line: "E2", adi: "E2 ADI", kll: "E2 KLL" }
 ];
 
-const positions = layout.flatMap(row => [row.adi, row.kll, row.wash, row.tt].filter(Boolean));
+const positions = layout.flatMap(row => [row.adi, row.kll, row.wash].filter(Boolean));
 const board = document.getElementById("board");
 const message = document.getElementById("boardMessage");
 const positionSelect = document.getElementById("positionSelect");
@@ -27,7 +27,6 @@ const searchBox = document.getElementById("searchBox");
 let positionData = [];
 let activeFilter = "all";
 let isAdmin = sessionStorage.getItem("trackingAdmin") === "true";
-const TRACKING_CACHE_KEY = "sbi-shed:last-known-loco-positions";
 
 function safe(value) {
     const node = document.createElement("span");
@@ -48,33 +47,20 @@ function itemsAt(position) {
     });
 }
 
-function locoCards(items, startNumber = 1, emptyText = "Available", minimumSlots = 0) {
-    const occupiedCards = items.map((item, index) => `
+function locoCards(items, startNumber = 1, emptyText = "Available") {
+    if (!items.length) return `<div class="empty-slot">${safe(emptyText)}</div>`;
+    return items.map((item, index) => `
         <div class="loco-card" data-loco="${safe(item.loco_no).toUpperCase()}">
             <span class="sequence" title="Shunting order">${startNumber + index}</span>
             <div class="loco-identity"><strong>${safe(item.loco_no)}</strong><small>${safe(item.loco_type || "Type not set")}</small></div>
             <span class="status-badge ${statusClass(item.status)}">${safe(item.status || "Stable")}</span>
         </div>`).join("");
-    const vacantCards = Array.from(
-        { length: Math.max(0, minimumSlots - items.length) },
-        (_, index) => `
-            <div class="loco-card slot-placeholder">
-                <span class="sequence" title="Physical slot">${startNumber + items.length + index}</span>
-                <div class="loco-identity"><strong>VACANT</strong><small>Physical slot</small></div>
-                <span class="vacant-badge">Empty</span>
-            </div>`
-    ).join("");
-    return occupiedCards + vacantCards || `<div class="empty-slot">${safe(emptyText)}</div>`;
 }
 
-function bay(title, subtitle, position, className, items, startNumber = 1, minimumSlots = 0) {
-    subtitle = String(subtitle || "")
-        .replace(/OPEN AREA.*ADDITIONAL/, "OPEN AREA")
-        .replace(/ROOFED.*MAX 3 LOCOS/, "ROOFED AREA")
-        .replace(/ROOFED.*MAX 2 LOCOS/, "ROOFED AREA");
+function bay(title, subtitle, position, className, items, startNumber = 1) {
     return `<article class="track-bay ${className}" data-position="${safe(position)}" data-occupied="${items.length > 0}">
         <header><div><strong>${safe(title)}</strong><span>${safe(subtitle)}</span></div><b>${items.length || "—"}</b></header>
-        <div class="loco-stack">${locoCards(items, startNumber, "Available", minimumSlots)}</div>
+        <div class="loco-stack">${locoCards(items, startNumber)}</div>
     </article>`;
 }
 
@@ -82,77 +68,26 @@ function renderLine(row) {
     const adiItems = itemsAt(row.adi);
     const kllItems = itemsAt(row.kll);
     const washItems = row.wash ? itemsAt(row.wash) : [];
-    const ttItems = row.tt ? itemsAt(row.tt) : [];
     let adiMarkup;
 
-    if (row.allAdiOpen || row.splitAdi) {
-        const roofedItems = row.allAdiOpen ? [] : adiItems.slice(-3).reverse();
-        const openItems = row.allAdiOpen
-            ? [...adiItems].reverse()
-            : adiItems.slice(0, Math.max(0, adiItems.length - 3)).reverse();
-        const openMarkup = bay(
-            "ADI SIDE",
-            "OPEN AREA",
-            row.adi,
-            "open-bay derived-bay",
-            openItems,
-            4
-        );
-        const approachMarkup = row.wash
-            ? `<div class="wash-open-split">
-                ${bay(row.washLabel, "", row.wash, "wash-bay", washItems, 1)}
-                ${openMarkup}
-            </div>`
-            : `<div class="approach-open">${openMarkup}</div>`;
-        const innerMarkup = row.allAdiOpen
-            ? bay("ADI SIDE", "UNDER FRAME", row.adi, "under-frame-bay derived-bay", [], 1, 3)
-            : bay("ADI SIDE", "ROOFED AREA", row.adi, "roofed-bay derived-bay", roofedItems, 1, 3);
-        adiMarkup = `${approachMarkup}${innerMarkup}`;
-    } else if (row.allAdiOpen) {
-        adiMarkup = `
-            ${bay("ADI SIDE", "OPEN AREA", row.adi, "open-bay derived-bay", [...adiItems].reverse(), 1)}
-            ${bay("ADI SIDE", "UNDER FRAME", row.adi, "under-frame-bay derived-bay", [], 1)}`;
-    } else if (row.splitAdi) {
+    if (row.splitAdi) {
         const outsideCount = Math.max(0, adiItems.length - 3);
-        const outsideItems = adiItems.slice(0, outsideCount).reverse();
-        const roofedItems = adiItems.slice(outsideCount).reverse();
+        const outsideItems = adiItems.slice(0, outsideCount);
+        const roofedItems = adiItems.slice(outsideCount);
         adiMarkup = `
             ${bay("ADI SIDE", "OPEN AREA · ADDITIONAL", row.adi, "open-bay derived-bay", outsideItems, roofedItems.length + 1)}
             ${bay("ADI SIDE", "ROOFED · MAX 3 LOCOS", row.adi, "roofed-bay derived-bay", roofedItems, 1)}`;
     } else {
-        adiMarkup = bay("ADI SIDE", "TRACK POSITION", row.adi, "adi-bay wide-adi", [...adiItems].reverse(), 1);
+        adiMarkup = bay("ADI SIDE", "TRACK POSITION", row.adi, "adi-bay wide-adi", adiItems, 1);
     }
 
-    const kllMarkup = row.splitKll
-        ? `<div class="kll-split">
-            ${bay("KLL SIDE", "ROOFED - MAX 2 LOCOS", row.kll, "kll-roofed derived-bay", kllItems.slice(0, 2), 1)}
-            ${bay("KLL SIDE", "OPEN AREA", row.kll, "kll-open derived-bay", kllItems.slice(2), 3)}
-        </div>`
-        : bay("KLL SIDE", "OPEN AREA", row.kll, "kll-bay", kllItems, 1);
-    const rightSideMarkup = row.tt
-        ? `<div class="kll-tt-split">
-            ${kllMarkup}
-            ${bay("TT", "TYRE TURNING", row.tt, "tt-bay", ttItems, 1)}
-        </div>`
-        : kllMarkup;
-
-    const occupied = adiItems.length + kllItems.length + washItems.length + ttItems.length;
-    return `<section class="line-section ${row.wash ? "has-wash" : ""} ${row.tt ? "has-tt" : ""}" data-line="${safe(row.line)}" data-occupied="${occupied > 0}">
-        <div class="line-track desktop-line-detail">
+    const occupied = adiItems.length + kllItems.length + washItems.length;
+    return `<section class="line-section ${row.wash ? "has-wash" : ""}" data-line="${safe(row.line)}" data-occupied="${occupied > 0}">
+        <div class="line-track">
+            ${row.wash ? bay(row.washLabel, "WASH HOUSE BAY", row.wash, "wash-bay", washItems, 1) : '<div class="wash-spacer" aria-hidden="true"></div>'}
             ${adiMarkup}
             <div class="line-marker"><span>LINE</span><strong>${safe(row.line)}</strong></div>
-            ${rightSideMarkup}
-        </div>
-        <div class="mobile-line-summary">
-            <div class="mobile-line-title"><span>LINE</span><strong>${safe(row.line)}</strong></div>
-            <div class="mobile-side-row mobile-adi-row">
-                <div class="mobile-side-label">ADI SIDE</div>
-                <div class="mobile-side-content">${adiMarkup}</div>
-            </div>
-            <div class="mobile-side-row mobile-kll-row">
-                <div class="mobile-side-label">KLL SIDE</div>
-                <div class="mobile-side-content">${rightSideMarkup}</div>
-            </div>
+            ${bay("KLL SIDE", "TRACK POSITION", row.kll, "kll-bay", kllItems, 1)}
         </div>
     </section>`;
 }
@@ -190,35 +125,12 @@ function updateSummary() {
 
 async function loadData() {
     message.textContent = "Loading live positions...";
-    let data;
-    let error;
-    try {
-        ({ data, error } = await positionDb.from("loco_positions").select("*").order("updated_at", { ascending: false }));
-    } catch (requestError) {
-        error = requestError;
-    }
+    const { data, error } = await positionDb.from("loco_positions").select("*").order("updated_at", { ascending: false });
     if (error) {
-        try {
-            const cached = JSON.parse(localStorage.getItem(TRACKING_CACHE_KEY) || "null");
-            if (cached?.records?.length) {
-                positionData = cached.records;
-                updateSummary();
-                renderBoard();
-                message.textContent = `Offline saved view — last live sync ${new Date(cached.savedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}. Read-only until connection returns.`;
-                return;
-            }
-        } catch (cacheError) {
-            console.warn("Unable to read saved tracking data", cacheError);
-        }
-        message.textContent = `Unable to load live positions: ${error.message || "No network connection and no saved tracking data."}`;
+        message.textContent = `Unable to load live positions: ${error.message}`;
         return;
     }
     positionData = data || [];
-    try {
-        localStorage.setItem(TRACKING_CACHE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), records: positionData }));
-    } catch (cacheError) {
-        console.warn("Unable to save tracking data for offline viewing", cacheError);
-    }
     updateSummary();
     renderBoard();
     message.textContent = "";
@@ -226,11 +138,10 @@ async function loadData() {
 
 function refreshOrderNumbers() {
     const rows = [...entryBody.querySelectorAll("tr")];
-    const isAdi = / ADI$/.test(positionSelect.value);
+    const splitAdi = /^LINE [2-8] ADI$/.test(positionSelect.value);
+    const outsideCount = splitAdi ? Math.max(0, rows.length - 3) : 0;
     rows.forEach((row, index) => {
-        const sequence = positionSelect.value === "LINE 4 ADI"
-            ? rows.length - index + 3
-            : (isAdi ? rows.length - index : index + 1);
+        const sequence = splitAdi && outsideCount ? (index < outsideCount ? index + 4 : index - outsideCount + 1) : index + 1;
         row.querySelector(".editor-sequence").textContent = sequence;
         row.querySelector(".move-up").disabled = index === 0;
         row.querySelector(".move-down").disabled = index === entryBody.children.length - 1;
@@ -341,15 +252,11 @@ document.getElementById("pdfBtn").addEventListener("click", () => {
     doc.setFontSize(16); doc.text("SBI Shed Live Position Board", 14, 16);
     doc.setFontSize(9); doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 14, 22);
     const rows = [];
-    layout.forEach(line => [line.wash, line.adi, line.kll, line.tt].filter(Boolean).forEach(position => {
+    layout.forEach(line => [line.wash, line.adi, line.kll].filter(Boolean).forEach(position => {
         const items = itemsAt(position);
-        const outsideCount = line.allAdiOpen && position === line.adi
-            ? items.length
-            : (line.splitAdi && position === line.adi ? Math.max(0, items.length - 3) : 0);
+        const outsideCount = line.splitAdi && position === line.adi ? Math.max(0, items.length - 3) : 0;
         items.forEach((item, index) => {
-            const sequence = position === "LINE 4 ADI"
-                ? items.length - index + 3
-                : (position.endsWith(" ADI") ? items.length - index : index + 1);
+            const sequence = outsideCount ? (index < outsideCount ? index + 4 : index - outsideCount + 1) : index + 1;
             const area = outsideCount && index < outsideCount ? "Open" : (line.splitAdi && position === line.adi ? "Roofed" : position);
             rows.push([`${position} · ${area}`, sequence, item.loco_no, item.loco_type, item.status]);
         });
