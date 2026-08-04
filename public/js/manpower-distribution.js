@@ -169,7 +169,9 @@ async function loadUnavailableStaff() {
 
     const params =
         new URLSearchParams({
-            assign_date: assignDate
+            assign_date: assignDate,
+            supervisor_id:
+                user.supervisor_master_id || user.id
         });
 
     const response =
@@ -291,15 +293,16 @@ async function loadAssignedWork() {
         ) {
 
             tbody.innerHTML = `
-
-                <tr>
-
-                    <td colspan="8">
-                        No Assigned Work Found
-                    </td>
-
+                <tr class="empty-assigned-work-row" aria-label="No assigned work found">
+                    <td><span class="empty-column-label">S.No.</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Loco No.</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Schedule</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Assigned Work</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Man Power Distribution</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Remarks</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Assigned By</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Status</span><span class="empty-column-box"></span></td>
                 </tr>
-
             `;
 
             return;
@@ -331,7 +334,8 @@ async function loadAssignedWork() {
                     </td>
 
                     <td>
-                        ${header.loco_id || "-"}
+                        ${header.loco_master?.loco_no ||
+                        header.temporary_loco_master?.loco_no || "-"}
                     </td>
 
                     <td>
@@ -590,13 +594,8 @@ function refreshStaffAvailability() {
 
             if (!staffId) return;
 
-            const selectedElsewhere =
-                (selectedCounts.get(staffId) || 0) >
-                (ownStaffId === staffId ? 1 : 0);
-
             const unavailable =
-                unavailableStaffIds.has(staffId) ||
-                selectedElsewhere;
+                unavailableStaffIds.has(staffId);
 
             option.disabled =
                 unavailable &&
@@ -683,16 +682,6 @@ async function saveDistribution() {
             });
         });
 
-    }
-
-    if (
-        new Set(allSelectedStaffIds).size !==
-        allSelectedStaffIds.length
-    ) {
-        alert(
-            "Same staff cannot be selected for more than one work on the selected date."
-        );
-        return;
     }
 
     if (assignments.length === 0) {

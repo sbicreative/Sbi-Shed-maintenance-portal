@@ -1,0 +1,296 @@
+/* Shared responsive safeguards. Page-specific colours and layouts remain authoritative. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { max-width: 100%; }
+img, svg, video, canvas { max-width: 100%; }
+button, a, input, select, textarea { touch-action: manipulation; }
+input, select, textarea { max-width: 100%; }
+.table-container, .viewer-table-container, .table-wrapper, .table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+.modal-content, .viewer-modal-content, [role="dialog"] {
+    max-width: min(96vw, 100%);
+    max-height: 92dvh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .main-header {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 70px !important;
+        display: grid !important;
+        grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+        text-align: center !important;
+    }
+    .main-header .logo-left, .main-header .logo-right { width: 44px !important; }
+    .main-header .logo-left img, .main-header .logo-right img,
+    .main-header .header-logo img { width: 42px !important; height: 42px !important; object-fit: contain; }
+    .main-header .header-title { min-width: 0; padding: 0 4px !important; }
+    .main-header .header-title h1 { margin: 0 !important; font-size: 14px !important; line-height: 1.16 !important; letter-spacing: .2px !important; }
+    .main-header .header-title h2, .main-header .header-title h3 { margin: 3px 0 0 !important; font-size: 10px !important; line-height: 1.15 !important; }
+    .main-header .header-title p { margin: 2px 0 0 !important; font-size: 8px !important; line-height: 1.1 !important; }
+    button, .btn, a.button, input[type="button"], input[type="submit"] { min-height: 42px; }
+    input, select, textarea { font-size: 16px; }
+    h1, h2, h3, p, td, th, label, button, a { overflow-wrap: anywhere; }
+
+    /* Shared compact card rhythm across role, form, review and viewer pages. */
+    .summary,
+    .summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+        margin-bottom: 12px !important;
+    }
+    .summary > .card,
+    .summary > .summary-card,
+    .summary-cards > .summary-card {
+        width: auto !important;
+        min-width: 0 !important;
+        min-height: 92px !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 8px 6px !important;
+        border-radius: 9px !important;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, .12) !important;
+    }
+    .summary > .card i,
+    .summary > .summary-card .card-icon,
+    .summary-cards > .summary-card i {
+        min-height: 0 !important;
+        margin-bottom: 2px !important;
+        font-size: 21px !important;
+        line-height: 1 !important;
+    }
+    .summary > .card h2,
+    .summary > .summary-card h2,
+    .summary-cards > .summary-card h3 {
+        margin: 2px 0 !important;
+        font-size: 21px !important;
+        line-height: 1.05 !important;
+    }
+    .summary > .card p,
+    .summary > .summary-card p,
+    .summary-cards > .summary-card p {
+        margin: 0 !important;
+        font-size: 10px !important;
+        line-height: 1.15 !important;
+    }
+    .filter-card,
+    .work-card,
+    .quick-actions,
+    .activity,
+    .work-panel,
+    .viewer-search-card,
+    .viewer-result-card,
+    .review-table-card,
+    .assignment-card,
+    .form-card,
+    .common-card,
+    .login-card {
+        margin-bottom: 12px !important;
+        padding: 10px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 3px 11px rgba(0, 0, 0, .12) !important;
+    }
+    .filter-card,
+    .assignment-card {
+        gap: 8px !important;
+    }
+    .quick-actions h2,
+    .activity h2,
+    .work-panel h2,
+    .viewer-search-card h2,
+    .viewer-result-card h2,
+    .review-table-card h2,
+    .form-card h2 {
+        margin-bottom: 9px !important;
+        font-size: 18px !important;
+        line-height: 1.15 !important;
+    }
+    .table-container, .viewer-table-container, .table-wrapper, .table-responsive {
+        border-radius: 10px;
+        scrollbar-width: thin;
+    }
+    .modal-content, .viewer-modal-content, [role="dialog"] { margin: 10px; }
+
+    /* Tables with up to 6 columns stay on one compact, full-width row. */
+    table.mobile-compact-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+    }
+    table.mobile-compact-table th,
+    table.mobile-compact-table td {
+        min-width: 0 !important;
+        padding: 6px 3px !important;
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+        overflow-wrap: anywhere !important;
+        white-space: normal !important;
+    }
+    table.mobile-compact-table td input,
+    table.mobile-compact-table td select,
+    table.mobile-compact-table td textarea,
+    table.mobile-compact-table td button,
+    table.mobile-compact-table td .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 30px !important;
+        margin: 0 !important;
+        padding: 4px 2px !important;
+        font-size: 9px !important;
+        line-height: 1.1 !important;
+    }
+
+    /* Tables with 7+ columns become one readable two-row record on phones. */
+    table.mobile-two-row-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: auto !important;
+    }
+    table.mobile-two-row-table thead {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+    table.mobile-two-row-table tbody {
+        display: grid !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+    table.mobile-two-row-table tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        gap: 0 !important;
+        overflow: hidden !important;
+        border: 1px solid #d7e1ed !important;
+        border-radius: 9px !important;
+        background: #fff !important;
+        box-shadow: 0 2px 7px rgba(15, 45, 80, .08) !important;
+    }
+    table.mobile-two-row-table tbody tr.mobile-full-row {
+        display: block !important;
+    }
+    table.mobile-two-row-table tbody td {
+        display: flex !important;
+        min-width: 0 !important;
+        min-height: 48px !important;
+        padding: 5px 4px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: center !important;
+        gap: 3px !important;
+        border: 0 !important;
+        border-right: 1px solid #e1e8f0 !important;
+        border-bottom: 1px solid #e1e8f0 !important;
+        font-size: 10px !important;
+        line-height: 1.16 !important;
+        text-align: center !important;
+        overflow-wrap: anywhere !important;
+        white-space: normal !important;
+    }
+    table.mobile-two-row-table tbody td::before {
+        content: attr(data-mobile-label);
+        display: block;
+        color: #245a9f;
+        font-size: 8px;
+        font-weight: 800;
+        line-height: 1.08;
+        text-transform: uppercase;
+    }
+    table.mobile-two-row-table tbody tr.mobile-full-row td {
+        width: 100% !important;
+        min-height: 42px !important;
+    }
+    table.mobile-two-row-table tbody tr.mobile-full-row td::before {
+        display: none;
+    }
+    table.mobile-two-row-table tbody td input,
+    table.mobile-two-row-table tbody td select,
+    table.mobile-two-row-table tbody td textarea,
+    table.mobile-two-row-table tbody td button,
+    table.mobile-two-row-table tbody td .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 30px !important;
+        margin: 0 !important;
+        padding: 4px 3px !important;
+        font-size: 10px !important;
+        line-height: 1.12 !important;
+    }
+
+    /* Manpower: four identity cells, then a clearly separated work row. */
+    table.mobile-manpower-table tbody tr:not(.mobile-full-row) {
+        row-gap: 9px !important;
+    }
+    table.mobile-manpower-table th:nth-child(7),
+    table.mobile-manpower-table td:nth-child(7) {
+        display: none !important;
+    }
+    table.mobile-manpower-table th:nth-child(6) {
+        display: table-cell !important;
+    }
+    table.mobile-manpower-table td:nth-child(6) {
+        display: flex !important;
+    }
+    table.mobile-manpower-table td:nth-child(5) {
+        grid-column: span 2 !important;
+    }
+    table.mobile-manpower-table td:nth-child(5),
+    table.mobile-manpower-table td:nth-child(6),
+    table.mobile-manpower-table td:nth-child(8) {
+        border-top: 2px solid #8eb5e4 !important;
+        background: #f4f8fd !important;
+    }
+    table.mobile-manpower-table .manpower-picker,
+    table.mobile-manpower-table .staff-select-list,
+    table.mobile-manpower-table .staff-select {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    table.mobile-manpower-table .staff-select-row {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 3px !important;
+    }
+    table.mobile-manpower-table .btn-add-manpower,
+    table.mobile-manpower-table .btn-remove-staff {
+        width: auto !important;
+        min-width: 28px !important;
+        padding-inline: 5px !important;
+    }
+
+    /* Staff work: four identity cells, then four clearly separated work cells. */
+    table.mobile-staff-work-table tbody tr:not(.mobile-full-row) {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        row-gap: 10px !important;
+    }
+    table.mobile-staff-work-table td {
+        grid-column: span 1 !important;
+    }
+    table.mobile-staff-work-table td:nth-child(n+5) {
+        border-top: 2px solid #8eb5e4 !important;
+        background: #f4f8fd !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .modal-content, .viewer-modal-content, [role="dialog"] {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        margin: 8px !important;
+    }
+}
