@@ -7,6 +7,27 @@ const trackingDb = createClient(
     "sb_publishable_QA6Obxmmpy7GT9NOWtwHIQ_yNs91LID"
 );
 
+router.get("/locos", async (req, res) => {
+    try {
+        const { data, error } = await trackingDb
+            .from("loco_positions")
+            .select("loco_no,loco_type,position,status,updated_at")
+            .order("loco_no");
+
+        if (error) throw error;
+
+        res.json({
+            success: true,
+            locos: data || []
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 router.get("/summary", async (req, res) => {
     try {
         const { data, error } = await trackingDb

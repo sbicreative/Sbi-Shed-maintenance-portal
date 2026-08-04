@@ -217,7 +217,8 @@ function renderWorkTable() {
                 <td>${index + 1}</td>
                 <td>${escapeHtml(item.assigned_date || "-")}</td>
                 <td>${escapeHtml(
-                    header.loco_master?.loco_no || "-"
+                    header.loco_master?.loco_no ||
+                    header.temporary_loco_master?.loco_no || "-"
                 )}</td>
                 <td>${escapeHtml(
                     header.schedule_master?.schedule_name || "-"

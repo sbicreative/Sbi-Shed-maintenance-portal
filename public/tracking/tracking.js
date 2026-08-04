@@ -75,16 +75,16 @@ function renderLine(row) {
         const outsideItems = adiItems.slice(0, outsideCount);
         const roofedItems = adiItems.slice(outsideCount);
         adiMarkup = `
-            ${bay("ADI SIDE", "OPEN AREA · ADDITIONAL", row.adi, "open-bay derived-bay", outsideItems, 1)}
-            ${bay("ADI SIDE", "ROOFED · MAX 3 LOCOS", row.adi, "roofed-bay derived-bay", roofedItems, outsideCount + 1)}`;
+            ${bay("ADI SIDE", "OPEN AREA · ADDITIONAL", row.adi, "open-bay derived-bay", outsideItems, roofedItems.length + 1)}
+            ${bay("ADI SIDE", "ROOFED · MAX 3 LOCOS", row.adi, "roofed-bay derived-bay", roofedItems, 1)}`;
     } else {
-        adiMarkup = bay("ADI SIDE", "TRACK POSITION", row.adi, "adi-bay", adiItems, 1);
+        adiMarkup = bay("ADI SIDE", "TRACK POSITION", row.adi, "adi-bay wide-adi", adiItems, 1);
     }
 
     const occupied = adiItems.length + kllItems.length + washItems.length;
     return `<section class="line-section ${row.wash ? "has-wash" : ""}" data-line="${safe(row.line)}" data-occupied="${occupied > 0}">
         <div class="line-track">
-            ${row.wash ? bay(row.washLabel, "WASH HOUSE BAY", row.wash, "wash-bay", washItems, 1) : ""}
+            ${row.wash ? bay(row.washLabel, "WASH HOUSE BAY", row.wash, "wash-bay", washItems, 1) : '<div class="wash-spacer" aria-hidden="true"></div>'}
             ${adiMarkup}
             <div class="line-marker"><span>LINE</span><strong>${safe(row.line)}</strong></div>
             ${bay("KLL SIDE", "TRACK POSITION", row.kll, "kll-bay", kllItems, 1)}
@@ -137,8 +137,12 @@ async function loadData() {
 }
 
 function refreshOrderNumbers() {
-    [...entryBody.querySelectorAll("tr")].forEach((row, index) => {
-        row.querySelector(".editor-sequence").textContent = index + 1;
+    const rows = [...entryBody.querySelectorAll("tr")];
+    const splitAdi = /^LINE [2-8] ADI$/.test(positionSelect.value);
+    const outsideCount = splitAdi ? Math.max(0, rows.length - 3) : 0;
+    rows.forEach((row, index) => {
+        const sequence = splitAdi && outsideCount ? (index < outsideCount ? index + 4 : index - outsideCount + 1) : index + 1;
+        row.querySelector(".editor-sequence").textContent = sequence;
         row.querySelector(".move-up").disabled = index === 0;
         row.querySelector(".move-down").disabled = index === entryBody.children.length - 1;
     });
@@ -248,7 +252,15 @@ document.getElementById("pdfBtn").addEventListener("click", () => {
     doc.setFontSize(16); doc.text("SBI Shed Live Position Board", 14, 16);
     doc.setFontSize(9); doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 14, 22);
     const rows = [];
-    layout.forEach(line => [line.wash, line.adi, line.kll].filter(Boolean).forEach(position => itemsAt(position).forEach((item, index) => rows.push([position, index + 1, item.loco_no, item.loco_type, item.status]))));
+    layout.forEach(line => [line.wash, line.adi, line.kll].filter(Boolean).forEach(position => {
+        const items = itemsAt(position);
+        const outsideCount = line.splitAdi && position === line.adi ? Math.max(0, items.length - 3) : 0;
+        items.forEach((item, index) => {
+            const sequence = outsideCount ? (index < outsideCount ? index + 4 : index - outsideCount + 1) : index + 1;
+            const area = outsideCount && index < outsideCount ? "Open" : (line.splitAdi && position === line.adi ? "Roofed" : position);
+            rows.push([`${position} · ${area}`, sequence, item.loco_no, item.loco_type, item.status]);
+        });
+    }));
     doc.autoTable({ startY: 27, head: [["Position", "Order", "Loco No.", "Type", "Status"]], body: rows, theme: "grid", headStyles: { fillColor: [38, 63, 50] }, alternateRowStyles: { fillColor: [244, 240, 232] } });
     doc.save("SBI-Shed-Loco-Position.pdf");
 });

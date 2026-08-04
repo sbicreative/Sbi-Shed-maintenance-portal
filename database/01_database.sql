@@ -138,14 +138,20 @@ CREATE TABLE IF NOT EXISTS schedule_master (
 
     department_id BIGINT NOT NULL,
 
+    section_id BIGINT,
+
     schedule_name VARCHAR(30) NOT NULL,
 
     CONSTRAINT uq_schedule
-    UNIQUE(department_id, schedule_name),
+    UNIQUE(department_id, section_id, schedule_name),
 
     CONSTRAINT fk_schedule_department
     FOREIGN KEY(department_id)
-    REFERENCES department_master(id)
+    REFERENCES department_master(id),
+
+    CONSTRAINT fk_schedule_section
+    FOREIGN KEY(section_id)
+    REFERENCES section_master(id)
 
 );
 

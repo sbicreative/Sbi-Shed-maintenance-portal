@@ -1,6 +1,50 @@
 const express = require("express");
+const path = require("path");
 const router = express.Router();
 const supabase = require("../config/supabase");
+
+router.get("/template/:templateId/source", async (req, res) => {
+    try {
+        const templateId = Number(req.params.templateId);
+        if (!templateId) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid form template."
+            });
+        }
+
+        const { data, error } = await supabase
+            .from("schedule_form_master")
+            .select("source_file_name")
+            .eq("id", templateId)
+            .single();
+        if (error) throw error;
+
+        const masterRoot = path.resolve(
+            __dirname,
+            "..",
+            "Project Documents",
+            "MASTER"
+        );
+        const sourcePath = path.resolve(
+            masterRoot,
+            String(data.source_file_name || "")
+        );
+        if (!sourcePath.startsWith(masterRoot + path.sep)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid template source path."
+            });
+        }
+
+        res.sendFile(sourcePath);
+    } catch (err) {
+        res.status(404).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
 
 function normalize(value) {
     return String(value || "")
@@ -47,6 +91,11 @@ async function getAssignment(staffId, distributionId) {
                     loco_master (
                         id,
                         loco_no
+                    ),
+                    temporary_loco_master (
+                        id,
+                        loco_no,
+                        loco_type
                     ),
                     schedule_master (
                         id,
@@ -251,7 +300,8 @@ router.get("/review-queue/:role/:reviewerId", async (req, res) => {
                     staff_id:
                         record.assignment.employee.id,
                     loco_no:
-                        header.loco_master?.loco_no || "-",
+                        header.loco_master?.loco_no ||
+                        header.temporary_loco_master?.loco_no || "-",
                     schedule_name:
                         header.schedule_master
                             ?.schedule_name || "-",

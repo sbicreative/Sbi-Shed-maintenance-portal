@@ -150,7 +150,8 @@ async function loadReviewForm() {
     document.getElementById("staffName").textContent =
         assignment.employee.name;
     document.getElementById("locoNo").textContent =
-        header.loco_master?.loco_no || "-";
+        header.loco_master?.loco_no ||
+        header.temporary_loco_master?.loco_no || "-";
     document.getElementById("scheduleName").textContent =
         header.schedule_master?.schedule_name || "-";
     document.getElementById("workName").textContent =
