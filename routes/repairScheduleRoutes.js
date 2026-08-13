@@ -28,10 +28,23 @@ router.get("/remarks", async (req, res) => {
         const { data, error } = await query;
         if (error) throw error;
 
+        const viewerRole = String(req.query.viewer_role || "").trim().toLowerCase();
+        const visibleAuthorRoles = {
+            incharge: new Set(["supervisor", "staff"]),
+            supervisor: new Set(["incharge", "staff"]),
+            staff: new Set(["incharge", "supervisor"])
+        };
+        if (viewerRole && !visibleAuthorRoles[viewerRole]) {
+            return res.status(400).json({ success: false, message: "Invalid dashboard role." });
+        }
+
         const loco = String(req.query.loco || "").trim().toLowerCase();
         const remarks = (data || []).filter(item => {
             const locoNo = item.loco_master?.loco_no || item.temporary_loco_master?.loco_no || "";
-            return !loco || String(locoNo).toLowerCase().includes(loco);
+            const roleVisible = !viewerRole || visibleAuthorRoles[viewerRole].has(
+                String(item.author_role || "").trim().toLowerCase()
+            );
+            return roleVisible && (!loco || String(locoNo).toLowerCase().includes(loco));
         });
 
         res.json({ success: true, remarks });

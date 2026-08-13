@@ -18,14 +18,14 @@
 
 </head>
 
-<body>
+<body data-dashboard-role="incharge">
 
     <!-- ================= HEADER ================= -->
 
     <header class="main-header">
 
         <div class="logo-left">
-            <img src="../images/ir-logo.jpeg" alt="IR Logo">
+            <img src="../images/IR-logo.jpeg" alt="IR Logo">
         </div>
 
         <div class="header-title">
@@ -39,7 +39,7 @@
         </div>
 
         <div class="logo-right">
-            <img src="../images/sbi-logo.jpeg" alt="SBI Shed Logo">
+            <img src="../images/SBI-logo.jpeg" alt="SBI Shed Logo">
         </div>
 
     </header>
@@ -272,10 +272,21 @@
 
         </section>
 
+        <section class="repair-remarks-panel" aria-labelledby="repairRemarksTitle">
+            <div class="repair-remarks-panel-header">
+                <h2 id="repairRemarksTitle">Repair Remarks <span id="repairRemarksCount" class="repair-remarks-count">0</span></h2>
+                <a href="repairs-schedule.html">View full timeline</a>
+            </div>
+            <div id="repairRemarksFeed" class="repair-remarks-feed">
+                <p class="remarks-feed-empty">Loading Supervisor and Staff remarks…</p>
+            </div>
+        </section>
+
     </div>
 
     <script src="../js/incharge.js?v=20260813-1"></script>
     <script src="../js/charge-handover.js"></script>
+    <script src="../js/repair-remarks-feed.js?v=20260813-1"></script>
     <script src="/js/pwa.js"></script>
 
 </body>

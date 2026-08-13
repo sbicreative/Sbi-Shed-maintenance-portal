@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
                 )
             `)
 
-            .eq("status", "true")
+            .in("status", ["true", "Active"])
 
             .order("work_name");
 
@@ -91,7 +91,7 @@ router.get(
 
                 .eq("schedule_id", scheduleId)
 
-                .eq("status", "true")
+                .in("status", ["true", "Active"])
 
                 .order("work_name");
 

@@ -17,6 +17,29 @@ test("all three role dashboards expose the Repairs Schedule timeline", () => {
     for (const name of ["incharge.html", "supervisor.html", "staff.html"]) {
         const html = fs.readFileSync(path.join(root, "public", "dashboard", name), "utf8");
         assert.match(html, /repairs-schedule\.html/);
+        assert.match(html, /id="repairRemarksFeed"/);
+        assert.match(html, /repair-remarks-feed\.js/);
+    }
+});
+
+test("dashboard repair remark feed enforces the confirmed cross-role audiences", () => {
+    const route = fs.readFileSync(path.join(root, "routes", "repairScheduleRoutes.js"), "utf8");
+    assert.match(route, /incharge:\s*new Set\(\["supervisor", "staff"\]\)/);
+    assert.match(route, /supervisor:\s*new Set\(\["incharge", "staff"\]\)/);
+    assert.match(route, /staff:\s*new Set\(\["incharge", "supervisor"\]\)/);
+});
+
+test("Repairs work created as Active remains selectable in every schedule", () => {
+    const route = fs.readFileSync(path.join(root, "routes", "workMasterRoutes.js"), "utf8");
+    assert.match(route, /\.in\("status", \["true", "Active"\]\)/);
+});
+
+test("dashboard logo references match case-sensitive production filenames", () => {
+    const dashboardDir = path.join(root, "public", "dashboard");
+    for (const name of fs.readdirSync(dashboardDir).filter(name => name.endsWith(".html"))) {
+        const html = fs.readFileSync(path.join(dashboardDir, name), "utf8");
+        assert.doesNotMatch(html, /images\/(?:ir-logo|sbi-logo)\.jpeg/);
+        assert.doesNotMatch(html, /images\/(?:IR logo|SBI shed logo)\.jpeg/);
     }
 });
 
