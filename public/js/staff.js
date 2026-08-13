@@ -153,6 +153,10 @@ function statusClass(status) {
 function actionButton(item) {
     const status = normalizedStatus(item);
 
+    if (!item.is_lead) {
+        return `<button class="work-action" type="button" data-open-form="${item.id}">View Form</button>`;
+    }
+
     if (status === "Completed") {
         return `
             <button class="work-action"
@@ -243,6 +247,7 @@ function renderWorkTable() {
                     <span class="status-badge ${statusClass(status)}">
                         ${escapeHtml(status)}
                     </span>
+                    <small>${item.is_lead ? "Lead Staff" : "Team Member · View Only"}</small>
                 </td>
                 <td>${actionButton(item)}</td>
             </tr>

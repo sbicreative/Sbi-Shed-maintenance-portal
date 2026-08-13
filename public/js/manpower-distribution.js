@@ -525,6 +525,10 @@ function addStaffSelect(picker) {
             .join("");
 
     row.innerHTML = `
+        <label class="lead-staff-choice" title="Only Lead Staff can fill the schedule form">
+            <input type="radio" name="lead-${picker.dataset.detailId}" class="lead-staff-radio">
+            Lead
+        </label>
         <select class="staff-select">
             <option value="">
                 Select ${escapeHtml(user.section)} Staff
@@ -558,6 +562,9 @@ function addStaffSelect(picker) {
     );
 
     list.appendChild(row);
+    if (currentRows.length === 0) {
+        row.querySelector(".lead-staff-radio").checked = true;
+    }
     refreshStaffAvailability();
 
 }
@@ -647,14 +654,13 @@ async function saveDistribution() {
                 ?.value
                 .trim() || "";
 
-        const selectedIds =
-            Array.from(
-                picker.querySelectorAll(
-                    ".staff-select"
-                )
-            )
-            .map(select => Number(select.value))
-            .filter(Boolean);
+        const staffRows = Array.from(picker.querySelectorAll(".staff-select-row"))
+            .map(staffRow => ({
+                staffId: Number(staffRow.querySelector(".staff-select")?.value),
+                isLead: Boolean(staffRow.querySelector(".lead-staff-radio")?.checked)
+            }))
+            .filter(item => item.staffId);
+        const selectedIds = staffRows.map(item => item.staffId);
 
         if (
             new Set(selectedIds).size !==
@@ -670,14 +676,24 @@ async function saveDistribution() {
             ...selectedIds
         );
 
-        selectedIds.forEach(staffId => {
+        if (selectedIds.length && staffRows.filter(item => item.isLead).length !== 1) {
+            alert("Please select exactly one Lead Staff for each assigned work.");
+            return;
+        }
+
+        staffRows.sort((left, right) => Number(right.isLead) - Number(left.isLead));
+        staffRows.forEach(({ staffId, isLead }) => {
             assignments.push({
                 assign_work_detail_id:
                     detailId,
                 staff_id: staffId,
-                assigned_by:
-                    user.supervisor_master_id ||
-                    user.id,
+                    assigned_by:
+                        user.supervisor_master_id ||
+                        user.id,
+
+                    author_name:
+                        user.name || "Supervisor",
+                is_lead: isLead,
                 remarks
             });
         });

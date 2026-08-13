@@ -70,6 +70,11 @@
 
             <span id="currentDateTime"></span>
 
+            <button type="button" class="portal-btn"
+                onclick="window.location.href='/dashboard/repairs-schedule.html'">
+                Repairs Schedule
+            </button>
+
             <button
                 id="logoutBtn"
                 class="logout-btn">
@@ -129,6 +134,13 @@
 
                 <p>Completed Today</p>
 
+            </div>
+
+            <div class="card">
+                <i class="fa-solid fa-file-circle-exclamation"></i>
+                <h2 id="incompleteForms">0</h2>
+                <p>Incomplete Schedule Forms</p>
+                <small id="incompleteSchedules">-</small>
             </div>
 
         </section>

@@ -59,3 +59,4 @@
     font-size: 13px;
     font-weight: 600;
 }
+.lead-staff-choice{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:6px;background:#fff3cd;color:#5f4700;font-size:11px;font-weight:800;white-space:nowrap}.lead-staff-choice input{margin:0}

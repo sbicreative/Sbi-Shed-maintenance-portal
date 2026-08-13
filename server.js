@@ -42,6 +42,8 @@ const trackingRoutes =
     require("./routes/trackingRoutes");
 const historicalScheduleRoutes =
     require("./routes/historicalScheduleRoutes");
+const repairScheduleRoutes =
+    require("./routes/repairScheduleRoutes");
 const employeeRoutes =
 require("./routes/employeeRoutes");
 const adminAuthRoutes = require("./routes/adminAuthRoutes");
@@ -143,6 +145,7 @@ app.use(
     "/api/historical-schedules",
     historicalScheduleRoutes
 );
+app.use("/api/repair-schedule", repairScheduleRoutes);
 app.use(
     "/api/employees",
     employeeRoutes

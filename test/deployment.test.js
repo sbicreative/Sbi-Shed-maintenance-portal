@@ -45,6 +45,7 @@ for (const [path, contentType] of [
     ["/manifest.webmanifest", /application\/manifest\+json|application\/json/],
     ["/service-worker.js", /javascript/],
     ["/dashboard/login.html", /text\/html/],
+    ["/dashboard/repairs-schedule.html", /text\/html/],
     ["/tracking/", /text\/html/]
 ]) {
     test(`serves ${path}`, async () => {

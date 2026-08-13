@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const supabase = require("../config/supabase");
+const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 
 // ======================================================
 // GET STAFF ALREADY ASSIGNED ON A WORK DATE
@@ -92,6 +93,7 @@ router.get("/staff/:staffId", async (req, res) => {
                     assigned_by,
                     assigned_date,
                     status,
+                    is_lead,
                     remarks
                 `)
                 .eq("staff_id", staffId)
@@ -369,6 +371,8 @@ router.post("/", async (req, res) => {
             assign_work_detail_id,
             staff_id,
             assigned_by,
+            author_name,
+            is_lead,
             remarks
         } = req.body;
 
@@ -391,8 +395,13 @@ router.post("/", async (req, res) => {
             .from("assign_work_details")
             .select(`
                 id,
+                work_master (work_name),
                 assign_work_header!inner (
-                    assign_date
+                    id,
+                    assign_date,
+                    loco_id,
+                    temporary_loco_id,
+                    schedule_id
                 )
             `)
             .eq("id", detailId)
@@ -461,7 +470,7 @@ router.post("/", async (req, res) => {
             });
         }
 
-        const { error } = await supabase
+        const { data: distribution, error } = await supabase
 
             .from("manpower_distribution")
 
@@ -471,13 +480,16 @@ router.post("/", async (req, res) => {
                 staff_id: staffId,
                 assigned_by: assignedBy,
                 assigned_date: assignDate,
+                is_lead: Boolean(is_lead),
 
                 status: "Assigned",
 
                 remarks:
                     remarks || null
 
-            }]);
+            }])
+            .select("id")
+            .single();
 
         if (error) {
 
@@ -508,6 +520,62 @@ router.post("/", async (req, res) => {
 
             });
 
+        }
+
+        if (!Boolean(is_lead)) {
+            const { data: activeLead, error: leadError } = await supabase
+                .from("manpower_distribution")
+                .select("id")
+                .eq("assign_work_detail_id", detailId)
+                .eq("is_lead", true)
+                .neq("status", "Completed")
+                .limit(1);
+            if (leadError) throw leadError;
+            if (!activeLead?.length) {
+                return res.status(400).json({
+                    success: false,
+                    code: "LEAD_STAFF_REQUIRED",
+                    message: "Assign the Lead Staff before adding view-only team members."
+                });
+            }
+        }
+
+        const header = workDetail.assign_work_header || {};
+        await appendRepairRemark({
+            remark_text: remarks,
+            author_id: assignedBy,
+            author_name,
+            author_role: "Supervisor",
+            assignment_date: assignDate,
+            loco_id: header.loco_id || header.loco_master?.id,
+            temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
+            assign_work_header_id: header.id,
+            schedule_id: header.schedule_id || header.schedule_master?.id,
+            assign_work_detail_id: detailId,
+            manpower_distribution_id: distribution.id,
+            source_type: "manpower_distribution",
+            source_action: "assign"
+        });
+
+        if (Boolean(is_lead) && String(workDetail.work_master?.work_name || "").trim().toLowerCase() === "repairs") {
+            const locoKey = header.loco_id
+                ? `master:${header.loco_id}`
+                : header.temporary_loco_id
+                    ? `temporary:${header.temporary_loco_id}`
+                    : null;
+            if (locoKey) {
+                const { error: reopenError } = await supabase
+                    .from("schedule_form_details")
+                    .update({
+                        active_manpower_distribution_id: distribution.id,
+                        staff_id: staffId,
+                        submitted_to_supervisor_id: assignedBy,
+                        completion_state: "Incomplete",
+                        status: "Continuation Assigned"
+                    })
+                    .eq("repair_loco_key", locoKey);
+                if (reopenError) throw reopenError;
+            }
         }
 
         res.json({

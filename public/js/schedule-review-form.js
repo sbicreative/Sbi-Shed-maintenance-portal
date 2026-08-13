@@ -40,17 +40,57 @@ function sanitizeReviewHtml(html) {
     return value.body.innerHTML;
 }
 
-function populateReviewFields(answers) {
+function prepareReviewColumns(table) {
+    const columns = { action: null, name: null, remark: null };
+    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach((cell, index) => {
+        const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
+        if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
+            columns.action = index;
+            cell.innerHTML = "Action Taken<br><small>की गई कार्रवाई</small>";
+        } else if (/name of tcn|name of staff|टीसीएन का नाम/.test(text)) {
+            columns.name = index;
+            cell.innerHTML = "Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small>";
+        } else if (/sign\s*\/\s*remarks?|remarks?$|हस्ताक्षर.*टिप्पणी/.test(text)) {
+            columns.remark = index;
+            cell.innerHTML = "Remark<br><small>टिप्पणी</small>";
+        } else if (/detail of work|description of activities|items to check|कार्य.*निरीक्षण का विवरण/.test(text)) {
+            cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
+        }
+    }));
+    return columns;
+}
+
+function reviewStaffName(cell, key, answers, attributions) {
+    const attribution = attributions[key];
+    const legacyName = answers[cell.dataset.legacyAnswerKey || ""];
+    const safeName = String(attribution?.staff_name || legacyName || "—")
+        .replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
+    cell.classList.add("staff-name-cell");
+    cell.innerHTML = `<strong>${safeName}</strong>${attribution?.entered_at ? `<small>${new Date(attribution.entered_at).toLocaleString("en-IN")}</small>` : ""}`;
+}
+
+function populateReviewFields(answers, attributions = {}) {
     document.querySelectorAll("#templateContainer table")
         .forEach((table, tableIndex) => {
+            const columns = prepareReviewColumns(table);
             [...table.rows].forEach((row, rowIndex) => {
                 [...row.cells].forEach((cell, cellIndex) => {
                     if (
                         cell.textContent.replace(/\s+/g, " ").trim()
                     ) return;
 
+                    if (cell.dataset.attributionFor) {
+                        reviewStaffName(cell, cell.dataset.attributionFor, answers, attributions);
+                        return;
+                    }
+                    if (columns.name !== null && cellIndex === columns.name) {
+                        cell.dataset.legacyAnswerKey = `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
+                        reviewStaffName(cell, `t${tableIndex}_r${rowIndex}_c${columns.action}`, answers, attributions);
+                        return;
+                    }
+
                     const key =
-                        `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
+                        cell.dataset.answerKey || `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
                     const field = document.createElement("textarea");
                     field.className = "cell-answer";
                     field.dataset.answerKey = key;
@@ -59,6 +99,36 @@ function populateReviewFields(answers) {
                 });
             });
         });
+}
+
+function showAttributions(attributions = {}) {
+    document.querySelectorAll("[data-answer-key]").forEach(field => {
+        const attribution = attributions[field.dataset.answerKey];
+        if (!attribution || !field.value.trim()) return;
+        field.title = `Entered by ${attribution.staff_name} on ${new Date(attribution.entered_at).toLocaleString("en-IN")}`;
+        const credit = document.createElement("small");
+        credit.className = "answer-credit";
+        credit.textContent = field.title;
+        field.parentElement.appendChild(credit);
+    });
+}
+
+async function loadContinuationStaff(assignment) {
+    const params = new URLSearchParams({
+        department: assignment.employee.department || "",
+        section: assignment.employee.section || ""
+    });
+    const response = await fetch(`/api/employees?${params}`);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Unable to load Staff.");
+    const select = document.getElementById("continuationStaff");
+    (Array.isArray(result) ? result : []).forEach(employee => {
+        const option = document.createElement("option");
+        option.value = employee.id;
+        option.textContent = `${employee.name} (${employee.designation || "Staff"})`;
+        select.appendChild(option);
+    });
+    document.getElementById("continuationDate").value = new Date().toISOString().slice(0, 10);
 }
 
 function collectReviewAnswers() {
@@ -113,6 +183,8 @@ function renderActionButtons(status) {
 
     if (reviewerRole === "supervisor") {
         document.getElementById("inchargeField").hidden = false;
+        const incomplete = reviewRecord.form.completion_state !== "Complete";
+        document.getElementById("continuationFields").hidden = !incomplete;
         actions.innerHTML = `
             <button class="draft-btn" type="button" data-action="save">
                 Save Remarks
@@ -120,9 +192,9 @@ function renderActionButtons(status) {
             <button class="draft-btn" type="button" data-action="return">
                 Return to Staff
             </button>
-            <button class="submit-btn" type="button" data-action="forward">
-                Forward to Incharge
-            </button>
+            ${incomplete
+                ? '<button class="submit-btn" type="button" data-continuation>Assign Continuation</button>'
+                : '<button class="submit-btn" type="button" data-action="forward">Forward to Incharge</button>'}
         `;
     } else {
         document.getElementById("inchargeField").remove();
@@ -192,16 +264,35 @@ async function loadReviewForm() {
             template.template_schema?.document_html || ""
         )}
     `;
-    populateReviewFields(form.form_answers || {});
+    populateReviewFields(form.form_answers || {}, form.answer_attributions || {});
+    showAttributions(form.answer_attributions || {});
 
+    lockSubmittedAnswers();
     if (reviewerRole === "supervisor") {
-        lockSubmittedAnswers();
         await loadIncharges(
             assignment.employee.department
         );
+        if (form.completion_state !== "Complete") await loadContinuationStaff(assignment);
     }
 
     renderActionButtons(form.status);
+}
+
+async function assignContinuation(button) {
+    const staffId = Number(document.getElementById("continuationStaff").value);
+    const assignedDate = document.getElementById("continuationDate").value;
+    if (!staffId || !assignedDate) return showReviewMessage("Select Staff and continuation date.", true);
+    button.disabled = true;
+    try {
+        const response = await fetch(`/api/schedule-forms/review/${formId}/continuation/${reviewerId}`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ staff_id: staffId, assigned_date: assignedDate })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        showReviewMessage(result.message);
+        setTimeout(() => window.location.href = "/dashboard/schedule-review.html", 1000);
+    } catch (error) { button.disabled = false; showReviewMessage(error.message, true); }
 }
 
 async function performReviewAction(action, button) {
@@ -235,6 +326,7 @@ async function performReviewAction(action, button) {
         const requestBody = {
             action,
             remarks,
+            author_name: reviewer?.name || reviewerRole,
             incharge_id: inchargeId
         };
 
@@ -299,8 +391,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("reviewActions")
         .addEventListener("click", event => {
             const button =
-                event.target.closest("[data-action]");
+                event.target.closest("[data-action], [data-continuation]");
             if (!button) return;
+            if (button.hasAttribute("data-continuation")) return assignContinuation(button);
             performReviewAction(
                 button.dataset.action,
                 button

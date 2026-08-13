@@ -59,12 +59,44 @@ function safeTemplateHtml(html) {
     return documentValue.body.innerHTML;
 }
 
-function createAnswerFields(savedAnswers = {}) {
+function prepareBilingualColumns(table) {
+    const columns = { action: null, name: null, remark: null };
+    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach((cell, index) => {
+        const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
+        if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
+            columns.action = index;
+            cell.innerHTML = "Action Taken<br><small>की गई कार्रवाई</small>";
+        } else if (/name of tcn|name of staff|टीसीएन का नाम/.test(text)) {
+            columns.name = index;
+            cell.innerHTML = "Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small>";
+        } else if (/sign\s*\/\s*remarks?|remarks?$|हस्ताक्षर.*टिप्पणी/.test(text)) {
+            columns.remark = index;
+            cell.innerHTML = "Remark<br><small>टिप्पणी</small>";
+        } else if (/detail of work|description of activities|items to check|कार्य.*निरीक्षण का विवरण/.test(text)) {
+            cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
+        }
+    }));
+    return columns;
+}
+
+function renderStaffName(cell, key, savedAnswers, attributions) {
+    const attribution = attributions[key];
+    const legacyName = savedAnswers[cell.dataset.legacyAnswerKey || ""];
+    const name = attribution?.staff_name || legacyName || "—";
+    const time = attribution?.entered_at
+        ? `<small>${new Date(attribution.entered_at).toLocaleString("en-IN")}</small>`
+        : "";
+    cell.classList.add("staff-name-cell");
+    cell.innerHTML = `<strong>${String(name).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char])}</strong>${time}`;
+}
+
+function createAnswerFields(savedAnswers = {}, attributions = {}) {
     const tables = document.querySelectorAll(
         "#templateContainer table"
     );
 
     tables.forEach((table, tableIndex) => {
+        const columns = prepareBilingualColumns(table);
         [...table.rows].forEach((row, rowIndex) => {
             [...row.cells].forEach((cell, cellIndex) => {
                 const plainText =
@@ -72,21 +104,49 @@ function createAnswerFields(savedAnswers = {}) {
 
                 if (plainText) return;
 
+                const explicitAttributionKey = cell.dataset.attributionFor;
+                if (explicitAttributionKey) {
+                    renderStaffName(cell, explicitAttributionKey, savedAnswers, attributions);
+                    return;
+                }
+
+                if (columns.name !== null && cellIndex === columns.name) {
+                    const actionKey = `t${tableIndex}_r${rowIndex}_c${columns.action}`;
+                    cell.dataset.legacyAnswerKey = `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
+                    renderStaffName(cell, actionKey, savedAnswers, attributions);
+                    return;
+                }
+
                 const key =
-                    `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
+                    cell.dataset.answerKey || `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
                 const textarea = document.createElement("textarea");
                 textarea.className = "cell-answer";
                 textarea.dataset.answerKey = key;
+                const required = cell.dataset.requiredAnswer !== undefined
+                    ? cell.dataset.requiredAnswer === "true"
+                    : !(columns.remark !== null && cellIndex === columns.remark);
+                textarea.dataset.requiredAnswer = String(required);
                 textarea.setAttribute(
                     "aria-label",
                     `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`
                 );
                 textarea.value = savedAnswers[key] || "";
+                const attribution = attributions[key];
+                if (attribution && textarea.value.trim()) {
+                    textarea.readOnly = true;
+                    textarea.classList.add("attributed-answer");
+                    textarea.title = `Entered by ${attribution.staff_name} on ${new Date(attribution.entered_at).toLocaleString("en-IN")}`;
+                    const credit = document.createElement("small");
+                    credit.className = "answer-credit";
+                    credit.textContent = textarea.title;
+                    cell.replaceChildren(textarea, credit);
+                } else {
+                    cell.replaceChildren(textarea);
+                }
                 textarea.addEventListener(
                     "input",
                     updateCompletion
                 );
-                cell.replaceChildren(textarea);
             });
         });
     });
@@ -108,7 +168,7 @@ function collectAnswers() {
 
 function updateCompletion() {
     const fields = [
-        ...document.querySelectorAll("[data-answer-key]")
+        ...document.querySelectorAll('[data-answer-key][data-required-answer="true"]')
     ];
     const filled = fields.filter(
         field => field.value.trim()
@@ -127,6 +187,7 @@ function setReadOnly(readOnly) {
 
     document.getElementById("saveDraftBtn").disabled = readOnly;
     document.getElementById("submitFormBtn").disabled = readOnly;
+    document.getElementById("submitIncompleteBtn").disabled = readOnly;
 }
 
 async function loadSupervisors(section, selectedId) {
@@ -171,7 +232,7 @@ async function loadScheduleForm() {
             );
         }
 
-        const { assignment, template, submission } = result;
+        const { assignment, template, submission, can_edit: canEdit } = result;
         const header =
             assignment.detail.assign_work_header || {};
 
@@ -240,7 +301,10 @@ async function loadScheduleForm() {
             ${templateContent}
         `;
         if (!isPdf) {
-            createAnswerFields(submission?.form_answers || {});
+            createAnswerFields(
+                submission?.form_answers || {},
+                submission?.answer_attributions || {}
+            );
         } else {
             updateCompletion();
         }
@@ -249,15 +313,20 @@ async function loadScheduleForm() {
             submission?.staff_remarks || "";
 
         setReadOnly(
+            !canEdit ||
             [
-                "Submitted",
+                "Submitted Incomplete",
                 "Supervisor Review",
+                "Submitted Complete",
                 "Forwarded to Incharge",
                 "Returned to Supervisor",
                 "Approved"
             ]
                 .includes(submission?.status)
         );
+        if (!canEdit) {
+            showFormMessage("View only — only the active Lead Staff can fill or submit this form.");
+        }
     } catch (error) {
         document.getElementById("templateContainer").textContent =
             error.message;
@@ -267,12 +336,14 @@ async function loadScheduleForm() {
 }
 
 async function saveForm(action) {
-    const isSubmit = action === "submit";
+    const isSubmit = action !== "draft";
 
     if (
         isSubmit &&
         !confirm(
-            "Submit this schedule form? After submission it cannot be edited."
+            action === "submit_incomplete"
+                ? "Submit incomplete form to Supervisor for continuation review?"
+                : "Submit completed form for review?"
         )
     ) {
         return;
@@ -282,11 +353,13 @@ async function saveForm(action) {
         document.getElementById("saveDraftBtn");
     const submitButton =
         document.getElementById("submitFormBtn");
+    const incompleteButton = document.getElementById("submitIncompleteBtn");
     const draftLabel = draftButton.textContent;
     const submitLabel = submitButton.textContent;
 
     draftButton.disabled = true;
     submitButton.disabled = true;
+    incompleteButton.disabled = true;
     if (isSubmit) {
         submitButton.textContent = "Submitting...";
         showFormMessage(
@@ -308,6 +381,9 @@ async function saveForm(action) {
                 body: JSON.stringify({
                     action,
                     form_answers: collectAnswers(),
+                    answer_keys: [...document.querySelectorAll("[data-answer-key]")]
+                        .filter(field => field.dataset.requiredAnswer === "true")
+                        .map(field => field.dataset.answerKey),
                     supervisor_id:
                         Number(
                             document.getElementById(
@@ -316,7 +392,9 @@ async function saveForm(action) {
                         ) || null,
                     staff_remarks:
                         document.getElementById("staffRemarks")
-                            .value.trim()
+                            .value.trim(),
+                    author_name:
+                        scheduleUser?.name || "Staff"
                 })
             }
         );
@@ -344,12 +422,14 @@ async function saveForm(action) {
         } else {
             draftButton.disabled = false;
             submitButton.disabled = false;
+            incompleteButton.disabled = false;
             draftButton.textContent = draftLabel;
             submitButton.textContent = submitLabel;
         }
     } catch (error) {
         draftButton.disabled = false;
         submitButton.disabled = false;
+        incompleteButton.disabled = false;
         draftButton.textContent = draftLabel;
         submitButton.textContent = submitLabel;
         showFormMessage(error.message, true);
@@ -376,7 +456,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("submitFormBtn").addEventListener(
         "click",
-        () => saveForm("submit")
+        () => saveForm("submit_complete")
+    );
+    document.getElementById("submitIncompleteBtn").addEventListener(
+        "click",
+        () => saveForm("submit_incomplete")
     );
 
     loadScheduleForm();

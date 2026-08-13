@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const supabase = require("../config/supabase");
+const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 
 router.get("/summary", async (req, res) => {
     try {
@@ -70,6 +71,7 @@ router.post("/", async (req, res) => {
             schedule_id,
             supervisor_id,
             created_by,
+            author_name,
             works
         } = req.body;
 
@@ -189,11 +191,12 @@ router.post("/", async (req, res) => {
         // Insert Assigned Work Details
         // ==============================================
 
-        const { error: detailsError } = await supabase
+        const { data: detailData, error: detailsError } = await supabase
 
             .from("assign_work_details")
 
-            .insert(workRows);
+            .insert(workRows)
+            .select("id,work_master_id,remarks");
 
         if (detailsError) {
 
@@ -212,6 +215,23 @@ router.post("/", async (req, res) => {
 
             });
 
+        }
+
+        for (const detail of detailData || []) {
+            await appendRepairRemark({
+                remark_text: detail.remarks,
+                author_id: created_by,
+                author_name,
+                author_role: "Incharge",
+                assignment_date: assign_date,
+                loco_id: loco_id || null,
+                temporary_loco_id: temporaryLocoId,
+                assign_work_header_id: headerData.id,
+                schedule_id,
+                assign_work_detail_id: detail.id,
+                source_type: "assign_work_detail",
+                source_action: "assign"
+            });
         }
 
         // ==============================================

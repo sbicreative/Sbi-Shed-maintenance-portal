@@ -968,6 +968,9 @@ document
                         created_by:
                             Number(user.id),
 
+                        author_name:
+                            user.name || "Incharge",
+
                         works:
                             uniqueWorks
 

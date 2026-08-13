@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repairs Schedule</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/repairs-schedule.css">
+</head>
+<body>
+    <header class="repairs-header">
+        <div><p>SBI Shed Loco Maintenance</p><h1>Repairs Schedule</h1></div>
+        <button type="button" id="backBtn">Back to Dashboard</button>
+    </header>
+    <main>
+        <form id="filters" class="filters">
+            <label>Assignment date<input type="date" id="dateFilter"></label>
+            <label>Loco number<input type="search" id="locoFilter" placeholder="e.g. 30512"></label>
+            <button type="submit">Show Timeline</button>
+            <button type="button" id="clearBtn" class="secondary">Clear</button>
+        </form>
+        <p id="message" role="status"></p>
+        <section id="timeline" class="timeline" aria-live="polite"></section>
+    </main>
+    <script src="../js/repairs-schedule.js"></script>
+    <script src="/js/pwa.js"></script>
+</body>
+</html>

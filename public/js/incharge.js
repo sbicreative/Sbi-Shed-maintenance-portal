@@ -112,6 +112,19 @@ async function loadDashboardSummary() {
     }
 }
 
+async function loadIncompleteFormsSummary() {
+    const reviewerId = Number(user.supervisor_master_id || user.id);
+    if (!reviewerId) return;
+    try {
+        const response = await fetch(`/api/schedule-forms/incomplete-summary/incharge/${reviewerId}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        document.getElementById("incompleteForms").textContent = result.count ?? 0;
+        document.getElementById("incompleteSchedules").textContent =
+            result.schedule_names?.join(", ") || "-";
+    } catch (error) { console.error("Incomplete Forms Summary:", error); }
+}
+
 
 // ======================================
 // PAGE SPECIFIC CODE
@@ -123,7 +136,9 @@ async function loadDashboardSummary() {
 
 document.addEventListener("DOMContentLoaded", () => {
     loadDashboardSummary();
+    loadIncompleteFormsSummary();
     setInterval(loadDashboardSummary, 30000);
+    setInterval(loadIncompleteFormsSummary, 30000);
     const user =
     JSON.parse(
         localStorage.getItem("user")

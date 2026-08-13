@@ -49,6 +49,17 @@ async function loadDashboardSummary() {
     }
 }
 
+async function loadIncompleteFormsSummary() {
+    try {
+        const response = await fetch(`/api/schedule-forms/incomplete-summary/supervisor/${supervisorId}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        document.getElementById("incompleteForms").textContent = result.count ?? 0;
+        document.getElementById("incompleteSchedules").textContent =
+            result.schedule_names?.join(", ") || "-";
+    } catch (error) { console.error("Incomplete Forms Summary:", error); }
+}
+
 async function loadDashboardSummaryFallback() {
     try {
         const date = localDateValue();
@@ -342,7 +353,9 @@ document
 window.onload = function () {
     loadAssignedWork();
     loadDashboardSummary();
+    loadIncompleteFormsSummary();
     setInterval(loadDashboardSummary, 30000);
+    setInterval(loadIncompleteFormsSummary, 30000);
 
 }
 async function loadAssignedWork() {
