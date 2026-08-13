@@ -16,7 +16,7 @@
           href="../css/assign-work.css">
 
     <link rel="stylesheet"
-          href="../css/manpower-distribution.css">
+          href="../css/manpower-distribution.css?v=20260813-2">
 
     <link rel="stylesheet" href="../css/maintenance-theme.css?v=20260804-18">
 
@@ -47,9 +47,9 @@
 
     </div>
 
-
     <!-- ================= FILTER ================= -->
 
+    <div class="manpower-overview-row">
     <div class="filter-card">
 
         <div class="filter-box">
@@ -89,6 +89,37 @@
 
         </div>
 
+    </div>
+
+    <section class="staff-loan-card" aria-labelledby="staffLoanTitle">
+        <div class="staff-loan-header">
+            <div>
+                <p class="staff-loan-kicker">Selected date</p>
+                <h2 id="staffLoanTitle">Temporary Staff Loan</h2>
+            </div>
+            <button id="addStaffLoanBtn" type="button" class="btn-add-loan">
+                + Add Temporary Staff Loan
+            </button>
+        </div>
+
+        <div class="staff-loan-tabs" role="tablist" aria-label="Temporary staff loans">
+            <button class="staff-loan-tab active" type="button" role="tab"
+                    aria-selected="true" data-loan-tab="in">
+                Loaned In <span id="loanedInCount">0</span>
+            </button>
+            <button class="staff-loan-tab" type="button" role="tab"
+                    aria-selected="false" data-loan-tab="out">
+                Loaned Out <span id="loanedOutCount">0</span>
+            </button>
+        </div>
+
+        <div id="loanedInPanel" class="staff-loan-panel" role="tabpanel">
+            <div id="loanedInList" class="staff-loan-list"></div>
+        </div>
+        <div id="loanedOutPanel" class="staff-loan-panel" role="tabpanel" hidden>
+            <div id="loanedOutList" class="staff-loan-list"></div>
+        </div>
+    </section>
     </div>
 
 
@@ -161,7 +192,33 @@
 
 </div>
 
-<script src="../js/manpower-distribution.js?v=20260804-4"></script>
+<div id="staffLoanModal" class="staff-loan-modal" hidden>
+    <div class="staff-loan-dialog" role="dialog" aria-modal="true"
+         aria-labelledby="staffLoanDialogTitle">
+        <div class="staff-loan-dialog-header">
+            <div>
+                <p class="staff-loan-kicker">One-day transfer</p>
+                <h2 id="staffLoanDialogTitle">Add Temporary Staff Loan</h2>
+            </div>
+            <button id="closeStaffLoanBtn" type="button" class="loan-close-btn"
+                    aria-label="Close">&times;</button>
+        </div>
+        <form id="staffLoanForm">
+            <p class="loan-date-note">Loan date: <strong id="staffLoanDate"></strong></p>
+            <label for="loanStaffSelect">Staff Name</label>
+            <select id="loanStaffSelect" required></select>
+            <label for="loanToSectionSelect">Loan To Section</label>
+            <select id="loanToSectionSelect" required></select>
+            <p id="staffLoanMessage" class="staff-loan-message" hidden></p>
+            <div class="staff-loan-form-actions">
+                <button id="cancelStaffLoanBtn" type="button" class="loan-cancel-btn">Cancel</button>
+                <button type="submit" class="btn-add-loan">Save Loan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../js/manpower-distribution.js?v=20260813-2"></script>
 
 <script src="/js/pwa.js"></script>
 

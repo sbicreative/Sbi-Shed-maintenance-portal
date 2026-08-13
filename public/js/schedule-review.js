@@ -2,8 +2,20 @@ const reviewUser = getReviewUser();
 const reviewRole =
     String(reviewUser?.role || "").trim().toLowerCase();
 const reviewerMasterId =
-    Number(reviewUser?.supervisor_master_id);
+    Number(
+        reviewUser?.acting_for_incharge_id ||
+        reviewUser?.supervisor_master_id
+    );
 let reviewRows = [];
+
+function expiredActingReviewAccess() {
+    if (!reviewUser?.acting_charge) return false;
+    const today = new Date().toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata"
+    });
+    return today < String(reviewUser.charge_handover?.start_date || "") ||
+        today > String(reviewUser.charge_handover?.end_date || "");
+}
 
 function getReviewUser() {
     try {
@@ -137,6 +149,10 @@ async function loadReviewQueue() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    if (expiredActingReviewAccess()) {
+        window.location.replace("/dashboard/login.html");
+        return;
+    }
     if (!validReviewer()) {
         window.location.replace("/dashboard/login.html");
         return;

@@ -2,6 +2,20 @@
     min-width: 250px;
 }
 
+.manpower-overview-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    align-items: start;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.manpower-overview-row .filter-card,
+.manpower-overview-row .staff-loan-card {
+    height: 100%;
+    margin-bottom: 0;
+}
+
 .staff-select-list {
     display: grid;
     gap: 8px;
@@ -58,5 +72,159 @@
     color: #991b1b;
     font-size: 13px;
     font-weight: 600;
+}
+
+.staff-loan-card {
+    margin-bottom: 25px;
+    overflow: hidden;
+    border: 1px solid #d9e2dc;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, .08);
+}
+
+.staff-loan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+}
+
+.staff-loan-header h2,
+.staff-loan-dialog h2 { color: #1e293b; }
+.staff-loan-kicker {
+    margin-bottom: 3px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.btn-add-loan {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background: #356859;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-add-loan:hover { background: #294f45; }
+.btn-add-loan:disabled { cursor: wait; opacity: .65; }
+
+.staff-loan-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+.staff-loan-tab {
+    padding: 12px;
+    border: 0;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    cursor: pointer;
+}
+.staff-loan-tab + .staff-loan-tab { border-left: 1px solid #e2e8f0; }
+.staff-loan-tab.active { background: #eef6f2; color: #234c40; }
+.staff-loan-tab span {
+    display: inline-grid;
+    min-width: 24px;
+    min-height: 24px;
+    margin-left: 5px;
+    place-items: center;
+    border-radius: 999px;
+    background: #dcebe4;
+}
+
+.staff-loan-panel { padding: 14px 22px 20px; }
+.staff-loan-list { display: grid; gap: 8px; }
+.staff-loan-person {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 11px 13px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+.staff-loan-person strong { color: #1e293b; }
+.staff-loan-person span { color: #64748b; font-size: 13px; }
+.staff-loan-empty { padding: 10px 0; color: #64748b; text-align: center; }
+
+.staff-loan-modal {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .55);
+}
+.staff-loan-modal[hidden] { display: none; }
+.staff-loan-dialog {
+    width: min(460px, 100%);
+    padding: 22px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 22px 55px rgba(0, 0, 0, .25);
+}
+.staff-loan-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.loan-close-btn {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: #eef2f7;
+    font-size: 25px;
+    cursor: pointer;
+}
+.staff-loan-dialog label {
+    display: block;
+    margin: 14px 0 6px;
+    color: #334155;
+    font-weight: 700;
+}
+.staff-loan-dialog select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+}
+.loan-date-note { padding: 10px; border-radius: 7px; background: #f1f5f9; }
+.staff-loan-message { margin-top: 12px; color: #b91c1c; font-weight: 600; }
+.staff-loan-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+.loan-cancel-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background: #fff;
+    color: #334155;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+    .staff-loan-header { align-items: stretch; flex-direction: column; }
+    .btn-add-loan { width: 100%; }
+    .staff-loan-person { align-items: flex-start; flex-direction: column; gap: 3px; }
+}
+
+@media (max-width: 700px) {
+    .manpower-overview-row { grid-template-columns: 1fr; }
 }
 .lead-staff-choice{display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:6px;background:#fff3cd;color:#5f4700;font-size:11px;font-weight:800;white-space:nowrap}.lead-staff-choice input{margin:0}

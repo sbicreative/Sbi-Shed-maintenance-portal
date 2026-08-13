@@ -21,7 +21,14 @@ console.log(
 );
 
 let availableStaff = [];
+let permanentSectionStaff = [];
 let unavailableStaffIds = new Set();
+let temporaryLoanData = {
+    loaned_in: [],
+    loaned_out: [],
+    staff_for_loan: [],
+    destination_sections: []
+};
 // ======================================================
 // PAGE LOAD
 // ======================================================
@@ -35,6 +42,7 @@ document.addEventListener(
         try {
 
             await loadSectionStaff();
+            await loadTemporaryStaffLoansSafely();
             await loadUnavailableStaff();
 
         }
@@ -75,6 +83,8 @@ document.addEventListener(
                 saveDistribution
             );
         }
+
+        setupTemporaryStaffLoanUi();
 
     }
 );
@@ -125,16 +135,18 @@ async function loadSectionStaff() {
 
     const data = await response.json();
 
-    availableStaff =
+    permanentSectionStaff =
         Array.isArray(data)
             ? data
             : [];
+    availableStaff = [...permanentSectionStaff];
 
 }
 
 async function handleDistributionDateChange() {
 
     try {
+        await loadTemporaryStaffLoansSafely();
         await loadUnavailableStaff();
         await loadAssignedWork();
     }
@@ -147,6 +159,171 @@ async function handleDistributionDateChange() {
         alert(error.message);
     }
 
+}
+
+async function loadTemporaryStaffLoansSafely() {
+    try {
+        await loadTemporaryStaffLoans();
+        const addButton = document.getElementById("addStaffLoanBtn");
+        if (addButton) {
+            addButton.disabled = false;
+            addButton.title = "";
+        }
+    } catch (error) {
+        console.warn("Temporary Staff Loan is not ready:", error);
+        temporaryLoanData = {
+            loaned_in: [],
+            loaned_out: [],
+            staff_for_loan: [],
+            destination_sections: []
+        };
+        availableStaff = [...permanentSectionStaff];
+        renderTemporaryStaffLoans();
+        const addButton = document.getElementById("addStaffLoanBtn");
+        if (addButton) {
+            addButton.disabled = true;
+            addButton.title =
+                "Temporary Staff Loan database setup is pending.";
+        }
+    }
+}
+
+async function loadTemporaryStaffLoans() {
+    const params = new URLSearchParams({
+        loan_date: getSelectedDate(),
+        supervisor_id: user.supervisor_master_id || user.id
+    });
+    const response = await fetch(
+        `/api/manpower-distribution/temporary-loans?${params.toString()}`
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to load temporary staff loans.");
+    }
+
+    temporaryLoanData = result;
+    const loanedOutIds = new Set(
+        (result.loaned_out || []).map(item => Number(item.staff_id))
+    );
+    const incomingStaff = (result.loaned_in || []).map(item => ({
+        id: Number(item.staff_id),
+        name: item.staff_name,
+        designation: "Temporary",
+        department: user.department,
+        section: item.from_section
+    }));
+    availableStaff = [
+        ...permanentSectionStaff.filter(item =>
+            !loanedOutIds.has(Number(item.id))
+        ),
+        ...incomingStaff
+    ];
+    renderTemporaryStaffLoans();
+}
+
+function renderTemporaryStaffLoans() {
+    const incoming = temporaryLoanData.loaned_in || [];
+    const outgoing = temporaryLoanData.loaned_out || [];
+    document.getElementById("loanedInCount").textContent = incoming.length;
+    document.getElementById("loanedOutCount").textContent = outgoing.length;
+    renderLoanList("loanedInList", incoming, "from_section", "From");
+    renderLoanList("loanedOutList", outgoing, "to_section", "To");
+}
+
+function renderLoanList(elementId, rows, sectionKey, prefix) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    element.innerHTML = rows.length
+        ? rows.map(item => `
+            <div class="staff-loan-person">
+                <strong>${escapeHtml(item.staff_name)}</strong>
+                <span>${prefix}: ${escapeHtml(item[sectionKey])}</span>
+            </div>
+        `).join("")
+        : '<p class="staff-loan-empty">No staff for the selected date.</p>';
+}
+
+function setupTemporaryStaffLoanUi() {
+    document.querySelectorAll("[data-loan-tab]").forEach(tab => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll("[data-loan-tab]").forEach(item => {
+                const active = item === tab;
+                item.classList.toggle("active", active);
+                item.setAttribute("aria-selected", String(active));
+            });
+            document.getElementById("loanedInPanel").hidden =
+                tab.dataset.loanTab !== "in";
+            document.getElementById("loanedOutPanel").hidden =
+                tab.dataset.loanTab !== "out";
+        });
+    });
+    document.getElementById("addStaffLoanBtn")
+        ?.addEventListener("click", openStaffLoanModal);
+    document.getElementById("closeStaffLoanBtn")
+        ?.addEventListener("click", closeStaffLoanModal);
+    document.getElementById("cancelStaffLoanBtn")
+        ?.addEventListener("click", closeStaffLoanModal);
+    document.getElementById("staffLoanModal")
+        ?.addEventListener("click", event => {
+            if (event.target.id === "staffLoanModal") closeStaffLoanModal();
+        });
+    document.getElementById("staffLoanForm")
+        ?.addEventListener("submit", saveTemporaryStaffLoan);
+}
+
+function openStaffLoanModal() {
+    const staffSelect = document.getElementById("loanStaffSelect");
+    const sectionSelect = document.getElementById("loanToSectionSelect");
+    staffSelect.innerHTML = '<option value="">Select Staff</option>' +
+        (temporaryLoanData.staff_for_loan || []).map(item =>
+            `<option value="${item.id}">${escapeHtml(item.name)}</option>`
+        ).join("");
+    sectionSelect.innerHTML = '<option value="">Select Section</option>' +
+        (temporaryLoanData.destination_sections || []).map(section =>
+            `<option value="${escapeHtml(section)}">${escapeHtml(section)}</option>`
+        ).join("");
+    document.getElementById("staffLoanDate").textContent = getSelectedDate();
+    const message = document.getElementById("staffLoanMessage");
+    message.hidden = true;
+    message.textContent = "";
+    document.getElementById("staffLoanModal").hidden = false;
+}
+
+function closeStaffLoanModal() {
+    document.getElementById("staffLoanModal").hidden = true;
+    document.getElementById("staffLoanForm")?.reset();
+}
+
+async function saveTemporaryStaffLoan(event) {
+    event.preventDefault();
+    const submitButton = event.submitter;
+    const message = document.getElementById("staffLoanMessage");
+    submitButton.disabled = true;
+    message.hidden = true;
+    try {
+        const response = await fetch("/api/manpower-distribution/temporary-loans", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                loan_date: getSelectedDate(),
+                supervisor_id: user.supervisor_master_id || user.id,
+                staff_id: Number(document.getElementById("loanStaffSelect").value),
+                to_section: document.getElementById("loanToSectionSelect").value
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || "Unable to save temporary staff loan.");
+        }
+        closeStaffLoanModal();
+        await loadTemporaryStaffLoans();
+        refreshStaffAvailability();
+    } catch (error) {
+        message.textContent = error.message;
+        message.hidden = false;
+    } finally {
+        submitButton.disabled = false;
+    }
 }
 
 function getSelectedDate() {

@@ -302,6 +302,24 @@ router.post("/login", async (req, res) => {
             user = updatedUser;
         }
 
+        if (normalizeText(user.role) === "supervisor" && user.supervisor_master_id) {
+            const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+            const { data: handovers, error: handoverError } = await supabase
+                .from("incharge_charge_handover")
+                .select("id,permanent_incharge_id,acting_incharge_id,department,start_date,end_date,reason")
+                .eq("acting_incharge_id", user.supervisor_master_id)
+                .eq("status", "Active")
+                .lte("start_date", today)
+                .gte("end_date", today)
+                .limit(1);
+            if (!handoverError && handovers?.length) {
+                user = { ...user, permanent_role: user.role, role: "incharge",
+                    acting_charge: true,
+                    acting_for_incharge_id: handovers[0].permanent_incharge_id,
+                    charge_handover: handovers[0] };
+            }
+        }
+
 let dashboard = "";
 const dashboardRole = String(user.role || "")
     .trim()

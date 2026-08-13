@@ -146,6 +146,44 @@
 
         </section>
 
+        <section class="charge-handover-card" aria-labelledby="chargeHandoverTitle">
+            <div class="charge-handover-heading">
+                <div>
+                    <p>Temporary authority</p>
+                    <h2 id="chargeHandoverTitle">Charge Handover</h2>
+                </div>
+                <span id="chargeStatusBadge">Permanent Incharge</span>
+            </div>
+            <p id="actingChargeNotice" class="acting-charge-notice" hidden></p>
+            <form id="chargeHandoverForm">
+                <div class="charge-form-grid">
+                    <label>
+                        Acting Incharge
+                        <select id="actingInchargeSelect" required>
+                            <option value="">Select Supervisor</option>
+                        </select>
+                    </label>
+                    <label>
+                        From Date
+                        <input id="chargeStartDate" type="date" required>
+                    </label>
+                    <label>
+                        To Date
+                        <input id="chargeEndDate" type="date" required>
+                    </label>
+                    <label>
+                        Reason
+                        <input id="chargeReason" type="text"
+                               placeholder="Leave / Training / Duty">
+                    </label>
+                </div>
+                <p id="chargeHandoverMessage" class="charge-handover-message" hidden></p>
+                <button id="saveChargeHandoverBtn" type="submit">
+                    Hand Over Charge
+                </button>
+            </form>
+        </section>
+
 
         <!-- ================= QUICK ACTION ================= -->
 
@@ -236,7 +274,8 @@
 
     </div>
 
-    <script src="../js/incharge.js?v=20260801-1"></script>
+    <script src="../js/incharge.js?v=20260813-1"></script>
+    <script src="../js/charge-handover.js"></script>
     <script src="/js/pwa.js"></script>
 
 </body>

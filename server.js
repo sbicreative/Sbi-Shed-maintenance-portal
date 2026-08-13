@@ -44,6 +44,8 @@ const historicalScheduleRoutes =
     require("./routes/historicalScheduleRoutes");
 const repairScheduleRoutes =
     require("./routes/repairScheduleRoutes");
+const temporaryStaffLoanRoutes = require("./routes/temporaryStaffLoanRoutes");
+const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 const employeeRoutes =
 require("./routes/employeeRoutes");
 const adminAuthRoutes = require("./routes/adminAuthRoutes");
@@ -127,6 +129,10 @@ app.use(
 
 app.use(
     "/api/manpower-distribution",
+    temporaryStaffLoanRoutes
+);
+app.use(
+    "/api/manpower-distribution",
     manpowerRoutes
 );
 app.use(
@@ -146,6 +152,7 @@ app.use(
     historicalScheduleRoutes
 );
 app.use("/api/repair-schedule", repairScheduleRoutes);
+app.use("/api/charge-handover", chargeHandoverRoutes);
 app.use(
     "/api/employees",
     employeeRoutes

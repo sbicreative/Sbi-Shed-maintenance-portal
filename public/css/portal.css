@@ -102,8 +102,7 @@ main { width: min(1240px, calc(100% - 30px)); margin: 28px auto 42px; }
 .login-form input:focus { outline: 3px solid rgba(111,130,111,.22); border-color: var(--sage); }
 .login-form button,.tracking-login-link { display: block; width: 100%; margin-top: 7px; padding: 12px; border: 0; border-radius: 8px; color: white; background: var(--rust); text-align: center; text-decoration: none; font-weight: 800; cursor: pointer; }
 .tracking-login-link { background: var(--forest); margin-top: 31px; }
-.registration-link,.public-login-link,.admin-login-link { display: block; margin-top: 12px; color: var(--forest); text-align: center; font-weight: 700; text-underline-offset: 4px; }
-.admin-login-link { margin-top: 18px; color: var(--rust); }
+.registration-link,.public-login-link { display: block; margin-top: 12px; color: var(--forest); text-align: center; font-weight: 700; text-underline-offset: 4px; }
 .form-message { min-height: 18px; margin: 0; color: #a53027; font-size: 12px; }
 body.modal-open { overflow: hidden; }
 

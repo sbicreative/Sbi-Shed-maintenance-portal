@@ -397,27 +397,6 @@ table tr:hover{
 
 }
 
-@media(max-width:600px){
-    .top-nav{display:grid;grid-template-columns:1fr;gap:7px;padding:8px 10px;text-align:center;}
-    .top-nav>div{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:12px;}
-    .top-nav span{font-size:12px;}
-    .top-nav button{min-height:34px;margin:0;padding:7px 11px;font-size:11px;}
-    .portal-btn{margin-left:0;}
-    .dashboard{width:calc(100% - 16px);margin:12px auto;}
-    .summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px;}
-    .card{min-height:122px;padding:12px 8px;border-radius:10px;}
-    .card:nth-child(n){border-left-width:5px;}
-    .card i{font-size:25px;margin-bottom:5px;}
-    .card h2{margin:3px 0;font-size:24px;}
-    .card p{font-size:11px;line-height:1.2;}
-    .quick-actions,.activity{padding:14px 11px;margin-bottom:14px;border-radius:10px;}
-    .quick-actions h2,.activity h2{margin-bottom:11px;font-size:18px;}
-    .button-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-    .button-grid button{min-height:45px;padding:9px 7px;font-size:11px;line-height:1.2;}
-    table th{padding:9px;font-size:11px;}
-    table td{padding:9px;font-size:11px;}
-}
-
 .button-grid{
 
     grid-template-columns:1fr;
@@ -471,105 +450,78 @@ table{
     background:#0f2c59;
 
 }
-
-/* Final compact dashboard controls for phone screens. */
-@media (max-width:600px){
-    .top-nav{
-        display:grid;
-        grid-template-columns:1fr;
-        gap:6px;
-        padding:7px 9px;
-    }
-
-    .top-nav > div:first-child{
-        min-height:22px;
-    }
-
-    .top-nav > div:last-child{
-        width:100%;
-        display:grid;
-        grid-template-columns:minmax(88px,1fr) minmax(0,1.35fr) minmax(72px,1fr);
-        align-items:center;
-        gap:6px;
-    }
-
-    .top-nav > div:last-child #currentDateTime{
-        grid-column:2;
-        grid-row:1;
-        font-size:10px;
-        line-height:1.15;
-        text-align:center;
-    }
-
-    .top-nav .portal-btn{
-        grid-column:1;
-        grid-row:1;
-        width:100%;
-        margin:0;
-    }
-
-    .top-nav .logout-btn{
-        grid-column:3;
-        grid-row:1;
-        width:100%;
-        margin:0;
-    }
-
-    .summary{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:7px;
-        margin-bottom:11px;
-    }
-
-    .card{
-        min-height:92px;
-        padding:8px 6px;
-        border-radius:9px;
-    }
-
-    .card i{
-        margin-bottom:2px;
-        font-size:21px;
-    }
-
-    .card h2{
-        margin:1px 0;
-        font-size:21px;
-        line-height:1.05;
-    }
-
-    .card p{
-        font-size:10px;
-        line-height:1.15;
-    }
-
-    .activity{
-        overflow:hidden;
-        padding:11px 8px;
-    }
-
-    .activity h2{
-        margin-bottom:8px;
-        font-size:17px;
-    }
-
-    .activity table{
-        width:100%;
-        min-width:0;
-        table-layout:fixed;
-    }
-
-    .activity th,
-    .activity td{
-        padding:7px 3px;
-        font-size:9px;
-        line-height:1.15;
-        overflow-wrap:anywhere;
-        word-break:normal;
-    }
-
-    .activity th:nth-child(1){width:21%;}
-    .activity th:nth-child(2){width:24%;}
-    .activity th:nth-child(3){width:31%;}
-    .activity th:nth-child(4){width:24%;}
+/* Temporary Incharge authority */
+.charge-handover-card {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #d7e2dc;
+    border-left: 5px solid #356859;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+}
+.charge-handover-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+.charge-handover-heading p {
+    margin: 0 0 3px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+.charge-handover-heading h2 { margin: 0; color: #1e293b; }
+#chargeStatusBadge {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #e8f2ed;
+    color: #285548;
+    font-size: 12px;
+    font-weight: 800;
+}
+.charge-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+.charge-form-grid label { color: #334155; font-size: 13px; font-weight: 700; }
+.charge-form-grid input,
+.charge-form-grid select {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #fff;
+}
+#saveChargeHandoverBtn {
+    margin-top: 15px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 7px;
+    background: #356859;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+#saveChargeHandoverBtn:disabled { cursor: not-allowed; opacity: .6; }
+.charge-handover-message { margin: 12px 0 0; color: #b91c1c; font-weight: 700; }
+.acting-charge-notice {
+    padding: 12px;
+    border-radius: 8px;
+    background: #fff7df;
+    color: #765113;
+    font-weight: 700;
+}
+@media (max-width: 900px) {
+    .charge-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .charge-form-grid { grid-template-columns: 1fr; }
+    .charge-handover-heading { align-items: flex-start; flex-direction: column; }
 }
