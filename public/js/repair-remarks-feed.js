@@ -28,8 +28,14 @@
                 throw new Error(result.message || "Unable to load repair remarks.");
             }
 
-            const remarks = (result.remarks || []).slice(0, 8);
-            if (count) count.textContent = result.remarks?.length || 0;
+            const allowedLocos = role === "staff"
+                ? (window.assignedRepairLocoNumbers || new Set())
+                : null;
+            const visibleRemarks = (result.remarks || []).filter(item =>
+                !allowedLocos || allowedLocos.has(String(locoNumber(item)).trim().toLowerCase())
+            );
+            const remarks = visibleRemarks.slice(0, 8);
+            if (count) count.textContent = visibleRemarks.length;
             if (!remarks.length) {
                 feed.innerHTML = '<p class="remarks-feed-empty">No new cross-role repair remarks.</p>';
                 return;
@@ -55,7 +61,12 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        loadRepairRemarksFeed();
+        if (document.body.dataset.dashboardRole === "staff") {
+            window.addEventListener("assigned-repair-locos-ready", loadRepairRemarksFeed);
+        } else {
+            loadRepairRemarksFeed();
+        }
         window.setInterval(loadRepairRemarksFeed, 30000);
+        window.addEventListener("repair-remarks-updated", loadRepairRemarksFeed);
     });
 }());

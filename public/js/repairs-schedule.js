@@ -1,6 +1,7 @@
 const user = JSON.parse(localStorage.getItem("user") || "null");
 const timeline = document.getElementById("timeline");
 const message = document.getElementById("message");
+let allowedStaffLocos = null;
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -27,12 +28,18 @@ async function loadRemarks() {
         const response = await fetch(`/api/repair-schedule/remarks?${params}`);
         const result = await response.json();
         if (!response.ok || !result.success) throw new Error(result.message || "Unable to load remarks.");
-        message.textContent = `${result.remarks.length} remark${result.remarks.length === 1 ? "" : "s"}`;
-        if (!result.remarks.length) {
+        const visibleRemarks = allowedStaffLocos
+            ? (result.remarks || []).filter(item => {
+                const locoNo = item.loco_master?.loco_no || item.temporary_loco_master?.loco_no || "";
+                return allowedStaffLocos.has(String(locoNo).trim().toLowerCase());
+            })
+            : (result.remarks || []);
+        message.textContent = `${visibleRemarks.length} remark${visibleRemarks.length === 1 ? "" : "s"}`;
+        if (!visibleRemarks.length) {
             timeline.innerHTML = '<div class="empty">No repair schedule remarks match these filters.</div>';
             return;
         }
-        const groups = result.remarks.reduce((map, item) => {
+        const groups = visibleRemarks.reduce((map, item) => {
             const day = item.assignment_date || "No assignment date";
             if (!map.has(day)) map.set(day, []);
             map.get(day).push(item);
@@ -54,4 +61,48 @@ async function loadRemarks() {
 document.getElementById("filters").addEventListener("submit", event => { event.preventDefault(); loadRemarks(); });
 document.getElementById("clearBtn").addEventListener("click", () => { document.getElementById("filters").reset(); loadRemarks(); });
 document.getElementById("backBtn").addEventListener("click", () => { window.location.href = dashboardForRole(); });
-loadRemarks();
+
+async function authorizeRepairSchedule() {
+    const role = String(user?.role || "").trim().toLowerCase();
+    if (!user) {
+        window.location.replace("/dashboard/login.html");
+        return;
+    }
+    if (role === "incharge" || role === "supervisor") {
+        document.body.style.visibility = "";
+        document.body.classList.remove("access-pending");
+        await loadRemarks();
+        return;
+    }
+    if (role !== "staff" || !Number(user.employee_master_id)) {
+        window.location.replace(dashboardForRole());
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/manpower-distribution/staff/${Number(user.employee_master_id)}`);
+        const assignments = await response.json();
+        if (!response.ok || !Array.isArray(assignments)) {
+            throw new Error(assignments.message || "Unable to verify Repairs assignment.");
+        }
+        const locoAssignments = assignments.filter(item => {
+            const header = item.work_detail?.assign_work_header || {};
+            return Boolean(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no);
+        });
+        if (!locoAssignments.length) {
+            window.location.replace("/dashboard/staff.html");
+            return;
+        }
+        allowedStaffLocos = new Set(locoAssignments.map(item => {
+            const header = item.work_detail?.assign_work_header || {};
+            return String(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "").trim().toLowerCase();
+        }).filter(Boolean));
+        document.body.style.visibility = "";
+        document.body.classList.remove("access-pending");
+        await loadRemarks();
+    } catch (error) {
+        window.location.replace("/dashboard/staff.html");
+    }
+}
+
+authorizeRepairSchedule();

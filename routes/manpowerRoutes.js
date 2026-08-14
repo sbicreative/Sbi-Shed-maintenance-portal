@@ -143,6 +143,8 @@ router.get("/staff/:staffId", async (req, res) => {
                     assign_work_header (
                         id,
                         assign_date,
+                        loco_id,
+                        temporary_loco_id,
                         loco_master (
                             loco_no
                         ),
@@ -190,19 +192,43 @@ router.get("/staff/:staffId", async (req, res) => {
             ])
         );
 
-        const result = distributions.map(distribution => ({
-            ...distribution,
-            assigned_by_name:
-                supervisorMap.get(
-                    Number(distribution.assigned_by)
-                ) || "Supervisor",
-            work_detail:
-                detailMap.get(
-                    Number(
-                        distribution.assign_work_detail_id
-                    )
-                ) || null
-        }));
+        const masterLocoIds = [...new Set((details || [])
+            .map(item => Number(item.assign_work_header?.loco_id))
+            .filter(Boolean))];
+        const temporaryLocoIds = [...new Set((details || [])
+            .map(item => Number(item.assign_work_header?.temporary_loco_id))
+            .filter(Boolean))];
+        let locoRemarks = [];
+        if (masterLocoIds.length || temporaryLocoIds.length) {
+            const filters = [];
+            if (masterLocoIds.length) filters.push(`loco_id.in.(${masterLocoIds.join(",")})`);
+            if (temporaryLocoIds.length) filters.push(`temporary_loco_id.in.(${temporaryLocoIds.join(",")})`);
+            const { data: remarkData, error: remarkError } = await supabase
+                .from("repair_schedule_remarks")
+                .select("id,loco_id,temporary_loco_id,remark_text,author_name,author_role,created_at")
+                .or(filters.join(","))
+                .in("author_role", ["Incharge", "Supervisor"])
+                .order("created_at", { ascending: true });
+            if (remarkError) throw remarkError;
+            locoRemarks = remarkData || [];
+        }
+
+        function remarksForHeader(header = {}) {
+            return locoRemarks.filter(remark =>
+                (header.loco_id && Number(remark.loco_id) === Number(header.loco_id)) ||
+                (header.temporary_loco_id && Number(remark.temporary_loco_id) === Number(header.temporary_loco_id))
+            );
+        }
+
+        const result = distributions.map(distribution => {
+            const workDetail = detailMap.get(Number(distribution.assign_work_detail_id)) || null;
+            return {
+                ...distribution,
+                assigned_by_name: supervisorMap.get(Number(distribution.assigned_by)) || "Supervisor",
+                work_detail: workDetail,
+                loco_repair_remarks: remarksForHeader(workDetail?.assign_work_header)
+            };
+        });
 
         res.json(result);
 
@@ -341,7 +367,29 @@ router.get("/", async (req, res) => {
 
         }
 
-        res.json(data);
+        const details = data || [];
+        const detailIds = details.map(item => Number(item.id)).filter(Boolean);
+        let remarkRows = [];
+        if (detailIds.length) {
+            const { data: remarksData, error: remarksError } = await supabase
+                .from("repair_schedule_remarks")
+                .select("id,assign_work_detail_id,remark_text,author_name,author_role,created_at")
+                .in("assign_work_detail_id", detailIds)
+                .order("created_at", { ascending: true });
+            if (remarksError) throw remarksError;
+            remarkRows = remarksData || [];
+        }
+        const remarksByDetail = new Map();
+        remarkRows.forEach(remark => {
+            const key = Number(remark.assign_work_detail_id);
+            if (!remarksByDetail.has(key)) remarksByDetail.set(key, []);
+            remarksByDetail.get(key).push(remark);
+        });
+
+        res.json(details.map(detail => ({
+            ...detail,
+            repair_remarks: remarksByDetail.get(Number(detail.id)) || []
+        })));
 
     }
 
@@ -375,6 +423,10 @@ router.post("/", async (req, res) => {
             is_lead,
             remarks
         } = req.body;
+
+        const remarkList = Array.isArray(remarks)
+            ? remarks.map(value => String(value || "").trim()).filter(Boolean)
+            : [String(remarks || "").trim()].filter(Boolean);
 
         const detailId = Number(assign_work_detail_id);
         const staffId = Number(staff_id);
@@ -470,6 +522,24 @@ router.post("/", async (req, res) => {
             });
         }
 
+        if (!Boolean(is_lead)) {
+            const { data: activeLead, error: leadError } = await supabase
+                .from("manpower_distribution")
+                .select("id")
+                .eq("assign_work_detail_id", detailId)
+                .eq("is_lead", true)
+                .neq("status", "Completed")
+                .limit(1);
+            if (leadError) throw leadError;
+            if (!activeLead?.length) {
+                return res.status(400).json({
+                    success: false,
+                    code: "LEAD_STAFF_REQUIRED",
+                    message: "Assign the Lead Staff before adding view-only team members."
+                });
+            }
+        }
+
         const { data: distribution, error } = await supabase
 
             .from("manpower_distribution")
@@ -484,8 +554,7 @@ router.post("/", async (req, res) => {
 
                 status: "Assigned",
 
-                remarks:
-                    remarks || null
+                remarks: remarkList.length ? remarkList.join("\n") : null
 
             }])
             .select("id")
@@ -522,40 +591,24 @@ router.post("/", async (req, res) => {
 
         }
 
-        if (!Boolean(is_lead)) {
-            const { data: activeLead, error: leadError } = await supabase
-                .from("manpower_distribution")
-                .select("id")
-                .eq("assign_work_detail_id", detailId)
-                .eq("is_lead", true)
-                .neq("status", "Completed")
-                .limit(1);
-            if (leadError) throw leadError;
-            if (!activeLead?.length) {
-                return res.status(400).json({
-                    success: false,
-                    code: "LEAD_STAFF_REQUIRED",
-                    message: "Assign the Lead Staff before adding view-only team members."
-                });
-            }
-        }
-
         const header = workDetail.assign_work_header || {};
-        await appendRepairRemark({
-            remark_text: remarks,
-            author_id: assignedBy,
-            author_name,
-            author_role: "Supervisor",
-            assignment_date: assignDate,
-            loco_id: header.loco_id || header.loco_master?.id,
-            temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
-            assign_work_header_id: header.id,
-            schedule_id: header.schedule_id || header.schedule_master?.id,
-            assign_work_detail_id: detailId,
-            manpower_distribution_id: distribution.id,
-            source_type: "manpower_distribution",
-            source_action: "assign"
-        });
+        for (const remarkText of remarkList) {
+            await appendRepairRemark({
+                remark_text: remarkText,
+                author_id: assignedBy,
+                author_name,
+                author_role: "Supervisor",
+                assignment_date: assignDate,
+                loco_id: header.loco_id || header.loco_master?.id,
+                temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
+                assign_work_header_id: header.id,
+                schedule_id: header.schedule_id || header.schedule_master?.id,
+                assign_work_detail_id: detailId,
+                manpower_distribution_id: distribution.id,
+                source_type: "manpower_distribution",
+                source_action: "assign"
+            });
+        }
 
         if (Boolean(is_lead) && String(workDetail.work_master?.work_name || "").trim().toLowerCase() === "repairs") {
             const locoKey = header.loco_id

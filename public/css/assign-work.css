@@ -589,6 +589,32 @@ min-width:180px;
 
 }
 
+.work-remarks-list,
+.remark-input-list,
+.supervisor-remarks-list { display:grid; gap:7px; }
+.multi-remarks-group,
+.distribution-remarks-panel { min-width:240px; padding:8px; border:1px solid #d8ded7; border-radius:7px; background:#fff; }
+.multi-remarks-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+.multi-remarks-heading strong { color:#234534; font-size:12px; }
+.remark-input-row,
+.supervisor-remark-row { display:flex; align-items:center; gap:5px; }
+.remark-input-row .remarks,
+.supervisor-remark-input { width:100%; min-width:150px; }
+.add-remark-btn,
+.add-supervisor-remark { border:0; border-radius:5px; padding:6px 8px; background:#356859; color:#fff; font-size:11px; font-weight:700; cursor:pointer; }
+.remove-remark-btn,
+.remove-supervisor-remark { flex:0 0 28px; height:30px; border:0; border-radius:5px; background:#b54e30; color:#fff; font-weight:800; cursor:pointer; }
+.existing-remarks-list { display:grid; gap:6px; margin-bottom:8px; }
+.existing-remark { padding:7px; border-left:3px solid #7b913d; background:#f2f5eb; border-radius:4px; }
+.existing-remark p { margin:0 0 3px; white-space:pre-wrap; font-size:12px; }
+.existing-remark small,
+.no-existing-remarks { color:#64716a; font-size:10px; }
+.no-existing-remarks { margin:0 0 7px; }
+
+.staff-select-row { display:grid; grid-template-columns:auto minmax(170px,1fr) auto; align-items:center; gap:7px; }
+.lead-staff-choice { display:inline-flex; align-items:center; gap:4px; padding:6px 7px; border:1px solid #e1c96c; border-radius:6px; background:#fff7d7; color:#604b00; font-size:11px; font-weight:800; white-space:nowrap; cursor:pointer; }
+.lead-staff-choice input { width:auto; min-width:0; margin:0; accent-color:#356859; }
+
 /* ================= RESPONSIVE ================= */
 
 @media(max-width:991px){
@@ -806,4 +832,31 @@ transform:translateY(0);
 
 }
 
+}
+
+/* Phone layout: one assignment is shown as two aligned four-column rows. */
+@media (max-width:600px) {
+    .assign-work-page .table-container { overflow-x:hidden; }
+    .assign-work-page .table-container table { display:block; width:100%; min-width:0; table-layout:auto; }
+    .assign-work-page .table-container thead,
+    .assign-work-page .table-container tbody { display:grid; width:100%; gap:8px; }
+    .assign-work-page .table-container thead tr,
+    .assign-work-page .table-container tbody tr { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); width:100%; gap:5px; }
+    .assign-work-page .table-container th,
+    .assign-work-page .table-container td,
+    .assign-work-page .table-container th:nth-child(6),
+    .assign-work-page .table-container td:nth-child(6) { display:block; width:auto; min-width:0; padding:6px 4px; border:1px solid #d5ddd7; border-radius:6px; font-size:9px; line-height:1.15; }
+    .assign-work-page .table-container th { min-height:34px; display:flex; align-items:center; justify-content:center; background:#244b37; color:#fff; }
+    .assign-work-page .table-container th:nth-child(6),
+    .assign-work-page .table-container td:nth-child(6) { grid-column:span 2; }
+    .assign-work-page .table-container td { background:#fff; }
+    .assign-work-page .table-container td input,
+    .assign-work-page .table-container td select { min-height:34px; padding:5px 4px; font-size:9px; }
+    .assign-work-page .multi-remarks-group { min-width:0; padding:5px; }
+    .assign-work-page .multi-remarks-heading { align-items:flex-start; flex-direction:column; }
+    .assign-work-page .add-remark-btn { width:100%; min-height:28px; padding:4px; font-size:9px; }
+    .assign-work-page .remark-input-row { align-items:stretch; }
+    .assign-work-page .remark-input-row .remarks { min-width:0; }
+    .assign-work-page .remove-remark-btn { flex-basis:25px; width:25px; min-height:34px; }
+    .assign-work-page .table-container .delete-loco-btn { min-height:34px; font-size:9px; }
 }

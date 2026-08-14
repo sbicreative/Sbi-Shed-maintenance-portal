@@ -33,7 +33,7 @@ function requireStaffLogin() {
         );
         document.getElementById("assignedWorkBody").innerHTML = `
             <tr>
-                <td colspan="8">Employee mapping is required.</td>
+            <td colspan="9">Employee mapping is required.</td>
             </tr>
         `;
         return false;
@@ -81,7 +81,7 @@ async function loadAssignedWork() {
     const body = document.getElementById("assignedWorkBody");
     body.innerHTML = `
         <tr>
-            <td colspan="8">Loading assigned work...</td>
+            <td colspan="9">Loading assigned work...</td>
         </tr>
     `;
     showMessage("");
@@ -99,12 +99,25 @@ async function loadAssignedWork() {
         }
 
         assignedWork = Array.isArray(result) ? result : [];
+        const hasLocoAssignment = assignedWork.some(item => {
+            const header = item.work_detail?.assign_work_header || {};
+            return Boolean(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no);
+        });
+        const repairsButton = document.getElementById("repairsScheduleBtn");
+        if (repairsButton) repairsButton.hidden = !hasLocoAssignment;
+        document.querySelectorAll("[data-repairs-schedule-access]")
+            .forEach(link => { link.hidden = !hasLocoAssignment; });
+        window.assignedRepairLocoNumbers = new Set(assignedWork.map(item => {
+            const header = item.work_detail?.assign_work_header || {};
+            return String(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "").trim().toLowerCase();
+        }).filter(Boolean));
+        window.dispatchEvent(new CustomEvent("assigned-repair-locos-ready"));
         updateSummary();
         renderWorkTable();
     } catch (error) {
         body.innerHTML = `
             <tr>
-                <td colspan="8">Unable to load assigned work.</td>
+            <td colspan="9">Unable to load assigned work.</td>
             </tr>
         `;
         showMessage(error.message, true);
@@ -209,9 +222,10 @@ function renderWorkTable() {
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
+                <td>&nbsp;</td>
             </tr>
             <tr class="empty-work-message">
-                <td colspan="8">
+                <td colspan="9">
                     ${showHistory
                         ? "No work history found."
                         : "No work assigned for today."}
@@ -225,6 +239,16 @@ function renderWorkTable() {
         const detail = item.work_detail || {};
         const header = detail.assign_work_header || {};
         const status = normalizedStatus(item);
+        const locoRemarks = Array.isArray(item.loco_repair_remarks)
+            ? item.loco_repair_remarks
+            : [];
+        const remarksMarkup = locoRemarks.length
+            ? `<div class="staff-loco-remarks">${locoRemarks.map(remark => `
+                <div class="staff-loco-remark">
+                    <p>${escapeHtml(remark.remark_text)}</p>
+                    <small>${escapeHtml(remark.author_name)} (${escapeHtml(remark.author_role)})</small>
+                </div>`).join("")}</div>`
+            : '<span class="no-staff-remarks">-</span>';
 
         return `
             <tr>
@@ -240,6 +264,7 @@ function renderWorkTable() {
                 <td>${escapeHtml(
                     detail.work_master?.work_name || "-"
                 )}</td>
+                <td>${remarksMarkup}</td>
                 <td>${escapeHtml(
                     item.assigned_by_name || "Supervisor"
                 )}</td>

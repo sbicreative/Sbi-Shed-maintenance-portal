@@ -233,6 +233,19 @@
 
         </section>
 
+        <section class="dashboard-remark-entry" aria-labelledby="dashboardRemarkTitle">
+            <div class="dashboard-remark-entry-heading">
+                <div><p>Assigned work remarks</p><h2 id="dashboardRemarkTitle">Add Multiple Remarks</h2></div>
+                <button id="dashboardAddRemark" type="button">+ Add Row</button>
+            </div>
+            <form id="dashboardRemarkForm">
+                <label for="dashboardRemarkAssignment">Assigned Loco / Work</label>
+                <select id="dashboardRemarkAssignment" required><option value="">Loading assigned work…</option></select>
+                <div id="dashboardRemarkRows" class="dashboard-remark-rows"></div>
+                <div class="dashboard-remark-actions"><p id="dashboardRemarkMessage" role="status"></p><button type="submit">Save Remarks</button></div>
+            </form>
+        </section>
+
         <section class="repair-remarks-panel" aria-labelledby="repairRemarksTitle">
             <div class="repair-remarks-panel-header">
                 <h2 id="repairRemarksTitle">Repair Remarks <span id="repairRemarksCount" class="repair-remarks-count">0</span></h2>
@@ -246,6 +259,7 @@
     </div>
 
     <script src="../js/supervisor.js?v=20260801-3"></script>
+    <script src="../js/dashboard-remark-entry.js?v=20260814-1"></script>
     <script src="../js/repair-remarks-feed.js?v=20260813-1"></script>
     <script src="/js/pwa.js"></script>
 

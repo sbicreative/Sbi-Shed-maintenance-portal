@@ -466,3 +466,32 @@ input, select, textarea { max-width: 100%; }
     background: #1554b3 !important;
     color: #fff !important;
 }
+
+/* Keep values directly below their headings on the Man Power page. */
+@media (max-width: 768px) {
+    .manpower-page .table-container { overflow-x:auto !important; -webkit-overflow-scrolling:touch; }
+    .manpower-page table.mobile-manpower-table { display:table !important; width:1180px !important; min-width:1180px !important; table-layout:fixed !important; }
+    .manpower-page table.mobile-manpower-table thead { position:static !important; display:table-header-group !important; width:auto !important; height:auto !important; margin:0 !important; overflow:visible !important; clip:auto !important; white-space:normal !important; }
+    .manpower-page table.mobile-manpower-table tbody { display:table-row-group !important; }
+    .manpower-page table.mobile-manpower-table tr,
+    .manpower-page table.mobile-manpower-table tbody tr:not(.mobile-full-row) { display:table-row !important; }
+    .manpower-page table.mobile-manpower-table th,
+    .manpower-page table.mobile-manpower-table td,
+    .manpower-page table.mobile-manpower-table td:nth-child(5),
+    .manpower-page table.mobile-manpower-table td:nth-child(6),
+    .manpower-page table.mobile-manpower-table td:nth-child(7),
+    .manpower-page table.mobile-manpower-table td:nth-child(8) { display:table-cell !important; min-height:0 !important; padding:9px 7px !important; border:1px solid #d9e0dc !important; background:#fff !important; vertical-align:top !important; text-align:center !important; }
+    .manpower-page table.mobile-manpower-table th { background:#667f35 !important; color:#fff !important; }
+    .manpower-page table.mobile-manpower-table td::before { display:none !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(1) { width:60px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(2) { width:95px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(3) { width:90px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(4) { width:190px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(5) { width:315px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(6) { width:260px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(7) { width:90px !important; }
+    .manpower-page table.mobile-manpower-table th:nth-child(8) { width:80px !important; }
+    .manpower-page table.mobile-manpower-table .staff-select-row { display:grid !important; grid-template-columns:auto minmax(150px,1fr) auto !important; gap:5px !important; }
+    .manpower-page table.mobile-manpower-table .lead-staff-choice,
+    .manpower-page table.mobile-manpower-table .btn-remove-staff { width:auto !important; }
+}

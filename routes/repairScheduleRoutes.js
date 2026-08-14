@@ -1,6 +1,105 @@
 const express = require("express");
 const router = express.Router();
 const supabase = require("../config/supabase");
+const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
+
+function normalizedRole(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+router.get("/assignment-options", async (req, res) => {
+    try {
+        const role = normalizedRole(req.query.role);
+        const authorId = Number(req.query.author_id);
+        if (!["incharge", "supervisor"].includes(role) || !authorId) {
+            return res.status(400).json({ success: false, message: "Valid dashboard role and author are required." });
+        }
+
+        let query = supabase
+            .from("assign_work_details")
+            .select(`
+                id,
+                work_master (work_name),
+                assign_work_header!inner (
+                    id, assign_date, created_by, supervisor_id,
+                    loco_master (loco_no),
+                    temporary_loco_master (loco_no),
+                    schedule_master (schedule_name)
+                )
+            `)
+            .order("id", { ascending: false });
+        query = role === "incharge"
+            ? query.eq("assign_work_header.created_by", authorId)
+            : query.eq("assign_work_header.supervisor_id", authorId);
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ success: true, assignments: data || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post("/remarks", async (req, res) => {
+    try {
+        const role = normalizedRole(req.body.author_role);
+        const authorId = Number(req.body.author_id);
+        const detailId = Number(req.body.assign_work_detail_id);
+        const authorName = String(req.body.author_name || "").trim();
+        const remarks = Array.isArray(req.body.remarks)
+            ? req.body.remarks.map(value => String(value || "").trim()).filter(Boolean)
+            : [];
+        if (!["incharge", "supervisor"].includes(role) || !authorId || !detailId || !authorName || !remarks.length) {
+            return res.status(400).json({ success: false, message: "Assigned work and at least one remark are required." });
+        }
+
+        const { data: detail, error } = await supabase
+            .from("assign_work_details")
+            .select(`
+                id, remarks,
+                assign_work_header!inner (
+                    id, assign_date, created_by, supervisor_id,
+                    loco_id, temporary_loco_id, schedule_id
+                )
+            `)
+            .eq("id", detailId)
+            .single();
+        if (error || !detail) throw error || new Error("Assigned work was not found.");
+        const header = detail.assign_work_header || {};
+        const ownsAssignment = role === "incharge"
+            ? Number(header.created_by) === authorId
+            : Number(header.supervisor_id) === authorId;
+        if (!ownsAssignment) {
+            return res.status(403).json({ success: false, message: "This assigned work is not available on your dashboard." });
+        }
+
+        for (const remarkText of remarks) {
+            await appendRepairRemark({
+                remark_text: remarkText,
+                author_id: authorId,
+                author_name: authorName,
+                author_role: role === "incharge" ? "Incharge" : "Supervisor",
+                assignment_date: header.assign_date,
+                loco_id: header.loco_id,
+                temporary_loco_id: header.temporary_loco_id,
+                assign_work_header_id: header.id,
+                schedule_id: header.schedule_id,
+                assign_work_detail_id: detailId,
+                source_type: "dashboard_remark",
+                source_action: "add"
+            });
+        }
+
+        const legacyRemarks = [String(detail.remarks || "").trim(), ...remarks].filter(Boolean).join("\n");
+        const { error: legacyError } = await supabase
+            .from("assign_work_details")
+            .update({ remarks: legacyRemarks })
+            .eq("id", detailId);
+        if (legacyError) throw legacyError;
+        res.status(201).json({ success: true, count: remarks.length });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 router.get("/remarks", async (req, res) => {
     try {

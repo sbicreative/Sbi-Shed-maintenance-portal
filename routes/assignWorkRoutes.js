@@ -175,7 +175,14 @@ router.post("/", async (req, res) => {
         // Prepare Multiple Work Rows
         // ==============================================
 
-        const workRows = works.map(work => ({
+        const normalizedWorks = works.map(work => {
+            const remarks = Array.isArray(work.remarks)
+                ? work.remarks.map(value => String(value || "").trim()).filter(Boolean)
+                : [String(work.remarks || "").trim()].filter(Boolean);
+            return { ...work, remarks };
+        });
+
+        const workRows = normalizedWorks.map(work => ({
 
             assign_header_id: headerData.id,
 
@@ -183,7 +190,7 @@ router.post("/", async (req, res) => {
 
             status: "Pending",
 
-            remarks: work.remarks || null
+            remarks: work.remarks.length ? work.remarks.join("\n") : null
 
         }));
 
@@ -218,20 +225,25 @@ router.post("/", async (req, res) => {
         }
 
         for (const detail of detailData || []) {
-            await appendRepairRemark({
-                remark_text: detail.remarks,
-                author_id: created_by,
-                author_name,
-                author_role: "Incharge",
-                assignment_date: assign_date,
-                loco_id: loco_id || null,
-                temporary_loco_id: temporaryLocoId,
-                assign_work_header_id: headerData.id,
-                schedule_id,
-                assign_work_detail_id: detail.id,
-                source_type: "assign_work_detail",
-                source_action: "assign"
-            });
+            const sourceWork = normalizedWorks.find(
+                work => Number(work.work_master_id) === Number(detail.work_master_id)
+            );
+            for (const remarkText of sourceWork?.remarks || []) {
+                await appendRepairRemark({
+                    remark_text: remarkText,
+                    author_id: created_by,
+                    author_name,
+                    author_role: "Incharge",
+                    assignment_date: assign_date,
+                    loco_id: loco_id || null,
+                    temporary_loco_id: temporaryLocoId,
+                    assign_work_header_id: headerData.id,
+                    schedule_id,
+                    assign_work_detail_id: detail.id,
+                    source_type: "assign_work_detail",
+                    source_action: "assign"
+                });
+            }
         }
 
         // ==============================================

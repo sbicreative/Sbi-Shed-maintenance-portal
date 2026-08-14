@@ -498,6 +498,19 @@ async function loadAssignedWork() {
                 const row =
                     document.createElement("tr");
 
+                const existingRemarks = Array.isArray(item.repair_remarks)
+                    ? item.repair_remarks
+                    : [];
+                const historyMarkup = existingRemarks.length
+                    ? existingRemarks.map(remark => `
+                        <div class="existing-remark">
+                            <p>${escapeHtml(remark.remark_text)}</p>
+                            <small>${escapeHtml(remark.author_name)} (${escapeHtml(remark.author_role)}) · ${escapeHtml(new Date(remark.created_at).toLocaleString("en-IN"))}</small>
+                        </div>`).join("")
+                    : item.remarks
+                        ? `<div class="existing-remark"><p>${escapeHtml(item.remarks)}</p><small>Incharge · Existing assignment remark</small></div>`
+                        : '<p class="no-existing-remarks">No existing remarks.</p>';
+
                 row.dataset.detailId =
                     item.id;
 
@@ -543,11 +556,16 @@ async function loadAssignedWork() {
                     </td>
 
                     <td>
-
-                        <input
-                            type="text"
-                            class="distribution-remarks"
-                            placeholder="Enter remarks">
+                        <div class="distribution-remarks-panel">
+                            <div class="existing-remarks-list">${historyMarkup}</div>
+                            <div class="supervisor-remarks-list">
+                                <div class="supervisor-remark-row">
+                                    <input type="text" class="supervisor-remark-input" placeholder="Add Supervisor remark">
+                                    <button type="button" class="remove-supervisor-remark" aria-label="Remove remark">×</button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-supervisor-remark">+ Add Remark</button>
+                        </div>
 
                     </td>
 
@@ -575,6 +593,30 @@ async function loadAssignedWork() {
             .forEach(addStaffSelect);
 
         refreshStaffAvailability();
+
+        document.querySelectorAll(".add-supervisor-remark").forEach(button => {
+            button.addEventListener("click", () => {
+                button.previousElementSibling.insertAdjacentHTML("beforeend", `
+                    <div class="supervisor-remark-row">
+                        <input type="text" class="supervisor-remark-input" placeholder="Add Supervisor remark">
+                        <button type="button" class="remove-supervisor-remark" aria-label="Remove remark">×</button>
+                    </div>`);
+            });
+        });
+
+        if (!tbody.dataset.remarkRemoveReady) {
+            tbody.dataset.remarkRemoveReady = "true";
+            tbody.addEventListener("click", event => {
+                const button = event.target.closest(".remove-supervisor-remark");
+                if (!button) return;
+                const list = button.closest(".supervisor-remarks-list");
+                if (list.querySelectorAll(".supervisor-remark-row").length === 1) {
+                    list.querySelector(".supervisor-remark-input").value = "";
+                } else {
+                    button.closest(".supervisor-remark-row").remove();
+                }
+            });
+        }
 
     }
 
@@ -704,7 +746,7 @@ function addStaffSelect(picker) {
     row.innerHTML = `
         <label class="lead-staff-choice" title="Only Lead Staff can fill the schedule form">
             <input type="radio" name="lead-${picker.dataset.detailId}" class="lead-staff-radio">
-            Lead
+            <span>Lead Staff</span>
         </label>
         <select class="staff-select">
             <option value="">
@@ -726,7 +768,11 @@ function addStaffSelect(picker) {
     ).addEventListener(
         "click",
         () => {
+            const removedLead = row.querySelector(".lead-staff-radio").checked;
             row.remove();
+            if (removedLead) {
+                list.querySelector(".lead-staff-radio")?.click();
+            }
             refreshStaffAvailability();
         }
     );
@@ -823,13 +869,9 @@ async function saveDistribution() {
         const row =
             picker.closest("tr");
 
-        const remarks =
-            row
-                ?.querySelector(
-                    ".distribution-remarks"
-                )
-                ?.value
-                .trim() || "";
+        const remarks = Array.from(
+            row?.querySelectorAll(".supervisor-remark-input") || []
+        ).map(input => input.value.trim()).filter(Boolean);
 
         const staffRows = Array.from(picker.querySelectorAll(".staff-select-row"))
             .map(staffRow => ({
@@ -871,7 +913,7 @@ async function saveDistribution() {
                     author_name:
                         user.name || "Supervisor",
                 is_lead: isLead,
-                remarks
+                remarks: isLead ? remarks : []
             });
         });
 

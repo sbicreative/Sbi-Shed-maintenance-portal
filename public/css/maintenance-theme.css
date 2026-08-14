@@ -71,6 +71,19 @@ body {
 .remarks-feed-item small, .remarks-feed-empty { color:#64716a; }
 .remarks-feed-empty { margin:0; padding:12px; text-align:center; }
 .remarks-feed-empty.error { color:#b42318; }
+.dashboard-remark-entry { margin:20px 0; padding:18px; border:1px solid #d7e2dc; border-left:5px solid #8f3e24; border-radius:12px; background:#fff; box-shadow:0 4px 14px rgba(15,23,42,.08); }
+.dashboard-remark-entry-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.dashboard-remark-entry-heading p { margin:0 0 3px; color:#64716a; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.dashboard-remark-entry-heading h2 { margin:0; color:#173d2b; }
+.dashboard-remark-entry label { display:block; margin-bottom:5px; color:#334b3e; font-size:12px; font-weight:800; }
+.dashboard-remark-entry select { width:100%; padding:10px; border:1px solid #bbc9c0; border-radius:7px; background:#fff; }
+.dashboard-remark-rows { display:grid; gap:8px; margin-top:10px; }
+.dashboard-remark-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; }
+.dashboard-remark-row textarea { width:100%; resize:vertical; padding:9px; border:1px solid #bbc9c0; border-radius:7px; font:inherit; }
+.dashboard-remark-entry button { border:0; border-radius:7px; padding:9px 12px; background:#bf552f; color:#fff; font-weight:800; cursor:pointer; }
+.dashboard-remove-remark { align-self:stretch; min-width:38px; }
+.dashboard-remark-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+.dashboard-remark-actions p { margin:0; color:#64716a; font-size:12px; }
 @media(max-width:600px) { .repair-remarks-panel { padding:14px; } .repair-remarks-panel-header { align-items:flex-start; } .repair-remarks-panel-header h2 { font-size:18px; } }
 
 .page-header-bar,

@@ -488,7 +488,32 @@ function getWorkOptions(scheduleId = "") {
 // One loco = One supervisor = Multiple works
 // ==========================================
 
+let remarkGroupSequence = 0;
+
+function nextRemarkGroupKey() {
+    remarkGroupSequence += 1;
+    return `work-remarks-${remarkGroupSequence}`;
+}
+
+function remarkGroupMarkup(key, title = "Select Work") {
+    return `
+        <div class="multi-remarks-group" data-remark-key="${key}">
+            <div class="multi-remarks-heading">
+                <strong>${title}</strong>
+                <button type="button" class="add-remark-btn">+ Add Remark</button>
+            </div>
+            <div class="remark-input-list">
+                <div class="remark-input-row">
+                    <input type="text" class="remarks" placeholder="Enter Incharge remark">
+                    <button type="button" class="remove-remark-btn" aria-label="Remove remark">×</button>
+                </div>
+            </div>
+        </div>`;
+}
+
 function addLocoRow() {
+
+    const initialRemarkKey = nextRemarkGroupKey();
 
     const row =
         document.createElement("tr");
@@ -547,7 +572,7 @@ function addLocoRow() {
 
             <div class="work-list">
 
-                <div class="work-row">
+                <div class="work-row" data-remark-key="${initialRemarkKey}">
 
                     <select class="workDropdown">
 
@@ -572,10 +597,9 @@ function addLocoRow() {
 
         <td>
 
-            <input
-                type="text"
-                class="remarks"
-                placeholder="Remarks">
+            <div class="work-remarks-list">
+                ${remarkGroupMarkup(initialRemarkKey)}
+            </div>
 
         </td>
 
@@ -638,6 +662,9 @@ workTableBody.addEventListener(
 
         });
 
+        row.querySelectorAll(".multi-remarks-heading strong")
+            .forEach(label => { label.textContent = "Select Work"; });
+
     }
 );
 
@@ -684,8 +711,10 @@ document.addEventListener(
             const workRow =
                 document.createElement("div");
 
-            workRow.className =
-                "work-row";
+            const remarkKey = nextRemarkGroupKey();
+
+            workRow.className = "work-row";
+            workRow.dataset.remarkKey = remarkKey;
 
             workRow.innerHTML = `
 
@@ -709,6 +738,9 @@ document.addEventListener(
                 workRow
             );
 
+            tableRow.querySelector(".work-remarks-list")
+                .insertAdjacentHTML("beforeend", remarkGroupMarkup(remarkKey));
+
         }
 
 
@@ -719,11 +751,32 @@ document.addEventListener(
                 "remove-work-btn"
             )
         ) {
+            const workRow = e.target.closest(".work-row");
+            const remarkKey = workRow.dataset.remarkKey;
+            workRow.closest("tr").querySelector(
+                `.multi-remarks-group[data-remark-key="${remarkKey}"]`
+            )?.remove();
+            workRow.remove();
 
-            e.target
-                .closest(".work-row")
-                .remove();
+        }
 
+        if (e.target.classList.contains("add-remark-btn")) {
+            e.target.closest(".multi-remarks-group")
+                .querySelector(".remark-input-list")
+                .insertAdjacentHTML("beforeend", `
+                    <div class="remark-input-row">
+                        <input type="text" class="remarks" placeholder="Enter Incharge remark">
+                        <button type="button" class="remove-remark-btn" aria-label="Remove remark">×</button>
+                    </div>`);
+        }
+
+        if (e.target.classList.contains("remove-remark-btn")) {
+            const list = e.target.closest(".remark-input-list");
+            if (list.querySelectorAll(".remark-input-row").length === 1) {
+                list.querySelector(".remarks").value = "";
+            } else {
+                e.target.closest(".remark-input-row").remove();
+            }
         }
 
 
@@ -745,6 +798,16 @@ document.addEventListener(
 
     }
 );
+
+workTableBody.addEventListener("change", event => {
+    if (!event.target.classList.contains("workDropdown")) return;
+    const workRow = event.target.closest(".work-row");
+    const remarkKey = workRow.dataset.remarkKey;
+    const selectedText = event.target.options[event.target.selectedIndex]?.textContent.trim() || "Select Work";
+    workRow.closest("tr").querySelector(
+        `.multi-remarks-group[data-remark-key="${remarkKey}"] .multi-remarks-heading strong`
+    ).textContent = selectedText;
+});
 
 
 // ==========================================
@@ -866,12 +929,6 @@ document
                             ".supervisorDropdown"
                         ).value;
 
-                    const remarks =
-                        row.querySelector(
-                            ".remarks"
-                        ).value
-                            .trim();
-
                     const workDropdowns =
                         row.querySelectorAll(
                             ".workDropdown"
@@ -884,6 +941,13 @@ document
 
                             if (item.value) {
 
+                                const remarkGroup = row.querySelector(
+                                    `.multi-remarks-group[data-remark-key="${item.closest(".work-row").dataset.remarkKey}"]`
+                                );
+                                const remarks = Array.from(
+                                    remarkGroup?.querySelectorAll(".remarks") || []
+                                ).map(input => input.value.trim()).filter(Boolean);
+
                                 works.push({
 
                                     work_master_id:
@@ -891,9 +955,7 @@ document
                                             item.value
                                         ),
 
-                                    remarks:
-                                        remarks ||
-                                        null
+                                    remarks
 
                                 });
 
