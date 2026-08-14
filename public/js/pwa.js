@@ -2,7 +2,8 @@
     if (!document.querySelector('link[data-pwa-responsive]')) {
         const responsiveStyles = document.createElement("link");
         responsiveStyles.rel = "stylesheet";
-        responsiveStyles.href = "/css/pwa-responsive.css";
+        responsiveStyles.href =
+            "/css/pwa-responsive.css?v=20260814-2";
         responsiveStyles.dataset.pwaResponsive = "true";
         document.head.appendChild(responsiveStyles);
     }

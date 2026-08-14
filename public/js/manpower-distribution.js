@@ -448,7 +448,9 @@ async function loadAssignedWork() {
 
         const response =
             await fetch(
-                `/api/supervisors/assigned-work/${user.supervisor_master_id}?${params.toString()}`
+                `/api/supervisors/assigned-work/${
+                    user.supervisor_master_id || user.id
+                }?${params.toString()}`
             );
 
         if (!response.ok) {
@@ -519,24 +521,30 @@ async function loadAssignedWork() {
 
                 row.innerHTML = `
 
-                    <td>
-                        ${index + 1}
+                    <td data-mobile-label="S.No.">
+                        <span class="mobile-field-box">${index + 1}</span>
                     </td>
 
-                    <td>
-                        ${header.loco_master?.loco_no ||
-                        header.temporary_loco_master?.loco_no || "-"}
+                    <td data-mobile-label="Loco No.">
+                        <span class="mobile-field-box">${
+                            header.loco_master?.loco_no ||
+                            header.temporary_loco_master?.loco_no || ""
+                        }</span>
                     </td>
 
-                    <td>
-                        ${header.schedule_id || "-"}
+                    <td data-mobile-label="Schedule">
+                        <span class="mobile-field-box">${
+                            header.schedule_master?.schedule_name || ""
+                        }</span>
                     </td>
 
-                    <td>
-                        ${work.work_name || "-"}
+                    <td data-mobile-label="Assigned Work">
+                        <span class="mobile-field-box">${
+                            work.work_name || ""
+                        }</span>
                     </td>
 
-                    <td>
+                    <td data-mobile-label="Man Power Distribution">
                         <div
                             class="manpower-picker"
                             data-detail-id="${item.id}">
@@ -555,7 +563,7 @@ async function loadAssignedWork() {
                         </div>
                     </td>
 
-                    <td>
+                    <td data-mobile-label="Remarks">
                         <div class="distribution-remarks-panel">
                             <div class="existing-remarks-list">${historyMarkup}</div>
                             <div class="supervisor-remarks-list">
@@ -569,12 +577,14 @@ async function loadAssignedWork() {
 
                     </td>
 
-                    <td>
-                        Incharge
+                    <td data-mobile-label="Assigned By">
+                        <span class="mobile-field-box">Incharge</span>
                     </td>
 
-                    <td>
-                        ${item.status || "Pending"}
+                    <td data-mobile-label="Status">
+                        <span class="mobile-field-box">${
+                            item.status || "Pending"
+                        }</span>
                     </td>
 
                 `;

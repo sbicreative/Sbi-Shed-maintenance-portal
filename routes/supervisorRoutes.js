@@ -340,6 +340,9 @@ router.get(
                             temporary_loco_master(
                                 loco_no,
                                 loco_type
+                            ),
+                            schedule_master(
+                                schedule_name
                             )
                         ),
 
