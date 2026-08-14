@@ -476,7 +476,8 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
             update.incharge_remarks = remarks || null;
             update.incharge_reviewed_at =
                 new Date().toISOString();
-            update.reviewed_by = reviewerId;
+            update.reviewed_by =
+                Number(req.body.action_reviewer_id) || reviewerId;
 
             if (action === "save") {
                 update.status = "Forwarded to Incharge";

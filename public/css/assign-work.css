@@ -696,3 +696,99 @@ transform:translateY(0);
 }
 
 }
+
+@media (max-width: 700px) {
+    .work-card .table-container {
+        overflow: visible;
+        border: 0;
+    }
+
+    table.mobile-assign-work-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    table.mobile-assign-work-table thead {
+        display: none !important;
+    }
+
+    table.mobile-assign-work-table tbody {
+        display: grid !important;
+        width: 100% !important;
+        gap: 24px !important;
+    }
+
+    table.mobile-assign-work-table tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        column-gap: 6px !important;
+        row-gap: 14px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    table.mobile-assign-work-table tbody td {
+        display: grid !important;
+        grid-template-rows: 40px minmax(42px, auto) !important;
+        min-width: 0 !important;
+        min-height: 90px !important;
+        padding: 0 !important;
+        gap: 8px !important;
+        border: 0 !important;
+        background: transparent !important;
+        text-align: center !important;
+    }
+
+    table.mobile-assign-work-table tbody td::before {
+        content: attr(data-mobile-label) !important;
+        display: flex !important;
+        min-height: 40px !important;
+        padding: 5px 3px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 6px !important;
+        background: #1f4b36 !important;
+        color: #fff !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        line-height: 1.15 !important;
+    }
+
+    table.mobile-assign-work-table .empty-work-box,
+    table.mobile-assign-work-table tbody td > select,
+    table.mobile-assign-work-table tbody td > input,
+    table.mobile-assign-work-table .work-list,
+    table.mobile-assign-work-table .delete-loco-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        border-radius: 6px !important;
+    }
+
+    table.mobile-assign-work-table .empty-work-box {
+        display: block !important;
+        border: 1px solid #cbd2bd !important;
+        background: #fffdf7 !important;
+    }
+
+    table.mobile-assign-work-table .work-row {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 30px !important;
+        gap: 3px !important;
+    }
+
+    table.mobile-assign-work-table select,
+    table.mobile-assign-work-table input,
+    table.mobile-assign-work-table button {
+        min-width: 0 !important;
+        padding: 5px 3px !important;
+        font-size: 9px !important;
+    }
+}

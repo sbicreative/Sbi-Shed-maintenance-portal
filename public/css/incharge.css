@@ -450,3 +450,136 @@ table{
     background:#0f2c59;
 
 }
+/* Temporary Incharge authority */
+.charge-handover-card {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #d7e2dc;
+    border-left: 5px solid #356859;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+}
+.charge-handover-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+.charge-handover-heading p {
+    margin: 0 0 3px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+.charge-handover-heading h2 { margin: 0; color: #1e293b; }
+#chargeStatusBadge {
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: #e8f2ed;
+    color: #285548;
+    font-size: 12px;
+    font-weight: 800;
+}
+.charge-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+.charge-form-grid label { color: #334155; font-size: 13px; font-weight: 700; }
+.charge-form-grid input,
+.charge-form-grid select {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: #fff;
+}
+#saveChargeHandoverBtn {
+    margin-top: 15px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 7px;
+    background: #356859;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+#saveChargeHandoverBtn:disabled { cursor: not-allowed; opacity: .6; }
+.charge-handover-message { margin: 12px 0 0; color: #b91c1c; font-weight: 700; }
+.acting-charge-notice {
+    padding: 12px;
+    border-radius: 8px;
+    background: #fff7df;
+    color: #765113;
+    font-weight: 700;
+}
+@media (max-width: 900px) {
+    .charge-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .charge-form-grid { grid-template-columns: 1fr; }
+    .charge-handover-heading { align-items: flex-start; flex-direction: column; }
+}
+
+.nav-controls,
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-actions { justify-content: space-between; }
+
+.card-note {
+    display: block;
+    margin-top: 8px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.repair-schedule-card {
+    width: 100%;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.repair-schedule-card h2 { line-height: 1; }
+
+@media (max-width: 700px) {
+    .top-nav { align-items: stretch; }
+    .nav-details { text-align: center; }
+
+    .nav-controls {
+        display: grid;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .nav-controls #currentDateTime {
+        display: block;
+        text-align: center;
+    }
+
+    .nav-actions {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .nav-actions .portal-btn,
+    .nav-actions .logout-btn {
+        width: auto;
+        min-width: 120px;
+        margin: 0;
+    }
+
+    .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

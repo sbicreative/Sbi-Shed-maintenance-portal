@@ -38,6 +38,8 @@ const trackingRoutes =
     require("./routes/trackingRoutes");
 const historicalScheduleRoutes =
     require("./routes/historicalScheduleRoutes");
+const chargeHandoverRoutes =
+    require("./routes/chargeHandoverRoutes");
     const employeeRoutes =
 require("./routes/employeeRoutes");
 
@@ -124,6 +126,10 @@ app.use(
 app.use(
     "/api/historical-schedules",
     historicalScheduleRoutes
+);
+app.use(
+    "/api/charge-handover",
+    chargeHandoverRoutes
 );
 app.use(
     "/api/employees",

@@ -9,7 +9,7 @@
     <title>Incharge Dashboard</title>
 
     <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/incharge.css">
+    <link rel="stylesheet" href="../css/incharge.css?v=20260814-1">
 
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -49,7 +49,7 @@
 
     <nav class="top-nav">
 
-        <div>
+        <div class="nav-details">
 
             Welcome,
 
@@ -57,26 +57,20 @@
 
         </div>
 
-        <div>
+        <div class="nav-controls">
 
             <span id="currentDateTime"></span>
 
-            <button
-                type="button"
-                class="portal-btn"
-                onclick="window.location.href='/'">
+            <div class="nav-actions">
+                <button type="button" class="portal-btn"
+                        onclick="window.location.href='/'">
+                    Main Portal
+                </button>
 
-                Main Portal
-
-            </button>
-
-            <button
-                id="logoutBtn"
-                class="logout-btn">
-
-                Logout
-
-            </button>
+                <button id="logoutBtn" class="logout-btn">
+                    Logout
+                </button>
+            </div>
 
         </div>
 
@@ -132,6 +126,59 @@
 
             </div>
 
+            <div class="card">
+                <i class="fa-solid fa-file-circle-exclamation"></i>
+                <h2 id="incompleteScheduleForms">0</h2>
+                <p>Incomplete Schedule Forms</p>
+                <span class="card-note">-</span>
+            </div>
+
+            <button type="button" class="card repair-schedule-card"
+                    onclick="location.href='schedule-review.html'">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+                <h2 aria-hidden="true">&nbsp;</h2>
+                <p>Repairs Schedule</p>
+                <span class="card-note">Open</span>
+            </button>
+
+        </section>
+
+        <section class="charge-handover-card" aria-labelledby="chargeHandoverTitle">
+            <div class="charge-handover-heading">
+                <div>
+                    <p>Temporary authority</p>
+                    <h2 id="chargeHandoverTitle">Charge Handover</h2>
+                </div>
+                <span id="chargeStatusBadge">Permanent Incharge</span>
+            </div>
+            <p id="actingChargeNotice" class="acting-charge-notice" hidden></p>
+            <form id="chargeHandoverForm">
+                <div class="charge-form-grid">
+                    <label>
+                        Acting Incharge
+                        <select id="actingInchargeSelect" required>
+                            <option value="">Select Supervisor</option>
+                        </select>
+                    </label>
+                    <label>
+                        From Date
+                        <input id="chargeStartDate" type="date" required>
+                    </label>
+                    <label>
+                        To Date
+                        <input id="chargeEndDate" type="date" required>
+                    </label>
+                    <label>
+                        Reason
+                        <input id="chargeReason" type="text"
+                               placeholder="Leave / Training / Duty">
+                    </label>
+                </div>
+                <p id="chargeHandoverMessage" class="charge-handover-message" hidden></p>
+                <button id="saveChargeHandoverBtn" type="submit">
+                    Hand Over Charge
+                </button>
+            </form>
         </section>
 
 
@@ -224,8 +271,8 @@
 
     </div>
 
-    <script src="../js/incharge.js?v=20260801-1"></script>
-    <script src="/js/pwa.js"></script>
+    <script src="../js/incharge.js?v=20260813-1"></script>
+    <script src="/js/pwa.js?v=20260814-2"></script>
 
 </body>
 

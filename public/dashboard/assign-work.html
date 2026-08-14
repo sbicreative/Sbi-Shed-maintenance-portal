@@ -11,7 +11,7 @@
     <title>Assign Work - SBI Shed</title>
 
     <link rel="stylesheet"
-          href="../css/assign-work.css">
+          href="../css/assign-work.css?v=20260814-1">
 
     <link rel="stylesheet" href="../css/maintenance-theme.css?v=20260804-8">
 
@@ -112,7 +112,8 @@
 
         <div class="table-container">
 
-            <table data-mobile-layout="single">
+            <table class="mobile-assign-work-table"
+                   data-mobile-layout="single">
 
                 <thead>
 
@@ -137,7 +138,15 @@
 
 
                 <tbody id="workTableBody">
-
+                    <tr class="empty-work-row" aria-label="No loco selected">
+                        <td data-mobile-label="S.No."><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Loco No."><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Schedule"><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Assign Work"><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Supervisor"><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Remarks"><span class="empty-work-box"></span></td>
+                        <td data-mobile-label="Action"><span class="empty-work-box"></span></td>
+                    </tr>
                 </tbody>
 
             </table>
@@ -171,9 +180,9 @@
 </div>
 
 
-<script src="../js/assign-work.js?v=20260801-4"></script>
+<script src="../js/assign-work.js?v=20260814-1"></script>
 
-<script src="/js/pwa.js"></script>
+<script src="/js/pwa.js?v=20260814-2"></script>
 
 </body>
 
