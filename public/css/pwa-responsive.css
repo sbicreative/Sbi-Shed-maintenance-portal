@@ -273,7 +273,7 @@ input, select, textarea { max-width: 100%; }
         padding-inline: 5px !important;
     }
 
-    /* Staff work: four identity cells, then four clearly separated work cells. */
+    /* Staff work: four identity cells, then the remaining work fields. */
     table.mobile-staff-work-table tbody tr:not(.mobile-full-row) {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
         row-gap: 10px !important;
@@ -389,7 +389,7 @@ input, select, textarea { max-width: 100%; }
     }
     .staff-dashboard-page table.mobile-staff-work-table tbody tr:not(.mobile-full-row) {
         display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
         width: 100% !important;
         gap: 8px 5px !important;
         padding: 8px !important;
@@ -398,6 +398,12 @@ input, select, textarea { max-width: 100%; }
         border-radius: 10px !important;
         background: #fff !important;
         box-shadow: 0 3px 10px rgba(13, 77, 166, .10) !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody tr:not(.mobile-full-row) > td {
+        grid-column: span 5 !important;
+    }
+    .staff-dashboard-page table.mobile-staff-work-table tbody tr:not(.mobile-full-row) > td:nth-child(n+5) {
+        grid-column: span 4 !important;
     }
     .staff-dashboard-page table.mobile-staff-work-table td,
     .staff-dashboard-page table.mobile-staff-work-table td:nth-child(n+5) {
@@ -440,6 +446,11 @@ input, select, textarea { max-width: 100%; }
     }
     .staff-dashboard-page table.mobile-staff-work-table tbody tr.mobile-full-row td::before {
         display: none !important;
+    }
+    .staff-dashboard-page .work-remarks {
+        display: grid !important;
+        gap: 3px !important;
+        overflow-wrap: anywhere !important;
     }
 }
 

@@ -33,7 +33,7 @@ function requireStaffLogin() {
         );
         document.getElementById("assignedWorkBody").innerHTML = `
             <tr>
-                <td colspan="8">Employee mapping is required.</td>
+                <td colspan="9">Employee mapping is required.</td>
             </tr>
         `;
         return false;
@@ -81,7 +81,7 @@ async function loadAssignedWork() {
     const body = document.getElementById("assignedWorkBody");
     body.innerHTML = `
         <tr>
-            <td colspan="8">Loading assigned work...</td>
+            <td colspan="9">Loading assigned work...</td>
         </tr>
     `;
     showMessage("");
@@ -104,7 +104,7 @@ async function loadAssignedWork() {
     } catch (error) {
         body.innerHTML = `
             <tr>
-                <td colspan="8">Unable to load assigned work.</td>
+                <td colspan="9">Unable to load assigned work.</td>
             </tr>
         `;
         showMessage(error.message, true);
@@ -148,6 +148,30 @@ function statusClass(status) {
     if (status === "Completed") return "status-completed";
     if (status === "In Progress") return "status-in-progress";
     return "";
+}
+
+function remarksContent(item) {
+    const supervisorRemarks = String(item.remarks || "").trim();
+    const inchargeRemarks = String(
+        item.work_detail?.remarks || ""
+    ).trim();
+    const lines = [];
+
+    if (supervisorRemarks) {
+        lines.push(
+            `<span><strong>Supervisor:</strong> ${escapeHtml(supervisorRemarks)}</span>`
+        );
+    }
+
+    if (inchargeRemarks && inchargeRemarks !== supervisorRemarks) {
+        lines.push(
+            `<span><strong>Incharge:</strong> ${escapeHtml(inchargeRemarks)}</span>`
+        );
+    }
+
+    return lines.length
+        ? `<span class="work-remarks">${lines.join("")}</span>`
+        : "-";
 }
 
 function actionButton(item) {
@@ -205,9 +229,10 @@ function renderWorkTable() {
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
+                <td>&nbsp;</td>
             </tr>
             <tr class="empty-work-message">
-                <td colspan="8">
+                <td colspan="9">
                     ${showHistory
                         ? "No work history found."
                         : "No work assigned for today."}
@@ -236,6 +261,7 @@ function renderWorkTable() {
                 <td>${escapeHtml(
                     detail.work_master?.work_name || "-"
                 )}</td>
+                <td>${remarksContent(item)}</td>
                 <td>${escapeHtml(
                     item.assigned_by_name || "Supervisor"
                 )}</td>
