@@ -33,7 +33,7 @@ function requireStaffLogin() {
         );
         document.getElementById("assignedWorkBody").innerHTML = `
             <tr>
-            <td colspan="9">Employee mapping is required.</td>
+                <td colspan="9">Employee mapping is required.</td>
             </tr>
         `;
         return false;
@@ -117,7 +117,7 @@ async function loadAssignedWork() {
     } catch (error) {
         body.innerHTML = `
             <tr>
-            <td colspan="9">Unable to load assigned work.</td>
+                <td colspan="9">Unable to load assigned work.</td>
             </tr>
         `;
         showMessage(error.message, true);
