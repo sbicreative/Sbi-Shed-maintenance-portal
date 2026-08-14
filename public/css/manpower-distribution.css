@@ -2,6 +2,103 @@
     min-width: 250px;
 }
 
+/* Final phone layout: one label and one box per column. */
+@media (max-width: 700px) {
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] thead {
+        display: none !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] tbody {
+        display: grid !important;
+        gap: 24px !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] tbody tr:not(.mobile-full-row) {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        column-gap: 6px !important;
+        row-gap: 14px !important;
+        width: 100% !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] tbody tr:not(.mobile-full-row) > td {
+        display: grid !important;
+        grid-template-rows: 40px minmax(42px, auto) !important;
+        grid-column: span 1 !important;
+        gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 90px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] tbody tr:not(.mobile-full-row) > td::before {
+        content: attr(data-mobile-label) !important;
+        display: flex !important;
+        min-height: 40px !important;
+        padding: 5px 3px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 6px !important;
+        background: #667f34 !important;
+        color: #fff !important;
+        font-size: 8px !important;
+        font-weight: 800 !important;
+        line-height: 1.15 !important;
+        text-align: center !important;
+        text-transform: none !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] .mobile-field-box {
+        display: flex !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 42px !important;
+        padding: 7px 4px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        border: 1px solid #cbd2bd !important;
+        border-radius: 6px !important;
+        background: #fffdf7 !important;
+        color: #17251d !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] .manpower-picker,
+    .manpower-page table.mobile-manpower-table[data-mobile-layout="manpower"] .distribution-remarks {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+}
+
+.manpower-overview-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    align-items: start;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.manpower-overview-row .filter-card,
+.manpower-overview-row .staff-loan-card {
+    height: 100%;
+    margin-bottom: 0;
+}
+
 .staff-select-list {
     display: grid;
     gap: 8px;
@@ -58,4 +155,270 @@
     color: #991b1b;
     font-size: 13px;
     font-weight: 600;
+}
+
+.staff-loan-card {
+    margin-bottom: 25px;
+    overflow: hidden;
+    border: 1px solid #d9e2dc;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, .08);
+}
+
+.staff-loan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+}
+
+.staff-loan-header h2,
+.staff-loan-dialog h2 { color: #1e293b; }
+.staff-loan-kicker {
+    margin-bottom: 3px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.btn-add-loan {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background: #356859;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-add-loan:hover { background: #294f45; }
+.btn-add-loan:disabled { cursor: wait; opacity: .65; }
+
+.staff-loan-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+.staff-loan-tab {
+    padding: 12px;
+    border: 0;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    cursor: pointer;
+}
+.staff-loan-tab + .staff-loan-tab { border-left: 1px solid #e2e8f0; }
+.staff-loan-tab.active { background: #eef6f2; color: #234c40; }
+.staff-loan-tab span {
+    display: inline-grid;
+    min-width: 24px;
+    min-height: 24px;
+    margin-left: 5px;
+    place-items: center;
+    border-radius: 999px;
+    background: #dcebe4;
+}
+
+.staff-loan-panel { padding: 14px 22px 20px; }
+.staff-loan-list { display: grid; gap: 8px; }
+.staff-loan-person {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 11px 13px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+.staff-loan-person strong { color: #1e293b; }
+.staff-loan-person span { color: #64748b; font-size: 13px; }
+.staff-loan-empty { padding: 10px 0; color: #64748b; text-align: center; }
+
+.staff-loan-modal {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .55);
+}
+.staff-loan-modal[hidden] { display: none; }
+.staff-loan-dialog {
+    width: min(460px, 100%);
+    padding: 22px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 22px 55px rgba(0, 0, 0, .25);
+}
+.staff-loan-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.loan-close-btn {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: #eef2f7;
+    font-size: 25px;
+    cursor: pointer;
+}
+.staff-loan-dialog label {
+    display: block;
+    margin: 14px 0 6px;
+    color: #334155;
+    font-weight: 700;
+}
+.staff-loan-dialog select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+}
+.loan-date-note { padding: 10px; border-radius: 7px; background: #f1f5f9; }
+.staff-loan-message { margin-top: 12px; color: #b91c1c; font-weight: 600; }
+.staff-loan-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+.loan-cancel-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background: #fff;
+    color: #334155;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+    .staff-loan-header { align-items: stretch; flex-direction: column; }
+    .btn-add-loan { width: 100%; }
+    .staff-loan-person { align-items: flex-start; flex-direction: column; gap: 3px; }
+}
+
+@media (max-width: 700px) {
+    .manpower-overview-row { grid-template-columns: 1fr; }
+
+    .manpower-page .work-card {
+        padding: 14px;
+    }
+
+    .manpower-page .work-card .table-container {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] thead {
+        display: none !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody {
+        display: grid !important;
+        gap: 22px !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        border: 1px solid #d8dfda !important;
+        border-radius: 12px !important;
+        background: #fff !important;
+        box-shadow: 0 3px 10px rgba(24, 55, 40, .09) !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody td {
+        display: flex !important;
+        grid-column: span 2 !important;
+        min-width: 0 !important;
+        min-height: 74px !important;
+        padding: 10px 7px !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        border: 0 !important;
+        border-bottom: 1px solid #e4e9e6 !important;
+        text-align: center !important;
+        overflow-wrap: anywhere !important;
+        white-space: normal !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody td::before {
+        content: attr(data-mobile-label) !important;
+        display: block !important;
+        color: #657267 !important;
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        line-height: 1.1 !important;
+        text-transform: uppercase !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody td:nth-child(4),
+    .manpower-page table[data-mobile-layout="manpower"] tbody td:nth-child(5),
+    .manpower-page table[data-mobile-layout="manpower"] tbody td:nth-child(6),
+    .manpower-page table[data-mobile-layout="manpower"] tbody td:nth-child(8) {
+        grid-column: 1 / -1 !important;
+        align-items: stretch !important;
+        text-align: left !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] tbody td:nth-child(7) {
+        display: none !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] .mobile-field-box,
+    .manpower-page table[data-mobile-layout="manpower"] .empty-column-box {
+        display: flex !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 38px !important;
+        padding: 8px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: 1px solid #bdc9c0 !important;
+        border-radius: 7px !important;
+        background: #fff !important;
+        color: #17251d !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] .empty-column-label {
+        display: none !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] td:nth-child(4) .mobile-field-box,
+    .manpower-page table[data-mobile-layout="manpower"] td:nth-child(8) .mobile-field-box {
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+
+    .manpower-page table[data-mobile-layout="manpower"] .manpower-picker,
+    .manpower-page table[data-mobile-layout="manpower"] .staff-select,
+    .manpower-page table[data-mobile-layout="manpower"] .distribution-remarks {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
 }
