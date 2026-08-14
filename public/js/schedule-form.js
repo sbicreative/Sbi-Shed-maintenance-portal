@@ -5,6 +5,7 @@ const query = new URLSearchParams(window.location.search);
 const distributionId =
     Number(query.get("assignment"));
 let loadedSubmission = null;
+let loadedScheduleName = "";
 
 function readUser() {
     try {
@@ -90,7 +91,57 @@ function renderStaffName(cell, key, savedAnswers, attributions) {
     cell.innerHTML = `<strong>${String(name).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char])}</strong>${time}`;
 }
 
-function createAnswerFields(savedAnswers = {}, attributions = {}) {
+function columnContext(table, rowIndex, cellIndex) {
+    const labels = [];
+    for (let index = 0; index <= rowIndex; index += 1) {
+        const cell = table.rows[index]?.cells[cellIndex];
+        if (!cell) continue;
+        const text = cell.textContent.replace(/\s+/g, " ").trim();
+        if (text) labels.push(text);
+    }
+    return labels.slice(-3).join(" ");
+}
+
+function buildAnswerField(config, key, savedValue, label) {
+    let field;
+
+    if (config.type === "select") {
+        field = document.createElement("select");
+        field.className = "cell-answer ic-answer-select";
+        field.innerHTML = '<option value="">Select</option>';
+        config.options.forEach(value => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            field.appendChild(option);
+        });
+    } else if (config.type === "value") {
+        field = document.createElement("input");
+        field.type = "text";
+        field.inputMode = "decimal";
+        field.className = "cell-answer ic-value-input";
+        field.placeholder = "Actual value";
+    } else {
+        field = document.createElement("textarea");
+        field.className = "cell-answer";
+    }
+
+    field.dataset.answerKey = key;
+    field.dataset.fieldKind = config.kind;
+    field.setAttribute("aria-label", label);
+    field.value = savedValue || "";
+    const handleFieldUpdate = () => {
+        field.closest("tr")?.classList.remove(
+            "ic-row-needs-remarks"
+        );
+        updateCompletion();
+    };
+    field.addEventListener("input", handleFieldUpdate);
+    field.addEventListener("change", handleFieldUpdate);
+    return field;
+}
+
+function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName = "") {
     const tables = document.querySelectorAll(
         "#templateContainer table"
     );
@@ -117,41 +168,84 @@ function createAnswerFields(savedAnswers = {}, attributions = {}) {
                     return;
                 }
 
-                const key =
-                    cell.dataset.answerKey || `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
-                const textarea = document.createElement("textarea");
-                textarea.className = "cell-answer";
-                textarea.dataset.answerKey = key;
+                const key = cell.dataset.answerKey ||
+                    `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
                 const required = cell.dataset.requiredAnswer !== undefined
                     ? cell.dataset.requiredAnswer === "true"
                     : !(columns.remark !== null && cellIndex === columns.remark);
-                textarea.dataset.requiredAnswer = String(required);
-                textarea.setAttribute(
-                    "aria-label",
-                    `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`
+                const label = `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`;
+                const usesTypedControls = window.IcFormControls
+                    ?.isTypedSchedule(scheduleName);
+                const config = usesTypedControls
+                    ? window.IcFormControls.classify(
+                        row.textContent,
+                        columnContext(table, rowIndex, cellIndex)
+                    )
+                    : { type: "text", kind: "text" };
+                const field = buildAnswerField(
+                    config,
+                    key,
+                    savedAnswers[key],
+                    label
                 );
-                textarea.value = savedAnswers[key] || "";
+                field.dataset.requiredAnswer = String(required);
                 const attribution = attributions[key];
-                if (attribution && textarea.value.trim()) {
-                    textarea.readOnly = true;
-                    textarea.classList.add("attributed-answer");
-                    textarea.title = `Entered by ${attribution.staff_name} on ${new Date(attribution.entered_at).toLocaleString("en-IN")}`;
+                if (attribution && field.value.trim()) {
+                    field.readOnly = true;
+                    field.disabled = field.tagName === "SELECT";
+                    field.classList.add("attributed-answer");
+                    field.title = `Entered by ${attribution.staff_name} on ${new Date(attribution.entered_at).toLocaleString("en-IN")}`;
                     const credit = document.createElement("small");
                     credit.className = "answer-credit";
-                    credit.textContent = textarea.title;
-                    cell.replaceChildren(textarea, credit);
+                    credit.textContent = field.title;
+                    cell.replaceChildren(field, credit);
                 } else {
-                    cell.replaceChildren(textarea);
+                    cell.replaceChildren(field);
                 }
-                textarea.addEventListener(
-                    "input",
-                    updateCompletion
-                );
             });
         });
     });
 
     updateCompletion();
+}
+
+function validateIcExceptions() {
+    if (!window.IcFormControls?.isTypedSchedule(
+        loadedScheduleName
+    )) {
+        return true;
+    }
+
+    document.querySelectorAll(".ic-row-needs-remarks")
+        .forEach(row => row.classList.remove(
+            "ic-row-needs-remarks"
+        ));
+
+    const generalRemarks = document.getElementById(
+        "staffRemarks"
+    )?.value.trim();
+    const adverseField = [...document.querySelectorAll(
+        ".ic-answer-select[data-answer-key]"
+    )].find(field => {
+        if (!window.IcFormControls.isAdverse(field.value)) return false;
+        const row = field.closest("tr");
+        const remarks = [...(row?.querySelectorAll(
+            'textarea[data-answer-key], input[data-answer-key][data-field-kind="remarks"]'
+        ) || [])];
+        if (remarks.length) {
+            return !remarks.some(item => item.value.trim());
+        }
+        return !generalRemarks;
+    });
+
+    if (!adverseField) return true;
+    showFormMessage(
+        "Please enter remarks for every defect, missing item or negative result.",
+        true
+    );
+    adverseField.focus();
+    adverseField.closest("tr")?.classList.add("ic-row-needs-remarks");
+    return false;
 }
 
 function collectAnswers() {
@@ -236,6 +330,9 @@ async function loadScheduleForm() {
         const header =
             assignment.detail.assign_work_header || {};
 
+        loadedScheduleName =
+            header.schedule_master?.schedule_name || "";
+
         loadedSubmission = submission;
 
         document.getElementById("staffName").textContent =
@@ -303,7 +400,11 @@ async function loadScheduleForm() {
         if (!isPdf) {
             createAnswerFields(
                 submission?.form_answers || {},
-                submission?.answer_attributions || {}
+                submission?.answer_attributions || {},
+                loadedScheduleName
+            );
+            window.BilingualScheduleActivities?.enhance(
+                container
             );
         } else {
             updateCompletion();
@@ -337,6 +438,10 @@ async function loadScheduleForm() {
 
 async function saveForm(action) {
     const isSubmit = action !== "draft";
+
+    if (isSubmit && !validateIcExceptions()) {
+        return;
+    }
 
     if (
         isSubmit &&
