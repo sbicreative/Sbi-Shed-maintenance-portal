@@ -467,3 +467,10 @@ tbody tr:hover{
     background:#ede9fe;
     color:#5b21b6;
 }
+.schedule-activity-hindi {
+    margin-top: 4px;
+    color: #40534a;
+    font-size: 0.93em;
+    font-weight: 600;
+    line-height: 1.35;
+}

@@ -2,11 +2,25 @@ const reviewer = readReviewer();
 const reviewerRole =
     String(reviewer?.role || "").trim().toLowerCase();
 const reviewerId =
+    Number(
+        reviewer?.acting_for_incharge_id ||
+        reviewer?.supervisor_master_id
+    );
+const actionReviewerId =
     Number(reviewer?.supervisor_master_id);
 const formId = Number(
     new URLSearchParams(window.location.search).get("form")
 );
 let reviewRecord = null;
+
+function expiredActingFormAccess() {
+    if (!reviewer?.acting_charge) return false;
+    const today = new Date().toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata"
+    });
+    return today < String(reviewer.charge_handover?.start_date || "") ||
+        today > String(reviewer.charge_handover?.end_date || "");
+}
 
 function readReviewer() {
     try {
@@ -193,6 +207,7 @@ async function loadReviewForm() {
         )}
     `;
     populateReviewFields(form.form_answers || {});
+    window.BilingualScheduleActivities?.enhance(container);
 
     if (reviewerRole === "supervisor") {
         lockSubmittedAnswers();
@@ -235,7 +250,8 @@ async function performReviewAction(action, button) {
         const requestBody = {
             action,
             remarks,
-            incharge_id: inchargeId
+            incharge_id: inchargeId,
+            action_reviewer_id: actionReviewerId
         };
 
         if (reviewerRole !== "supervisor") {
@@ -272,6 +288,10 @@ async function performReviewAction(action, button) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    if (expiredActingFormAccess()) {
+        window.location.replace("/dashboard/login.html");
+        return;
+    }
     if (
         !["supervisor", "incharge"].includes(reviewerRole) ||
         !reviewerId ||

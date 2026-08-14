@@ -305,3 +305,40 @@ body {
     border-radius: 8px;
     background: #fff;
 }
+.ic-answer-select,
+.ic-value-input {
+    width: 100%;
+    min-width: 115px;
+    min-height: 38px;
+    padding: 7px 8px;
+    border: 1px solid #b9c9c1;
+    border-radius: 6px;
+    background: #fff;
+    color: #1f2937;
+    font: inherit;
+}
+
+.ic-answer-select { cursor: pointer; }
+.ic-value-input { min-width: 90px; }
+
+.ic-row-needs-remarks {
+    background: #fff1f2 !important;
+    outline: 2px solid #dc2626;
+    outline-offset: -2px;
+}
+
+.schedule-activity-hindi {
+    margin-top: 4px;
+    color: #40534a;
+    font-size: 0.93em;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+    .ic-answer-select,
+    .ic-value-input {
+        min-width: 105px;
+        font-size: 13px;
+    }
+}
