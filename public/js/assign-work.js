@@ -15,6 +15,20 @@ const workTableBody =
 const addLocoBtn =
     document.getElementById("addLocoBtn");
 
+function showEmptyWorkRow() {
+    workTableBody.innerHTML = `
+        <tr class="empty-work-row" aria-label="No loco selected">
+            <td data-mobile-label="S.No."><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Loco No."><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Schedule"><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Assign Work"><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Supervisor"><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Remarks"><span class="empty-work-box"></span></td>
+            <td data-mobile-label="Action"><span class="empty-work-box"></span></td>
+        </tr>
+    `;
+}
+
 
 // ==========================================
 // MASTER LISTS
@@ -259,7 +273,7 @@ locoType.addEventListener(
         workTableBody.innerHTML = "";
 
         if (!this.value) {
-
+            showEmptyWorkRow();
             return;
 
         }
@@ -514,16 +528,21 @@ function remarkGroupMarkup(key, title = "Select Work") {
 function addLocoRow() {
 
     const initialRemarkKey = nextRemarkGroupKey();
+    workTableBody
+        .querySelector(".empty-work-row")
+        ?.remove();
 
     const row =
         document.createElement("tr");
 
+    row.className = "assignment-row";
+
     row.innerHTML = `
 
-        <td class="serial"></td>
+        <td class="serial" data-mobile-label="S.No."></td>
 
 
-        <td>
+        <td data-mobile-label="Loco No.">
 
             <select class="locoDropdown">
 
@@ -538,7 +557,7 @@ function addLocoRow() {
         </td>
 
 
-        <td>
+        <td data-mobile-label="Schedule">
 
             <select class="scheduleDropdown">
 
@@ -553,22 +572,7 @@ function addLocoRow() {
         </td>
 
 
-        <td>
-
-            <select class="supervisorDropdown">
-
-                <option value="">
-                    Select Supervisor
-                </option>
-
-                ${getSupervisorOptions()}
-
-            </select>
-
-        </td>
-
-
-        <td>
+        <td data-mobile-label="Assign Work">
 
             <div class="work-list">
 
@@ -595,7 +599,22 @@ function addLocoRow() {
         </td>
 
 
-        <td>
+        <td data-mobile-label="Supervisor">
+
+            <select class="supervisorDropdown">
+
+                <option value="">
+                    Select Supervisor
+                </option>
+
+                ${getSupervisorOptions()}
+
+            </select>
+
+        </td>
+
+
+        <td data-mobile-label="Remarks">
 
             <div class="work-remarks-list">
                 ${remarkGroupMarkup(initialRemarkKey)}
@@ -604,7 +623,7 @@ function addLocoRow() {
         </td>
 
 
-        <td>
+        <td data-mobile-label="Action">
 
             <button
                 type="button"
@@ -896,7 +915,7 @@ document
 
             const rows =
                 workTableBody
-                    .querySelectorAll("tr");
+                    .querySelectorAll("tr.assignment-row");
 
             if (rows.length === 0) {
 
