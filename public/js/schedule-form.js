@@ -141,6 +141,135 @@ function buildAnswerField(config, key, savedValue, label) {
     return field;
 }
 
+function syncStaffRemarksValue() {
+    const remarks = [...document.querySelectorAll(".staff-remark-input")]
+        .map(field => field.value.trim())
+        .filter(Boolean);
+    document.getElementById("staffRemarks").value = remarks.join("\n");
+}
+
+function refreshRemarkRowControls() {
+    const rows = [...document.querySelectorAll(".staff-remark-row")];
+    rows.forEach(row => {
+        const removeButton = row.querySelector(".remove-remark-btn");
+        removeButton.hidden = rows.length === 1;
+    });
+}
+
+function addStaffRemarkRow(value = "") {
+    const row = document.createElement("div");
+    row.className = "staff-remark-row";
+
+    const field = document.createElement("textarea");
+    field.className = "staff-remark-input";
+    field.rows = 2;
+    field.placeholder = "Enter one remark";
+    field.value = value;
+    field.addEventListener("input", syncStaffRemarksValue);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "remove-remark-btn";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
+        row.remove();
+        refreshRemarkRowControls();
+        syncStaffRemarksValue();
+    });
+
+    row.append(field, removeButton);
+    document.getElementById("staffRemarksList").appendChild(row);
+    refreshRemarkRowControls();
+    syncStaffRemarksValue();
+}
+
+function loadStaffRemarkRows(value) {
+    const list = document.getElementById("staffRemarksList");
+    list.replaceChildren();
+    const remarks = String(value || "")
+        .split(/\r?\n/)
+        .map(item => item.trim())
+        .filter(Boolean);
+    (remarks.length ? remarks : [""]).forEach(addStaffRemarkRow);
+}
+
+function removeSignatureRemarksColumns(container) {
+    const signatureRemarksPattern =
+        /(?:signature|sign|हस्ताक्षर)\s*(?:\/|&|and)?\s*(?:remarks?|टिप्पणी)/i;
+
+    container.querySelectorAll("table").forEach(table => {
+        const occupiedColumns = [];
+        const layout = [...table.rows].map(row => {
+            const mappedCells = [];
+            let logicalColumn = 0;
+
+            [...row.cells].forEach(cell => {
+                while (occupiedColumns[logicalColumn] > 0) {
+                    logicalColumn += 1;
+                }
+
+                const columnSpan = Number(cell.colSpan) || 1;
+                const rowSpan = Number(cell.rowSpan) || 1;
+                const start = logicalColumn;
+                const end = start + columnSpan;
+
+                mappedCells.push({ cell, start, end });
+
+                if (rowSpan > 1) {
+                    for (let column = start; column < end; column += 1) {
+                        occupiedColumns[column] = Math.max(
+                            occupiedColumns[column] || 0,
+                            rowSpan
+                        );
+                    }
+                }
+                logicalColumn = end;
+            });
+
+            for (
+                let column = 0;
+                column < occupiedColumns.length;
+                column += 1
+            ) {
+                occupiedColumns[column] = Math.max(
+                    0,
+                    (occupiedColumns[column] || 0) - 1
+                );
+            }
+
+            return mappedCells;
+        });
+
+        let targetColumn = null;
+        layout.some(rowCells =>
+            rowCells.some(({ cell, start }) => {
+                const label =
+                    cell.textContent.replace(/\s+/g, " ").trim();
+                if (!signatureRemarksPattern.test(label)) return false;
+                targetColumn = start;
+                return true;
+            })
+        );
+
+        if (targetColumn === null) return;
+
+        layout.forEach(rowCells => {
+            const mapped = rowCells.find(
+                ({ start, end }) =>
+                    targetColumn >= start && targetColumn < end
+            );
+            if (!mapped) return;
+
+            const span = Number(mapped.cell.colSpan) || 1;
+            if (span > 1) {
+                mapped.cell.colSpan = span - 1;
+            } else {
+                mapped.cell.remove();
+            }
+        });
+    });
+}
+
 function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName = "") {
     const tables = document.querySelectorAll(
         "#templateContainer table"
@@ -274,7 +403,8 @@ function updateCompletion() {
 
 function setReadOnly(readOnly) {
     document.querySelectorAll(
-        "[data-answer-key], #staffRemarks, #supervisorSelect"
+        "[data-answer-key], #staffRemarks, #supervisorSelect, " +
+        ".staff-remark-input, #addStaffRemarkBtn, .remove-remark-btn"
     ).forEach(field => {
         field.disabled = readOnly;
     });
@@ -398,6 +528,7 @@ async function loadScheduleForm() {
             ${templateContent}
         `;
         if (!isPdf) {
+            removeSignatureRemarksColumns(container);
             createAnswerFields(
                 submission?.form_answers || {},
                 submission?.answer_attributions || {},
@@ -410,8 +541,7 @@ async function loadScheduleForm() {
             updateCompletion();
         }
 
-        document.getElementById("staffRemarks").value =
-            submission?.staff_remarks || "";
+        loadStaffRemarkRows(submission?.staff_remarks || "");
 
         setReadOnly(
             !canEdit ||
@@ -438,6 +568,7 @@ async function loadScheduleForm() {
 
 async function saveForm(action) {
     const isSubmit = action !== "draft";
+    syncStaffRemarksValue();
 
     if (isSubmit && !validateIcExceptions()) {
         return;
@@ -557,6 +688,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveDraftBtn").addEventListener(
         "click",
         () => saveForm("draft")
+    );
+
+    document.getElementById("addStaffRemarkBtn").addEventListener(
+        "click",
+        () => addStaffRemarkRow()
     );
 
     document.getElementById("submitFormBtn").addEventListener(

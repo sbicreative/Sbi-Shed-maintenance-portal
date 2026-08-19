@@ -61,8 +61,10 @@
 
             <label class="remarks-field">
                 Staff Remarks
-                <textarea id="staffRemarks" rows="3"
-                    placeholder="Enter overall remarks, if any"></textarea>
+                <div id="staffRemarksList" class="staff-remarks-list"></div>
+                <button id="addStaffRemarkBtn" class="add-remark-btn"
+                    type="button">+ Add Remark Row</button>
+                <textarea id="staffRemarks" hidden></textarea>
             </label>
 
             <label class="reviewer-field">
@@ -88,7 +90,7 @@
 
     <script src="../js/ic-form-controls.js?v=20260819-1"></script>
     <script src="../js/bilingual-schedule-activities.js?v=20260819-2"></script>
-    <script src="../js/schedule-form.js?v=20260819-1"></script>
+    <script src="../js/schedule-form.js?v=20260819-4"></script>
     <script src="/js/pwa.js"></script>
 </body>
 </html>

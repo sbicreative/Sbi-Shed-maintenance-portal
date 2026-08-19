@@ -83,6 +83,84 @@ function reviewStaffName(cell, key, answers, attributions) {
     cell.innerHTML = `<strong>${safeName}</strong>${attribution?.entered_at ? `<small>${new Date(attribution.entered_at).toLocaleString("en-IN")}</small>` : ""}`;
 }
 
+function removeSignatureRemarksColumns(container) {
+    const signatureRemarksPattern =
+        /(?:signature|sign|हस्ताक्षर)\s*(?:\/|&|and)?\s*(?:remarks?|टिप्पणी)/i;
+
+    container.querySelectorAll("table").forEach(table => {
+        const occupiedColumns = [];
+        const layout = [...table.rows].map(row => {
+            const mappedCells = [];
+            let logicalColumn = 0;
+
+            [...row.cells].forEach(cell => {
+                while (occupiedColumns[logicalColumn] > 0) {
+                    logicalColumn += 1;
+                }
+
+                const columnSpan = Number(cell.colSpan) || 1;
+                const rowSpan = Number(cell.rowSpan) || 1;
+                const start = logicalColumn;
+                const end = start + columnSpan;
+
+                mappedCells.push({ cell, start, end });
+
+                if (rowSpan > 1) {
+                    for (let column = start; column < end; column += 1) {
+                        occupiedColumns[column] = Math.max(
+                            occupiedColumns[column] || 0,
+                            rowSpan
+                        );
+                    }
+                }
+                logicalColumn = end;
+            });
+
+            for (
+                let column = 0;
+                column < occupiedColumns.length;
+                column += 1
+            ) {
+                occupiedColumns[column] = Math.max(
+                    0,
+                    (occupiedColumns[column] || 0) - 1
+                );
+            }
+
+            return mappedCells;
+        });
+
+        let targetColumn = null;
+        layout.some(rowCells =>
+            rowCells.some(({ cell, start }) => {
+                const label =
+                    cell.textContent.replace(/\s+/g, " ").trim();
+                if (!signatureRemarksPattern.test(label)) return false;
+                targetColumn = start;
+                return true;
+            })
+        );
+
+        if (targetColumn === null) return;
+
+        layout.forEach(rowCells => {
+            const mapped = rowCells.find(
+                ({ start, end }) =>
+                    targetColumn >= start && targetColumn < end
+            );
+            if (!mapped) return;
+
+            const span = Number(mapped.cell.colSpan) || 1;
+            if (span > 1) {
+                mapped.cell.colSpan = span - 1;
+            } else {
+                mapped.cell.remove();
+            }
+        });
+    });
+}
+
+
 function populateReviewFields(answers, attributions = {}) {
     document.querySelectorAll("#templateContainer table")
         .forEach((table, tableIndex) => {
@@ -278,6 +356,7 @@ async function loadReviewForm() {
             template.template_schema?.document_html || ""
         )}
     `;
+    removeSignatureRemarksColumns(container);
     populateReviewFields(form.form_answers || {}, form.answer_attributions || {});
     showAttributions(form.answer_attributions || {});
     window.BilingualScheduleActivities?.enhance(container);
