@@ -479,7 +479,7 @@ async function loadAssignedWork() {
                     <td><span class="empty-column-label">Assigned Work</span><span class="empty-column-box"></span></td>
                     <td><span class="empty-column-label">Man Power Distribution</span><span class="empty-column-box"></span></td>
                     <td><span class="empty-column-label">Remarks</span><span class="empty-column-box"></span></td>
-                    <td><span class="empty-column-label">Assigned By</span><span class="empty-column-box"></span></td>
+                    <td><span class="empty-column-label">Assigned By / Submitted By</span><span class="empty-column-box"></span></td>
                     <td><span class="empty-column-label">Status</span><span class="empty-column-box"></span></td>
                 </tr>
             `;
@@ -512,6 +512,19 @@ async function loadAssignedWork() {
                     : item.remarks
                         ? `<div class="existing-remark"><p>${escapeHtml(item.remarks)}</p><small>Incharge · Existing assignment remark</small></div>`
                         : '<p class="no-existing-remarks">No existing remarks.</p>';
+                const incompleteSubmission = item.incomplete_submission;
+                const assignmentHistoryMarkup = `
+                    <span class="assignment-history-line">
+                        <strong>Assigned By:</strong> ${escapeHtml(item.assigned_by_name || "Incharge")}
+                    </span>
+                    ${incompleteSubmission ? `
+                        <span class="assignment-history-line">
+                            <strong>Submitted By:</strong> ${escapeHtml(incompleteSubmission.submitted_by_name || "Staff")}
+                        </span>
+                        <small class="assignment-submitted-time">
+                            ${escapeHtml(new Date(incompleteSubmission.submitted_at).toLocaleString("en-IN"))}
+                        </small>
+                    ` : ""}`;
 
                 row.dataset.detailId =
                     item.id;
@@ -577,13 +590,13 @@ async function loadAssignedWork() {
 
                     </td>
 
-                    <td data-mobile-label="Assigned By">
-                        <span class="mobile-field-box">Incharge</span>
+                    <td data-mobile-label="Assigned By / Submitted By">
+                        <span class="mobile-field-box assignment-history-box">${assignmentHistoryMarkup}</span>
                     </td>
 
                     <td data-mobile-label="Status">
                         <span class="mobile-field-box">${
-                            item.status || "Pending"
+                            incompleteSubmission ? "Incomplete" : (item.status || "Pending")
                         }</span>
                     </td>
 

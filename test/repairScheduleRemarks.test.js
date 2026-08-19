@@ -115,6 +115,19 @@ test("Man Power table keeps headings aligned and requires one visible Lead Staff
     );
 });
 
+test("Man Power shows incomplete form submitter and keeps same-day continuation assignable", () => {
+    const html = fs.readFileSync(path.join(root, "public", "dashboard", "manpower-distribution.html"), "utf8");
+    const client = fs.readFileSync(path.join(root, "public", "js", "manpower-distribution.js"), "utf8");
+    const supervisorRoute = fs.readFileSync(path.join(root, "routes", "supervisorRoutes.js"), "utf8");
+    const manpowerRoute = fs.readFileSync(path.join(root, "routes", "manpowerRoutes.js"), "utf8");
+    assert.match(html, /Assigned By \/ Submitted By/);
+    assert.match(client, /Submitted By:/);
+    assert.match(client, /incompleteSubmission \? "Incomplete"/);
+    assert.match(supervisorRoute, /incomplete_submission:/);
+    assert.match(supervisorRoute, /submitted_by_name:/);
+    assert.match(manpowerRoute, /Continuation Assigned/);
+});
+
 test("Incharge and Supervisor dashboards add multiple remarks only to owned assigned work", () => {
     const route = fs.readFileSync(path.join(root, "routes", "repairScheduleRoutes.js"), "utf8");
     const client = fs.readFileSync(path.join(root, "public", "js", "dashboard-remark-entry.js"), "utf8");

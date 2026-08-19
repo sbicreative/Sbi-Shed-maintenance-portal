@@ -676,6 +676,38 @@ router.post("/", async (req, res) => {
             });
         }
 
+        const header = workDetail.assign_work_header || {};
+        const { data: incompleteForms, error: incompleteFormError } = await supabase
+            .from("schedule_form_details")
+            .select("id,staff_id,status,completion_state")
+            .eq("assign_work_detail_id", detailId)
+            .eq("completion_state", "Incomplete")
+            .not("submitted_at", "is", null)
+            .order("submitted_at", { ascending: false })
+            .limit(1);
+        if (incompleteFormError) throw incompleteFormError;
+        const incompleteForm = incompleteForms?.[0] || null;
+
+        async function appendDistributionRemarks(distributionId) {
+            for (const remarkText of remarkList) {
+                await appendRepairRemark({
+                    remark_text: remarkText,
+                    author_id: assignedBy,
+                    author_name,
+                    author_role: "Supervisor",
+                    assignment_date: assignDate,
+                    loco_id: header.loco_id || header.loco_master?.id,
+                    temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
+                    assign_work_header_id: header.id,
+                    schedule_id: header.schedule_id || header.schedule_master?.id,
+                    assign_work_detail_id: detailId,
+                    manpower_distribution_id: distributionId,
+                    source_type: "manpower_distribution",
+                    source_action: incompleteForm ? "continuation_assign" : "assign"
+                });
+            }
+        }
+
         const {
             data: existingAssignment,
             error: conflictCheckError
@@ -710,12 +742,45 @@ router.post("/", async (req, res) => {
             });
         }
 
-        if (duplicateWork) {
+        if (duplicateWork && !(incompleteForm && Boolean(is_lead))) {
             return res.status(409).json({
                 success: false,
                 code: "STAFF_ALREADY_ON_WORK",
                 message:
                     "This staff member is already assigned to this work."
+            });
+        }
+
+        if (duplicateWork && incompleteForm && Boolean(is_lead)) {
+            const { error: demoteError } = await supabase
+                .from("manpower_distribution")
+                .update({ is_lead: false })
+                .eq("assign_work_detail_id", detailId)
+                .eq("is_lead", true)
+                .neq("id", duplicateWork.id);
+            if (demoteError) throw demoteError;
+
+            const { error: reactivateError } = await supabase
+                .from("manpower_distribution")
+                .update({ is_lead: true, status: "Assigned" })
+                .eq("id", duplicateWork.id);
+            if (reactivateError) throw reactivateError;
+
+            const { error: continuationUpdateError } = await supabase
+                .from("schedule_form_details")
+                .update({
+                    active_manpower_distribution_id: duplicateWork.id,
+                    staff_id: staffId,
+                    submitted_to_supervisor_id: assignedBy,
+                    status: "Continuation Assigned"
+                })
+                .eq("id", incompleteForm.id);
+            if (continuationUpdateError) throw continuationUpdateError;
+
+            await appendDistributionRemarks(duplicateWork.id);
+            return res.json({
+                success: true,
+                message: "Incomplete schedule form reassigned for continuation."
             });
         }
 
@@ -735,6 +800,18 @@ router.post("/", async (req, res) => {
                     message: "Assign the Lead Staff before adding view-only team members."
                 });
             }
+        }
+
+        let previousLeads = [];
+        if (Boolean(is_lead) && incompleteForm) {
+            const { data: demotedLeads, error: demoteError } = await supabase
+                .from("manpower_distribution")
+                .update({ is_lead: false })
+                .eq("assign_work_detail_id", detailId)
+                .eq("is_lead", true)
+                .select("id");
+            if (demoteError) throw demoteError;
+            previousLeads = demotedLeads || [];
         }
 
         const { data: distribution, error } = await supabase
@@ -758,6 +835,13 @@ router.post("/", async (req, res) => {
             .single();
 
         if (error) {
+
+            if (previousLeads.length) {
+                await supabase
+                    .from("manpower_distribution")
+                    .update({ is_lead: true })
+                    .in("id", previousLeads.map(item => item.id));
+            }
 
             const isUniqueConflict =
                 error.code === "23505";
@@ -788,26 +872,33 @@ router.post("/", async (req, res) => {
 
         }
 
-        const header = workDetail.assign_work_header || {};
-        for (const remarkText of remarkList) {
-            await appendRepairRemark({
-                remark_text: remarkText,
-                author_id: assignedBy,
-                author_name,
-                author_role: "Supervisor",
-                assignment_date: assignDate,
-                loco_id: header.loco_id || header.loco_master?.id,
-                temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
-                assign_work_header_id: header.id,
-                schedule_id: header.schedule_id || header.schedule_master?.id,
-                assign_work_detail_id: detailId,
-                manpower_distribution_id: distribution.id,
-                source_type: "manpower_distribution",
-                source_action: "assign"
-            });
+        await appendDistributionRemarks(distribution.id);
+
+        if (Boolean(is_lead) && incompleteForm) {
+            const { error: continuationError } = await supabase
+                .from("schedule_form_continuations")
+                .insert([{
+                    schedule_form_detail_id: incompleteForm.id,
+                    manpower_distribution_id: distribution.id,
+                    staff_id: staffId,
+                    assigned_by: assignedBy,
+                    assigned_date: assignDate
+                }]);
+            if (continuationError) throw continuationError;
+
+            const { error: continuationUpdateError } = await supabase
+                .from("schedule_form_details")
+                .update({
+                    active_manpower_distribution_id: distribution.id,
+                    staff_id: staffId,
+                    submitted_to_supervisor_id: assignedBy,
+                    status: "Continuation Assigned"
+                })
+                .eq("id", incompleteForm.id);
+            if (continuationUpdateError) throw continuationUpdateError;
         }
 
-        if (Boolean(is_lead) && String(workDetail.work_master?.work_name || "").trim().toLowerCase() === "repairs") {
+        if (!incompleteForm && Boolean(is_lead) && String(workDetail.work_master?.work_name || "").trim().toLowerCase() === "repairs") {
             const locoKey = header.loco_id
                 ? `master:${header.loco_id}`
                 : header.temporary_loco_id

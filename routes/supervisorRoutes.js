@@ -330,6 +330,7 @@ router.get(
                         assign_work_header!inner(
                             id,
                             assign_date,
+                            created_by,
                             loco_id,
                             temporary_loco_id,
                             schedule_id,
@@ -395,7 +396,82 @@ router.get(
 
             }
 
-            res.json(data || []);
+            const assignedWork = data || [];
+            const detailIds = assignedWork.map(item => Number(item.id)).filter(Boolean);
+            const creatorIds = [...new Set(assignedWork
+                .map(item => Number(item.assign_work_header?.created_by))
+                .filter(Boolean))];
+
+            const [formResult, creatorResult] = await Promise.all([
+                detailIds.length
+                    ? supabase
+                        .from("schedule_form_details")
+                        .select("id,assign_work_detail_id,staff_id,status,completion_state,submitted_at,answer_attributions")
+                        .in("assign_work_detail_id", detailIds)
+                        .eq("completion_state", "Incomplete")
+                        .not("submitted_at", "is", null)
+                    : Promise.resolve({ data: [], error: null }),
+                creatorIds.length
+                    ? supabase
+                        .from("employees")
+                        .select("id,name")
+                        .in("id", creatorIds)
+                    : Promise.resolve({ data: [], error: null })
+            ]);
+
+            if (formResult.error || creatorResult.error) {
+                throw formResult.error || creatorResult.error;
+            }
+
+            const forms = formResult.data || [];
+            const fallbackStaffIds = [...new Set(forms
+                .map(item => Number(item.staff_id))
+                .filter(Boolean))];
+            const { data: fallbackStaff, error: fallbackStaffError } = fallbackStaffIds.length
+                ? await supabase
+                    .from("employee_master")
+                    .select("id,name")
+                    .in("id", fallbackStaffIds)
+                : { data: [], error: null };
+            if (fallbackStaffError) throw fallbackStaffError;
+
+            const creatorNames = new Map((creatorResult.data || [])
+                .map(item => [Number(item.id), item.name]));
+            const staffNames = new Map((fallbackStaff || [])
+                .map(item => [Number(item.id), item.name]));
+            const formByDetail = new Map();
+
+            forms.forEach(form => {
+                const detailId = Number(form.assign_work_detail_id);
+                const current = formByDetail.get(detailId);
+                if (!current || new Date(form.submitted_at) > new Date(current.submitted_at)) {
+                    formByDetail.set(detailId, form);
+                }
+            });
+
+            res.json(assignedWork.map(item => {
+                const form = formByDetail.get(Number(item.id));
+                const attributions = Object.values(form?.answer_attributions || {})
+                    .filter(value => value && value.staff_name)
+                    .sort((left, right) =>
+                        new Date(right.entered_at || 0) - new Date(left.entered_at || 0)
+                    );
+                const submittedBy = attributions[0]?.staff_name ||
+                    staffNames.get(Number(form?.staff_id)) || "Staff";
+                const creatorId = Number(item.assign_work_header?.created_by);
+
+                return {
+                    ...item,
+                    assigned_by_name: creatorNames.get(creatorId) || "Incharge",
+                    incomplete_submission: form
+                        ? {
+                            form_id: form.id,
+                            submitted_by_name: submittedBy,
+                            submitted_at: form.submitted_at
+                        }
+                        : null
+                };
+            }));
 
         }
 
