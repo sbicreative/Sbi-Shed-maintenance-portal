@@ -36,3 +36,20 @@ test("existing bilingual text is not translated twice", () => {
         ""
     );
 });
+
+test("alternate electrical and mechanical form wording receives verified Hindi", () => {
+    assert.equal(
+        bilingual.translateActivity("Wiper Operation"),
+        "वाइपर की कार्यशीलता जाँचें।"
+    );
+    assert.equal(
+        bilingual.translateActivity(
+            "While Loco is energised, check the following:"
+        ),
+        "लोको ऊर्जित होने पर निम्न बिंदुओं की जाँच करें:"
+    );
+    assert.equal(
+        bilingual.translateActivity("No air leakage"),
+        "वायु रिसाव नहीं होना सुनिश्चित करें।"
+    );
+});
