@@ -496,6 +496,53 @@ function getWorkOptions(scheduleId = "") {
 
 }
 
+function isRepairsWork(workMasterId) {
+    return String(workList.find(item => Number(item.id) === Number(workMasterId))?.work_name || "")
+        .trim().toLowerCase() === "repairs";
+}
+
+async function loadRepairRemarkOptions(workRow) {
+    const container = workRow.querySelector(".repair-remark-selector");
+    const workSelect = workRow.querySelector(".workDropdown");
+    if (!container || !isRepairsWork(workSelect.value)) {
+        if (container) container.innerHTML = "";
+        return;
+    }
+
+    const assignmentRow = workRow.closest("tr.assignment-row");
+    const locoValue = assignmentRow.querySelector(".locoDropdown").value;
+    const selectedLoco = locoList.find(item =>
+        `${item.source}:${item.id || encodeURIComponent(item.loco_no)}` === locoValue
+    );
+    if (!selectedLoco) {
+        container.innerHTML = '<small class="repair-remark-help">First select Loco.</small>';
+        return;
+    }
+
+    container.innerHTML = '<small class="repair-remark-help">Loading pending repair remarks…</small>';
+    try {
+        const params = new URLSearchParams(selectedLoco.source === "master"
+            ? { loco_id: selectedLoco.id }
+            : { loco_no: selectedLoco.loco_no });
+        const response = await fetch(`/api/assign-work/repair-remarks?${params}`);
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.message || "Unable to load repair remarks.");
+        const remarks = Array.isArray(payload.remarks) ? payload.remarks : [];
+        container.innerHTML = remarks.length ? `
+            <label>Select Repair Remarks (multiple allowed)</label>
+            <select class="repairRemarkDropdown" multiple size="${Math.min(Math.max(remarks.length, 3), 6)}" required>
+                ${remarks.map(item => {
+                    const date = item.created_at ? new Date(item.created_at).toLocaleDateString("en-IN") : "-";
+                    return `<option value="${Number(item.id)}">${escapeHtml(item.remark_text)} — ${escapeHtml(item.author_name)} (${escapeHtml(item.author_role)}), ${escapeHtml(date)}</option>`;
+                }).join("")}
+            </select>
+            <small class="repair-remark-help">Tap remarks to select one or more repair items.</small>` :
+            '<small class="repair-remark-help">No pending repair remarks for this loco.</small>';
+    } catch (error) {
+        container.innerHTML = `<small class="repair-remark-help repair-remark-error">${escapeHtml(error.message)}</small>`;
+    }
+}
+
 
 // ==========================================
 // ADD LOCO ROW
@@ -592,6 +639,8 @@ function addLocoRow() {
 
                     </button>
 
+                    <div class="repair-remark-selector"></div>
+
                 </div>
 
             </div>
@@ -651,7 +700,7 @@ function addLocoRow() {
 
 workTableBody.addEventListener(
     "change",
-    function (e) {
+    async function (e) {
 
         if (
             !e.target.classList.contains(
@@ -683,6 +732,9 @@ workTableBody.addEventListener(
 
         row.querySelectorAll(".multi-remarks-heading strong")
             .forEach(label => { label.textContent = "Select Work"; });
+
+        row.querySelectorAll(".repair-remark-selector")
+            .forEach(container => { container.innerHTML = ""; });
 
     }
 );
@@ -751,6 +803,8 @@ document.addEventListener(
 
                 </button>
 
+                <div class="repair-remark-selector"></div>
+
             `;
 
             workListBox.appendChild(
@@ -818,7 +872,13 @@ document.addEventListener(
     }
 );
 
-workTableBody.addEventListener("change", event => {
+workTableBody.addEventListener("change", async event => {
+    if (event.target.classList.contains("locoDropdown")) {
+        for (const workRow of event.target.closest("tr").querySelectorAll(".work-row")) {
+            await loadRepairRemarkOptions(workRow);
+        }
+        return;
+    }
     if (!event.target.classList.contains("workDropdown")) return;
     const workRow = event.target.closest(".work-row");
     const remarkKey = workRow.dataset.remarkKey;
@@ -826,6 +886,7 @@ workTableBody.addEventListener("change", event => {
     workRow.closest("tr").querySelector(
         `.multi-remarks-group[data-remark-key="${remarkKey}"] .multi-remarks-heading strong`
     ).textContent = selectedText;
+    await loadRepairRemarkOptions(workRow);
 });
 
 
@@ -967,6 +1028,10 @@ document
                                     remarkGroup?.querySelectorAll(".remarks") || []
                                 ).map(input => input.value.trim()).filter(Boolean);
 
+                                const repairRemarkIds = Array.from(
+                                    item.closest(".work-row").querySelector(".repairRemarkDropdown")?.selectedOptions || []
+                                ).map(option => Number(option.value)).filter(Number.isInteger);
+
                                 works.push({
 
                                     work_master_id:
@@ -974,7 +1039,10 @@ document
                                             item.value
                                         ),
 
-                                    remarks
+                                    remarks,
+
+                                    repair_remark_ids:
+                                        repairRemarkIds
 
                                 });
 

@@ -104,7 +104,18 @@ async function buildRepairTemplate(assignment, template) {
     const pending = (data || []).filter(item =>
         !(item.repair_schedule_actions || []).some(action => action.status === "Completed")
     );
-    const rows = pending.map((item, index) => `<tr><td><strong>${index + 1}.</strong> ${escapeHtml(item.remark_text)}<small>${escapeHtml(new Date(item.created_at).toLocaleString("en-IN"))} · ${escapeHtml(item.author_name)} (${escapeHtml(item.author_role)})</small></td><td data-answer-key="repair_${item.id}" data-required-answer="true"></td><td data-attribution-for="repair_${item.id}"></td><td data-answer-key="repair_remark_${item.id}" data-required-answer="false"></td></tr>`).join("");
+    const pendingIds = pending.map(item => Number(item.id));
+    let selectedIds = new Set();
+    if (pendingIds.length) {
+        const { data: links, error: linkError } = await supabase
+            .from("repair_schedule_remark_assignments")
+            .select("repair_schedule_remark_id")
+            .in("repair_schedule_remark_id", pendingIds);
+        if (linkError) throw linkError;
+        selectedIds = new Set((links || []).map(item => Number(item.repair_schedule_remark_id)));
+    }
+    const assignedPending = pending.filter(item => selectedIds.has(Number(item.id)));
+    const rows = assignedPending.map((item, index) => `<tr><td><strong>${index + 1}.</strong> ${escapeHtml(item.remark_text)}<small>${escapeHtml(new Date(item.created_at).toLocaleString("en-IN"))} · ${escapeHtml(item.author_name)} (${escapeHtml(item.author_role)})</small></td><td data-answer-key="repair_${item.id}" data-required-answer="true"></td><td data-attribution-for="repair_${item.id}"></td><td data-answer-key="repair_remark_${item.id}" data-required-answer="false"></td></tr>`).join("");
     return { ...template, template_schema: { ...(template.template_schema || {}), dynamic_type: "repair_remarks", document_html: `<table><thead><tr><th>Work item<br><small>कार्य विवरण</small></th><th>Action Taken<br><small>की गई कार्रवाई</small></th><th>Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small></th><th>Remark<br><small>टिप्पणी</small></th></tr></thead><tbody>${rows || '<tr><td colspan="4">No pending repair remarks.</td></tr>'}</tbody></table>` } };
 }
 

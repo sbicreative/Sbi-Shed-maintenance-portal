@@ -34,6 +34,22 @@ test("Repairs work created as Active remains selectable in every schedule", () =
     assert.match(route, /\.in\("status", \["true", "Active"\]\)/);
 });
 
+test("Incharge selects one or more pending loco remarks for Repairs work", () => {
+    const linkMigration = fs.readFileSync(path.join(root, "database", "19_repair_remark_assignments.sql"), "utf8");
+    const client = fs.readFileSync(path.join(root, "public", "js", "assign-work.js"), "utf8");
+    const assignRoute = fs.readFileSync(path.join(root, "routes", "assignWorkRoutes.js"), "utf8");
+    const formRoute = fs.readFileSync(path.join(root, "routes", "scheduleFormRoutes.js"), "utf8");
+    assert.match(linkMigration, /repair_schedule_remark_id/);
+    assert.match(linkMigration, /UNIQUE \(repair_schedule_remark_id, assign_work_detail_id\)/);
+    assert.doesNotMatch(linkMigration, /INSERT INTO|UPDATE\s/i);
+    assert.match(client, /repairRemarkDropdown[^]*multiple/);
+    assert.match(client, /repair_remark_ids/);
+    assert.match(assignRoute, /router\.get\("\/repair-remarks"/);
+    assert.match(assignRoute, /already completed/);
+    assert.match(assignRoute, /repair_schedule_remark_assignments/);
+    assert.match(formRoute, /selectedIds\.has\(Number\(item\.id\)\)/);
+});
+
 test("dashboard logo references match case-sensitive production filenames", () => {
     const dashboardDir = path.join(root, "public", "dashboard");
     for (const name of fs.readdirSync(dashboardDir).filter(name => name.endsWith(".html"))) {

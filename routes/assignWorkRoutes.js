@@ -4,6 +4,45 @@ const router = express.Router();
 const supabase = require("../config/supabase");
 const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 
+function normalize(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+router.get("/repair-remarks", async (req, res) => {
+    try {
+        const locoId = Number(req.query.loco_id) || null;
+        let temporaryLocoId = Number(req.query.temporary_loco_id) || null;
+        const locoNo = String(req.query.loco_no || "").trim();
+        if (!locoId && !temporaryLocoId && locoNo) {
+            const { data: temporaryLoco, error: temporaryError } = await supabase
+                .from("temporary_loco_master")
+                .select("id")
+                .eq("loco_no", locoNo)
+                .maybeSingle();
+            if (temporaryError) throw temporaryError;
+            temporaryLocoId = Number(temporaryLoco?.id) || null;
+        }
+        if ((!locoId && !temporaryLocoId) || (locoId && temporaryLocoId)) {
+            return res.status(400).json({ success: false, message: "Select one valid loco." });
+        }
+
+        let query = supabase
+            .from("repair_schedule_remarks")
+            .select("id,remark_text,author_name,author_role,created_at,repair_schedule_actions(status)")
+            .order("created_at", { ascending: true });
+        query = locoId ? query.eq("loco_id", locoId) : query.eq("temporary_loco_id", temporaryLocoId);
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const remarks = (data || []).filter(item =>
+            !(item.repair_schedule_actions || []).some(action => action.status === "Completed")
+        );
+        res.json({ success: true, remarks });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 router.get("/summary", async (req, res) => {
     try {
         const assignDate = String(req.query.assign_date || "").trim();
@@ -137,41 +176,6 @@ router.post("/", async (req, res) => {
         }
 
         // ==============================================
-        // Create Assignment Header
-        // ==============================================
-
-        const { data: headerData, error: headerError } =
-            await supabase
-
-                .from("assign_work_header")
-
-                .insert([{
-
-                    assign_date,
-                    loco_id: loco_id || null,
-                    temporary_loco_id: temporaryLocoId,
-                    schedule_id,
-                    supervisor_id,
-                    created_by
-
-                }])
-
-                .select("id")
-
-                .single();
-
-        if (headerError) {
-
-            return res.status(500).json({
-
-                success: false,
-                message: headerError.message
-
-            });
-
-        }
-
-        // ==============================================
         // Prepare Multiple Work Rows
         // ==============================================
 
@@ -179,8 +183,67 @@ router.post("/", async (req, res) => {
             const remarks = Array.isArray(work.remarks)
                 ? work.remarks.map(value => String(value || "").trim()).filter(Boolean)
                 : [String(work.remarks || "").trim()].filter(Boolean);
-            return { ...work, remarks };
+            const repairRemarkIds = Array.isArray(work.repair_remark_ids)
+                ? [...new Set(work.repair_remark_ids.map(Number).filter(Number.isInteger))]
+                : [];
+            return { ...work, remarks, repair_remark_ids: repairRemarkIds };
         });
+
+        const workMasterIds = [...new Set(normalizedWorks.map(work => Number(work.work_master_id)))];
+        const { data: workMasters, error: workMasterError } = await supabase
+            .from("work_master")
+            .select("id,work_name")
+            .in("id", workMasterIds);
+        if (workMasterError) throw workMasterError;
+        const workNameById = new Map((workMasters || []).map(item => [Number(item.id), normalize(item.work_name)]));
+
+        for (const work of normalizedWorks) {
+            const isRepairs = workNameById.get(Number(work.work_master_id)) === "repairs";
+            if (isRepairs && !work.repair_remark_ids.length) {
+                return res.status(400).json({ success: false, message: "Select at least one pending repair remark." });
+            }
+            if (!isRepairs && work.repair_remark_ids.length) {
+                return res.status(400).json({ success: false, message: "Repair remarks can only be linked to Repairs work." });
+            }
+            if (isRepairs) {
+                let remarkQuery = supabase
+                    .from("repair_schedule_remarks")
+                    .select("id,repair_schedule_actions(status)")
+                    .in("id", work.repair_remark_ids);
+                remarkQuery = loco_id
+                    ? remarkQuery.eq("loco_id", Number(loco_id))
+                    : remarkQuery.eq("temporary_loco_id", temporaryLocoId);
+                const { data: selectedRemarks, error: selectedError } = await remarkQuery;
+                if (selectedError) throw selectedError;
+                const pendingIds = new Set((selectedRemarks || [])
+                    .filter(item => !(item.repair_schedule_actions || []).some(action => action.status === "Completed"))
+                    .map(item => Number(item.id)));
+                if (work.repair_remark_ids.some(id => !pendingIds.has(id))) {
+                    return res.status(400).json({ success: false, message: "One or more selected repair remarks are invalid or already completed." });
+                }
+            }
+        }
+
+        // ==============================================
+        // Create Assignment Header only after validation
+        // ==============================================
+
+        const { data: headerData, error: headerError } = await supabase
+            .from("assign_work_header")
+            .insert([{
+                assign_date,
+                loco_id: loco_id || null,
+                temporary_loco_id: temporaryLocoId,
+                schedule_id,
+                supervisor_id,
+                created_by
+            }])
+            .select("id")
+            .single();
+
+        if (headerError) {
+            return res.status(500).json({ success: false, message: headerError.message });
+        }
 
         const workRows = normalizedWorks.map(work => ({
 
@@ -228,6 +291,16 @@ router.post("/", async (req, res) => {
             const sourceWork = normalizedWorks.find(
                 work => Number(work.work_master_id) === Number(detail.work_master_id)
             );
+            if (sourceWork?.repair_remark_ids?.length) {
+                const { error: linkError } = await supabase
+                    .from("repair_schedule_remark_assignments")
+                    .insert(sourceWork.repair_remark_ids.map(remarkId => ({
+                        repair_schedule_remark_id: remarkId,
+                        assign_work_detail_id: detail.id,
+                        assigned_by: Number(created_by)
+                    })));
+                if (linkError) throw linkError;
+            }
             for (const remarkText of sourceWork?.remarks || []) {
                 await appendRepairRemark({
                     remark_text: remarkText,
