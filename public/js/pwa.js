@@ -1,4 +1,10 @@
 (function () {
+    if (!document.querySelector('link[rel="manifest"]')) {
+        const manifest = document.createElement("link");
+        manifest.rel = "manifest";
+        manifest.href = "/manifest.webmanifest";
+        document.head.appendChild(manifest);
+    }
     if (!document.querySelector('link[data-pwa-responsive]')) {
         const responsiveStyles = document.createElement("link");
         responsiveStyles.rel = "stylesheet";
@@ -84,7 +90,9 @@
         installButton.id = "installAppButton";
         installButton.type = "button";
         installButton.textContent = "Install App";
-        installButton.hidden = true;
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+            window.navigator.standalone === true;
+        installButton.hidden = isStandalone;
         Object.assign(installButton.style, {
             position: "fixed", right: "14px", bottom: "14px", zIndex: "9998",
             border: "0", borderRadius: "999px", padding: "11px 17px",
@@ -92,11 +100,18 @@
             font: "800 13px/1 system-ui, sans-serif", cursor: "pointer"
         });
         installButton.addEventListener("click", async () => {
-            if (!installPrompt) return;
-            installPrompt.prompt();
-            await installPrompt.userChoice;
-            installPrompt = null;
-            installButton.hidden = true;
+            if (installPrompt) {
+                installPrompt.prompt();
+                await installPrompt.userChoice;
+                installPrompt = null;
+                installButton.hidden = true;
+                return;
+            }
+
+            const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+            alert(isIos
+                ? "Install SBI Shed: Safari Share button खोलें और Add to Home Screen चुनें।"
+                : "Install SBI Shed: browser menu (⋮) खोलें और Install app या Add to Home screen चुनें।");
         });
         document.body.appendChild(installButton);
 

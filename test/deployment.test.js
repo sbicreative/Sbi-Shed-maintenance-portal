@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const { app } = require("../server");
 
@@ -54,3 +56,11 @@ for (const [path, contentType] of [
         assert.match(response.headers.get("content-type"), contentType);
     });
 }
+
+test("PWA install button stays available with browser-specific fallback", () => {
+    const pwa = fs.readFileSync(path.join(__dirname, "..", "public", "js", "pwa.js"), "utf8");
+    assert.match(pwa, /link\[rel="manifest"\]/);
+    assert.match(pwa, /manifest\.webmanifest/);
+    assert.match(pwa, /installButton\.hidden = isStandalone/);
+    assert.match(pwa, /Install app या Add to Home screen/);
+});
