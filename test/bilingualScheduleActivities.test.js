@@ -3,6 +3,31 @@ const assert = require("node:assert/strict");
 const bilingual = require(
     "../public/js/bilingual-schedule-activities"
 );
+const fullHindiTranslations = require(
+    "../public/js/schedule-hindi-translations"
+);
+
+test("all generated schedule instructions have complete static Hindi lines", () => {
+    const entries = Object.entries(fullHindiTranslations);
+    assert.equal(entries.length, 506);
+    assert.ok(entries.every(([, hindi]) => /[\u0900-\u097f]/.test(hindi)));
+
+    const pressureInstruction = entries.find(([english]) =>
+        english.includes("SA-9 Direct Brake")
+    );
+    assert.ok(pressureInstruction);
+    assert.match(pressureInstruction[1], /SA-9 Direct Brake लगाए बिना/);
+    assert.match(pressureInstruction[1], /SA-9 Direct Brake लगाकर/);
+    assert.match(pressureInstruction[1], /kg\/cm 2/);
+
+    const fduInstruction = entries.find(([english]) =>
+        english.includes("Calibrate the FDU")
+    );
+    assert.ok(fduInstruction);
+    for (const technicalText of ["FDU", "Trolex", "Siemens/Cerberus", "mV"]) {
+        assert.match(fduInstruction[1], new RegExp(technicalText.replace("/", "\\/")));
+    }
+});
 
 test("technical names remain English in Hindi activity line", () => {
     assert.equal(

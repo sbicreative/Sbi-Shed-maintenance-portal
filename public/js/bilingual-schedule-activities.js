@@ -9,6 +9,7 @@
     }
 
     const verifiedTranslations = new Map([
+        ...Object.entries(globalObject.ScheduleHindiTranslations || {}),
         ["Clean the surfaces of the driver’s desk with a soap solution and cloth, taking care not to allow water to enter electrical cubicles.", "ड्राइवर डेस्क की सतहों को साबुन के घोल और कपड़े से साफ करें। ध्यान रखें कि विद्युत क्यूबिकल में पानी प्रवेश न करे।"],
         ["Clean the dust filter on the buzzer using a soft brush without using the pressure / compressed air.", "दबाव वाली या संपीड़ित हवा का उपयोग किए बिना मुलायम ब्रश से बजर का डस्ट फिल्टर साफ करें।"],
         ["Ensure that transparent rubber caps provided over the push buttons of driver desk.", "सुनिश्चित करें कि ड्राइवर डेस्क के पुश बटनों पर पारदर्शी रबर कैप लगे हों।"],
