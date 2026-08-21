@@ -8,9 +8,15 @@ function normalize(value) {
     return String(value || "").trim().toLowerCase();
 }
 
+function validDepartmentId(value) {
+    const id = Number(value);
+    return [1, 2].includes(id) ? id : null;
+}
+
 router.get("/repair-remarks", async (req, res) => {
     try {
         const locoId = Number(req.query.loco_id) || null;
+        const departmentId = validDepartmentId(req.query.department_id);
         let temporaryLocoId = Number(req.query.temporary_loco_id) || null;
         const locoNo = String(req.query.loco_no || "").trim();
         if (!locoId && !temporaryLocoId && locoNo) {
@@ -22,19 +28,20 @@ router.get("/repair-remarks", async (req, res) => {
             if (temporaryError) throw temporaryError;
             temporaryLocoId = Number(temporaryLoco?.id) || null;
         }
-        if ((!locoId && !temporaryLocoId) || (locoId && temporaryLocoId)) {
-            return res.status(400).json({ success: false, message: "Select one valid loco." });
+        if ((!locoId && !temporaryLocoId) || (locoId && temporaryLocoId) || !departmentId) {
+            return res.status(400).json({ success: false, message: "Select one valid loco and department." });
         }
 
         let query = supabase
             .from("repair_schedule_remarks")
-            .select("id,remark_text,author_name,author_role,created_at,repair_schedule_actions(status)")
+            .select("id,remark_text,author_name,author_role,created_at,schedule_master(department_id),repair_schedule_actions(status)")
             .order("created_at", { ascending: true });
         query = locoId ? query.eq("loco_id", locoId) : query.eq("temporary_loco_id", temporaryLocoId);
         const { data, error } = await query;
         if (error) throw error;
 
         const remarks = (data || []).filter(item =>
+            Number(item.schedule_master?.department_id) === departmentId &&
             !(item.repair_schedule_actions || []).some(action => action.status === "Completed")
         );
         res.json({ success: true, remarks });
@@ -196,6 +203,13 @@ router.post("/", async (req, res) => {
             .in("id", workMasterIds);
         if (workMasterError) throw workMasterError;
         const workNameById = new Map((workMasters || []).map(item => [Number(item.id), normalize(item.work_name)]));
+        const { data: targetSchedule, error: targetScheduleError } = await supabase
+            .from("schedule_master")
+            .select("department_id")
+            .eq("id", Number(schedule_id))
+            .single();
+        if (targetScheduleError) throw targetScheduleError;
+        const targetDepartmentId = Number(targetSchedule?.department_id);
 
         for (const work of normalizedWorks) {
             const isRepairs = workNameById.get(Number(work.work_master_id)) === "repairs";
@@ -208,7 +222,7 @@ router.post("/", async (req, res) => {
             if (isRepairs) {
                 let remarkQuery = supabase
                     .from("repair_schedule_remarks")
-                    .select("id,repair_schedule_actions(status)")
+                    .select("id,schedule_master(department_id),repair_schedule_actions(status)")
                     .in("id", work.repair_remark_ids);
                 remarkQuery = loco_id
                     ? remarkQuery.eq("loco_id", Number(loco_id))
@@ -216,7 +230,10 @@ router.post("/", async (req, res) => {
                 const { data: selectedRemarks, error: selectedError } = await remarkQuery;
                 if (selectedError) throw selectedError;
                 const pendingIds = new Set((selectedRemarks || [])
-                    .filter(item => !(item.repair_schedule_actions || []).some(action => action.status === "Completed"))
+                    .filter(item =>
+                        Number(item.schedule_master?.department_id) === targetDepartmentId &&
+                        !(item.repair_schedule_actions || []).some(action => action.status === "Completed")
+                    )
                     .map(item => Number(item.id)));
                 if (work.repair_remark_ids.some(id => !pendingIds.has(id))) {
                     return res.status(400).json({ success: false, message: "One or more selected repair remarks are invalid or already completed." });

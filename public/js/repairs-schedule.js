@@ -20,10 +20,12 @@ async function loadRemarks() {
     message.textContent = "Loading remarks…";
     timeline.innerHTML = "";
     const params = new URLSearchParams();
+    const department = String(user?.department || "").trim();
     const date = document.getElementById("dateFilter").value;
     const loco = document.getElementById("locoFilter").value.trim();
     if (date) params.set("date", date);
     if (loco) params.set("loco", loco);
+    if (department) params.set("department", department);
     try {
         const response = await fetch(`/api/repair-schedule/remarks?${params}`);
         const result = await response.json();

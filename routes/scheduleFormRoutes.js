@@ -95,13 +95,15 @@ function repairLocoKey(assignment) {
 async function buildRepairTemplate(assignment, template) {
     if (!isRepairsAssignment(assignment)) return template;
     const header = assignment.detail.assign_work_header || {};
-    let query = supabase.from("repair_schedule_remarks").select("id,remark_text,author_name,author_role,created_at,repair_schedule_actions(status)").order("created_at", { ascending: true });
+    let query = supabase.from("repair_schedule_remarks").select("id,remark_text,author_name,author_role,created_at,schedule_master(department_id),repair_schedule_actions(status)").order("created_at", { ascending: true });
     query = header.loco_master?.id
         ? query.eq("loco_id", header.loco_master.id)
         : query.eq("temporary_loco_id", header.temporary_loco_master?.id);
     const { data, error } = await query;
     if (error) throw error;
+    const assignmentDepartmentId = Number(header.schedule_master?.department_id);
     const pending = (data || []).filter(item =>
+        Number(item.schedule_master?.department_id) === assignmentDepartmentId &&
         !(item.repair_schedule_actions || []).some(action => action.status === "Completed")
     );
     const pendingIds = pending.map(item => Number(item.id));
@@ -166,7 +168,8 @@ async function getAssignment(staffId, distributionId) {
                     ),
                     schedule_master (
                         id,
-                        schedule_name
+                        schedule_name,
+                        department_id
                     )
                 )
             `)

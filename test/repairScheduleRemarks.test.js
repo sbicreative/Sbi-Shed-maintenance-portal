@@ -29,6 +29,23 @@ test("dashboard repair remark feed enforces the confirmed cross-role audiences",
     assert.match(route, /staff:\s*new Set\(\["incharge", "supervisor"\]\)/);
 });
 
+test("repair remarks stay inside the viewer and assignment department", () => {
+    const repairRoute = fs.readFileSync(path.join(root, "routes", "repairScheduleRoutes.js"), "utf8");
+    const assignRoute = fs.readFileSync(path.join(root, "routes", "assignWorkRoutes.js"), "utf8");
+    const manpowerRoute = fs.readFileSync(path.join(root, "routes", "manpowerRoutes.js"), "utf8");
+    const formRoute = fs.readFileSync(path.join(root, "routes", "scheduleFormRoutes.js"), "utf8");
+    const feed = fs.readFileSync(path.join(root, "public", "js", "repair-remarks-feed.js"), "utf8");
+    const timeline = fs.readFileSync(path.join(root, "public", "js", "repairs-schedule.js"), "utf8");
+    assert.match(repairRoute, /sameDepartment/);
+    assert.match(repairRoute, /schedule_master \(schedule_name, department_id\)/);
+    assert.match(assignRoute, /targetDepartmentId/);
+    assert.match(assignRoute, /schedule_master\(department_id\)/);
+    assert.match(manpowerRoute, /headerDepartmentId/);
+    assert.match(formRoute, /assignmentDepartmentId/);
+    assert.match(feed, /department=.*encodeURIComponent\(department\)/);
+    assert.match(timeline, /params\.set\("department", department\)/);
+});
+
 test("Repairs work created as Active remains selectable in every schedule", () => {
     const route = fs.readFileSync(path.join(root, "routes", "workMasterRoutes.js"), "utf8");
     assert.match(route, /\.in\("status", \["true", "Active"\]\)/);

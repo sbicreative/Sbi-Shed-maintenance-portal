@@ -19,9 +19,16 @@
         const role = document.body.dataset.dashboardRole;
         if (!feed || !role) return;
 
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        const department = String(user?.department || "").trim();
+        if (!department) {
+            feed.innerHTML = '<p class="remarks-feed-empty error">Department is not available for this login.</p>';
+            return;
+        }
+
         try {
             const response = await fetch(
-                `/api/repair-schedule/remarks?viewer_role=${encodeURIComponent(role)}`
+                `/api/repair-schedule/remarks?viewer_role=${encodeURIComponent(role)}&department=${encodeURIComponent(department)}`
             );
             const result = await response.json();
             if (!response.ok || !result.success) {

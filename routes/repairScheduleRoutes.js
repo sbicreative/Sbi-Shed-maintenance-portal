@@ -7,6 +7,13 @@ function normalizedRole(value) {
     return String(value || "").trim().toLowerCase();
 }
 
+function normalizedDepartmentId(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "1" || normalized === "electrical") return 1;
+    if (normalized === "2" || normalized === "mechanical") return 2;
+    return null;
+}
+
 router.get("/assignment-options", async (req, res) => {
     try {
         const role = normalizedRole(req.query.role);
@@ -104,6 +111,10 @@ router.post("/remarks", async (req, res) => {
 router.get("/remarks", async (req, res) => {
     try {
         const date = String(req.query.date || "").trim();
+        const departmentId = normalizedDepartmentId(req.query.department_id || req.query.department);
+        if (!departmentId) {
+            return res.status(400).json({ success: false, message: "A valid Electrical or Mechanical department is required." });
+        }
         if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
             return res.status(400).json({ success: false, message: "Invalid date filter." });
         }
@@ -115,7 +126,7 @@ router.get("/remarks", async (req, res) => {
                 source_type, source_action, created_at,
                 loco_master (loco_no),
                 temporary_loco_master (loco_no),
-                schedule_master (schedule_name),
+                schedule_master (schedule_name, department_id),
                 assign_work_details (work_master (work_name)),
                 schedule_form_details (schedule_form_master (form_name))
             `)
@@ -143,7 +154,8 @@ router.get("/remarks", async (req, res) => {
             const roleVisible = !viewerRole || visibleAuthorRoles[viewerRole].has(
                 String(item.author_role || "").trim().toLowerCase()
             );
-            return roleVisible && (!loco || String(locoNo).toLowerCase().includes(loco));
+            const sameDepartment = Number(item.schedule_master?.department_id) === departmentId;
+            return sameDepartment && roleVisible && (!loco || String(locoNo).toLowerCase().includes(loco));
         });
 
         res.json({ success: true, remarks });

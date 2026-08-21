@@ -521,9 +521,16 @@ async function loadRepairRemarkOptions(workRow) {
 
     container.innerHTML = '<small class="repair-remark-help">Loading pending repair remarks…</small>';
     try {
+        const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+        const departmentId = String(currentUser?.department || "").trim().toLowerCase() === "electrical"
+            ? 1
+            : String(currentUser?.department || "").trim().toLowerCase() === "mechanical"
+                ? 2
+                : null;
+        if (!departmentId) throw new Error("Logged-in department is required.");
         const params = new URLSearchParams(selectedLoco.source === "master"
-            ? { loco_id: selectedLoco.id }
-            : { loco_no: selectedLoco.loco_no });
+            ? { loco_id: selectedLoco.id, department_id: departmentId }
+            : { loco_no: selectedLoco.loco_no, department_id: departmentId });
         const response = await fetch(`/api/assign-work/repair-remarks?${params}`);
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.message || "Unable to load repair remarks.");

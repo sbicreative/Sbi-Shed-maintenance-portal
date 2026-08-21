@@ -350,7 +350,8 @@ router.get("/staff/:staffId", async (req, res) => {
                             loco_type
                         ),
                         schedule_master (
-                            schedule_name
+                            schedule_name,
+                            department_id
                         )
                     )
                 `)
@@ -402,7 +403,7 @@ router.get("/staff/:staffId", async (req, res) => {
             if (temporaryLocoIds.length) filters.push(`temporary_loco_id.in.(${temporaryLocoIds.join(",")})`);
             const { data: remarkData, error: remarkError } = await supabase
                 .from("repair_schedule_remarks")
-                .select("id,loco_id,temporary_loco_id,remark_text,author_name,author_role,created_at")
+                .select("id,loco_id,temporary_loco_id,remark_text,author_name,author_role,created_at,schedule_master(department_id)")
                 .or(filters.join(","))
                 .in("author_role", ["Incharge", "Supervisor"])
                 .order("created_at", { ascending: true });
@@ -411,10 +412,13 @@ router.get("/staff/:staffId", async (req, res) => {
         }
 
         function remarksForHeader(header = {}) {
-            return locoRemarks.filter(remark =>
-                (header.loco_id && Number(remark.loco_id) === Number(header.loco_id)) ||
-                (header.temporary_loco_id && Number(remark.temporary_loco_id) === Number(header.temporary_loco_id))
-            );
+            const headerDepartmentId = Number(header.schedule_master?.department_id);
+            return locoRemarks.filter(remark => {
+                const sameLoco =
+                    (header.loco_id && Number(remark.loco_id) === Number(header.loco_id)) ||
+                    (header.temporary_loco_id && Number(remark.temporary_loco_id) === Number(header.temporary_loco_id));
+                return sameLoco && Number(remark.schedule_master?.department_id) === headerDepartmentId;
+            });
         }
 
         const result = distributions.map(distribution => {
