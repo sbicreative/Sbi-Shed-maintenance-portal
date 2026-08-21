@@ -64,3 +64,16 @@ test("PWA install button stays available with browser-specific fallback", () => 
     assert.match(pwa, /installButton\.hidden = isStandalone/);
     assert.match(pwa, /Install app या Add to Home screen/);
 });
+
+test("portal and Incharge demo preparation features remain deployed together", () => {
+    const portal = fs.readFileSync(path.join(__dirname, "..", "public", "portal.html"), "utf8");
+    const portalClient = fs.readFileSync(path.join(__dirname, "..", "public", "js", "portal.js"), "utf8");
+    const incharge = fs.readFileSync(path.join(__dirname, "..", "public", "dashboard", "incharge.html"), "utf8");
+    const inchargeClient = fs.readFileSync(path.join(__dirname, "..", "public", "js", "incharge.js"), "utf8");
+    const assignRoute = fs.readFileSync(path.join(__dirname, "..", "routes", "assignWorkRoutes.js"), "utf8");
+    assert.match(portal, /id="installAppBtn"/);
+    assert.match(portalClient, /deferredInstallPrompt/);
+    assert.match(incharge, /<th>Work<\/th>\s*<th>Supervisor<\/th>/);
+    assert.match(inchargeClient, /loadTodaysActivity/);
+    assert.match(assignRoute, /router\.get\("\/today"/);
+});

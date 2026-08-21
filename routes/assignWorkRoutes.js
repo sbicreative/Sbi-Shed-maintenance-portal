@@ -13,6 +13,62 @@ function validDepartmentId(value) {
     return [1, 2].includes(id) ? id : null;
 }
 
+router.get("/today", async (req, res) => {
+    try {
+        const assignDate = String(req.query.assign_date || "").trim();
+        const createdBy = Number(req.query.created_by);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(assignDate) || !createdBy) {
+            return res.status(400).json({ success: false, message: "A valid assign_date and created_by are required." });
+        }
+
+        const { data, error } = await supabase
+            .from("assign_work_details")
+            .select(`
+                id,
+                work_master (work_name),
+                assign_work_header!inner (
+                    assign_date, created_by, supervisor_id,
+                    loco_master (loco_no),
+                    temporary_loco_master (loco_no),
+                    schedule_master (schedule_name)
+                )
+            `)
+            .eq("assign_work_header.assign_date", assignDate)
+            .eq("assign_work_header.created_by", createdBy)
+            .order("id", { ascending: false });
+        if (error) throw error;
+
+        const supervisorIds = [...new Set((data || [])
+            .map(item => Number(item.assign_work_header?.supervisor_id))
+            .filter(Boolean))];
+        let supervisors = [];
+        if (supervisorIds.length) {
+            const supervisorResult = await supabase
+                .from("supervisor_master")
+                .select("id,name")
+                .in("id", supervisorIds);
+            if (supervisorResult.error) throw supervisorResult.error;
+            supervisors = supervisorResult.data || [];
+        }
+        const supervisorNames = new Map(supervisors.map(item => [Number(item.id), item.name]));
+
+        res.json({
+            success: true,
+            data: (data || []).map(item => {
+                const header = item.assign_work_header || {};
+                return {
+                    loco_no: header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "-",
+                    schedule_name: header.schedule_master?.schedule_name || "-",
+                    work_name: item.work_master?.work_name || "-",
+                    supervisor_name: supervisorNames.get(Number(header.supervisor_id)) || "-"
+                };
+            })
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 router.get("/repair-remarks", async (req, res) => {
     try {
         const locoId = Number(req.query.loco_id) || null;

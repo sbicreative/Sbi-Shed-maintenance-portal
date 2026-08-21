@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1f4b36">
     <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/images/SBI-logo.jpeg">
     <title>Locomotive Shed Sabarmati Portal</title>
-    <link rel="stylesheet" href="/css/portal.css">
+    <link rel="stylesheet" href="/css/portal.css?v=20260821-1">
 </head>
 <body>
     <header class="site-header">
@@ -90,6 +91,13 @@
         <p class="copyright-line">&copy; 2026 Locomotive Shed Sabarmati <span aria-hidden="true">|</span> Western Railway</p>
     </footer>
 
+    <button id="installAppBtn" class="install-app-btn" type="button">Install App</button>
+
+    <div id="installHelp" class="install-help" hidden role="status" aria-live="polite">
+        <span id="installHelpText"></span>
+        <button id="closeInstallHelpBtn" type="button" aria-label="Close install instructions">×</button>
+    </div>
+
     <div id="loginModal" class="login-modal" hidden>
         <div class="modal-backdrop" data-close-modal></div>
         <section class="login-dialog" role="dialog" aria-modal="true" aria-labelledby="loginDialogTitle">
@@ -133,7 +141,6 @@
         </section>
     </div>
 
-    <script src="/js/portal.js"></script>
-    <script src="/js/pwa.js"></script>
+    <script src="/js/portal.js?v=20260821-1"></script>
 </body>
 </html>
