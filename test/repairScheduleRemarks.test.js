@@ -13,13 +13,21 @@ test("repair remarks migration creates an append-only table without backfill", (
     assert.doesNotMatch(migration, /UPDATE\s+(assign_work|manpower|schedule_form)/i);
 });
 
-test("all three role dashboards expose the Repairs Schedule timeline", () => {
-    for (const name of ["incharge.html", "supervisor.html", "staff.html"]) {
+test("reviewer dashboards expose the Repairs Schedule timeline", () => {
+    for (const name of ["incharge.html", "supervisor.html"]) {
         const html = fs.readFileSync(path.join(root, "public", "dashboard", name), "utf8");
         assert.match(html, /repairs-schedule\.html/);
         assert.match(html, /id="repairRemarksFeed"/);
         assert.match(html, /repair-remarks-feed\.js/);
     }
+});
+
+test("Staff dashboard is limited to today's assigned work", () => {
+    const html = fs.readFileSync(path.join(root, "public", "dashboard", "staff.html"), "utf8");
+    assert.match(html, /Today's Assigned Work/);
+    assert.doesNotMatch(html, /class="summary"/);
+    assert.doesNotMatch(html, /Quick Actions/);
+    assert.doesNotMatch(html, /repairRemarksFeed|repairs-schedule\.html/);
 });
 
 test("dashboard repair remark feed enforces the confirmed cross-role audiences", () => {
@@ -110,23 +118,18 @@ test("Supervisor sees existing work remarks and adds multiple remarks only once 
 
 test("Staff receives remarks only for locos assigned to that Staff member", () => {
     const client = fs.readFileSync(path.join(root, "public", "js", "staff.js"), "utf8");
-    const feed = fs.readFileSync(path.join(root, "public", "js", "repair-remarks-feed.js"), "utf8");
     const route = fs.readFileSync(path.join(root, "routes", "manpowerRoutes.js"), "utf8");
     const html = fs.readFileSync(path.join(root, "public", "dashboard", "staff.html"), "utf8");
     assert.match(html, /<th>Assigned Work<\/th>\s*<th>Remarks<\/th>/);
     assert.match(client, /loco_repair_remarks/);
-    assert.match(client, /assigned-repair-locos-ready/);
-    assert.match(feed, /assignedRepairLocoNumbers \|\| new Set\(\)/);
     assert.match(route, /\.in\("author_role", \["Incharge", "Supervisor"\]\)/);
     assert.match(route, /loco_repair_remarks: remarksForHeader/);
 });
 
-test("Repair Schedule is always available to reviewers but conditional for Staff", () => {
+test("Repair Schedule remains available to reviewers but hidden from simplified Staff dashboard", () => {
     const staffHtml = fs.readFileSync(path.join(root, "public", "dashboard", "staff.html"), "utf8");
-    const staffClient = fs.readFileSync(path.join(root, "public", "js", "staff.js"), "utf8");
     const repairsClient = fs.readFileSync(path.join(root, "public", "js", "repairs-schedule.js"), "utf8");
-    assert.match(staffHtml, /id="repairsScheduleBtn"[^>]*hidden/);
-    assert.match(staffClient, /hasLocoAssignment/);
+    assert.doesNotMatch(staffHtml, /repairsScheduleBtn|repairs-schedule\.html/);
     assert.match(repairsClient, /role === "incharge" \|\| role === "supervisor"/);
     assert.match(repairsClient, /if \(!locoAssignments\.length\)/);
     assert.match(repairsClient, /allowedStaffLocos = new Set/);

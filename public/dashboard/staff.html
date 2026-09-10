@@ -29,10 +29,6 @@
         </div>
         <div class="nav-actions">
             <span id="currentDateTime"></span>
-            <button id="repairsScheduleBtn" class="portal-btn" type="button" hidden
-                onclick="window.location.href='/dashboard/repairs-schedule.html'">
-                Repairs Schedule
-            </button>
             <button id="logoutBtn" class="logout-btn" type="button">
                 Logout
             </button>
@@ -41,48 +37,6 @@
 
     <main class="dashboard">
         <div id="dashboardMessage" class="message" hidden></div>
-
-        <section class="summary" aria-label="Work summary">
-            <article class="summary-card assigned-card">
-                <span class="card-icon" aria-hidden="true">&#128188;</span>
-                <h2 id="todayAssigned">0</h2>
-                <p>Today's Assigned Work</p>
-            </article>
-            <article class="summary-card pending-card">
-                <span class="card-icon" aria-hidden="true">&#9203;</span>
-                <h2 id="pendingWork">0</h2>
-                <p>Pending Work</p>
-            </article>
-            <article class="summary-card completed-card">
-                <span class="card-icon" aria-hidden="true">&#10003;</span>
-                <h2 id="completedToday">0</h2>
-                <p>Completed Today</p>
-            </article>
-            <article class="summary-card submitted-card">
-                <span class="card-icon" aria-hidden="true">&#128196;</span>
-                <h2 id="formsSubmitted">0</h2>
-                <p>Forms Submitted</p>
-            </article>
-        </section>
-
-        <section class="quick-actions">
-            <h2>Quick Actions</h2>
-            <div class="button-grid">
-                <button type="button" class="action-blue" data-scroll-work>
-                    My Assigned Work
-                </button>
-                <button type="button" class="action-green" data-open-current>
-                    Fill Schedule Form
-                </button>
-                <button type="button" class="action-orange" data-show-history>
-                    Work History
-                </button>
-                <button type="button" class="action-purple"
-                    onclick="location.href='viewer.html'">
-                    Viewer
-                </button>
-            </div>
-        </section>
 
         <section id="assignedWorkSection" class="work-panel">
             <div class="section-heading">
@@ -121,19 +75,9 @@
             </div>
         </section>
 
-        <section class="repair-remarks-panel" aria-labelledby="repairRemarksTitle">
-            <div class="repair-remarks-panel-header">
-                <h2 id="repairRemarksTitle">Repair Remarks <span id="repairRemarksCount" class="repair-remarks-count">0</span></h2>
-                <a href="repairs-schedule.html" data-repairs-schedule-access hidden>View full timeline</a>
-            </div>
-            <div id="repairRemarksFeed" class="repair-remarks-feed">
-                <p class="remarks-feed-empty">Loading Incharge and Supervisor remarks…</p>
-            </div>
-        </section>
     </main>
 
     <script src="../js/staff.js"></script>
-    <script src="../js/repair-remarks-feed.js?v=20260813-1"></script>
     <script src="/js/pwa.js"></script>
 </body>
 </html>

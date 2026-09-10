@@ -2,7 +2,6 @@ const currentUser = readCurrentUser();
 const employeeMasterId =
     Number(currentUser?.employee_master_id);
 let assignedWork = [];
-let showHistory = false;
 
 function readCurrentUser() {
     try {
@@ -99,20 +98,6 @@ async function loadAssignedWork() {
         }
 
         assignedWork = Array.isArray(result) ? result : [];
-        const hasLocoAssignment = assignedWork.some(item => {
-            const header = item.work_detail?.assign_work_header || {};
-            return Boolean(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no);
-        });
-        const repairsButton = document.getElementById("repairsScheduleBtn");
-        if (repairsButton) repairsButton.hidden = !hasLocoAssignment;
-        document.querySelectorAll("[data-repairs-schedule-access]")
-            .forEach(link => { link.hidden = !hasLocoAssignment; });
-        window.assignedRepairLocoNumbers = new Set(assignedWork.map(item => {
-            const header = item.work_detail?.assign_work_header || {};
-            return String(header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "").trim().toLowerCase();
-        }).filter(Boolean));
-        window.dispatchEvent(new CustomEvent("assigned-repair-locos-ready"));
-        updateSummary();
         renderWorkTable();
     } catch (error) {
         body.innerHTML = `
@@ -124,33 +109,7 @@ async function loadAssignedWork() {
     }
 }
 
-function updateSummary() {
-    const today = localDateKey();
-    const todayItems = assignedWork.filter(
-        item => item.assigned_date === today
-    );
-    const pending = assignedWork.filter(
-        item => normalizedStatus(item) !== "Completed"
-    );
-    const completedToday = todayItems.filter(
-        item => normalizedStatus(item) === "Completed"
-    );
-
-    document.getElementById("todayAssigned").textContent =
-        todayItems.length;
-    document.getElementById("pendingWork").textContent =
-        pending.length;
-    document.getElementById("completedToday").textContent =
-        completedToday.length;
-    document.getElementById("formsSubmitted").textContent =
-        completedToday.length;
-}
-
 function visibleWork() {
-    if (showHistory) {
-        return assignedWork;
-    }
-
     const today = localDateKey();
     return assignedWork.filter(
         item => item.assigned_date === today
@@ -204,13 +163,6 @@ function renderWorkTable() {
     const body = document.getElementById("assignedWorkBody");
     const items = visibleWork();
 
-    document.getElementById("workTableTitle").textContent =
-        showHistory ? "Work History" : "Today's Assigned Work";
-    document.getElementById("workTableSubtitle").textContent =
-        showHistory
-            ? "All work mapped to your employee master record"
-            : "Work mapped to your employee master record";
-
     if (items.length === 0) {
         body.innerHTML = `
             <tr class="empty-work-grid" aria-label="Empty assigned work record">
@@ -226,9 +178,7 @@ function renderWorkTable() {
             </tr>
             <tr class="empty-work-message">
                 <td colspan="9">
-                    ${showHistory
-                        ? "No work history found."
-                        : "No work assigned for today."}
+                    No work assigned for today.
                 </td>
             </tr>
         `;
@@ -308,7 +258,6 @@ async function updateWorkStatus(distributionId, status, button) {
 
         if (item) item.status = status;
 
-        updateSummary();
         renderWorkTable();
         showMessage(
             status === "Completed"
@@ -340,47 +289,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("refreshBtn").addEventListener(
         "click",
         loadAssignedWork
-    );
-
-    document.querySelector("[data-scroll-work]").addEventListener(
-        "click",
-        () => {
-            showHistory = false;
-            renderWorkTable();
-            document.getElementById("assignedWorkSection")
-                .scrollIntoView({ behavior: "smooth" });
-        }
-    );
-
-    document.querySelector("[data-show-history]").addEventListener(
-        "click",
-        () => {
-            showHistory = true;
-            renderWorkTable();
-            document.getElementById("assignedWorkSection")
-                .scrollIntoView({ behavior: "smooth" });
-        }
-    );
-
-    document.querySelector("[data-open-current]").addEventListener(
-        "click",
-        () => {
-            const current = assignedWork.find(item =>
-                item.assigned_date === localDateKey() &&
-                normalizedStatus(item) !== "Assigned"
-            );
-
-            if (current) {
-                window.location.href =
-                    `/dashboard/schedule-form.html?assignment=${current.id}`;
-                return;
-            }
-
-            showMessage(
-                "Start an assigned work before opening its schedule form.",
-                true
-            );
-        }
     );
 
     document.getElementById("assignedWorkBody").addEventListener(
