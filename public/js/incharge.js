@@ -78,53 +78,6 @@ updateDateTime();
 
 setInterval(updateDateTime, 1000);
 
-async function loadDashboardSummary() {
-    const now = new Date();
-    const today = [
-        now.getFullYear(),
-        String(now.getMonth() + 1).padStart(2, "0"),
-        String(now.getDate()).padStart(2, "0")
-    ].join("-");
-
-    try {
-        const [trackingResponse, workResponse] = await Promise.all([
-            fetch("/api/tracking/summary"),
-            fetch(`/api/assign-work/summary?assign_date=${today}`)
-        ]);
-        const [tracking, work] = await Promise.all([
-            trackingResponse.json(),
-            workResponse.json()
-        ]);
-
-        if (!trackingResponse.ok || !workResponse.ok) {
-            throw new Error(
-                tracking.message || work.message ||
-                "Unable to load dashboard summary."
-            );
-        }
-
-        document.getElementById("totalLocos").textContent =
-            tracking.total_locos ?? 0;
-        document.getElementById("workingLocos").textContent =
-            work.working_locos ?? 0;
-    } catch (error) {
-        console.error("Dashboard Summary Error:", error);
-    }
-}
-
-async function loadIncompleteFormsSummary() {
-    const reviewerId = Number(user.supervisor_master_id || user.id);
-    if (!reviewerId) return;
-    try {
-        const response = await fetch(`/api/schedule-forms/incomplete-summary/incharge/${reviewerId}`);
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
-        document.getElementById("incompleteForms").textContent = result.count ?? 0;
-        document.getElementById("incompleteSchedules").textContent =
-            result.schedule_names?.join(", ") || "-";
-    } catch (error) { console.error("Incomplete Forms Summary:", error); }
-}
-
 function escapeActivityValue(value) {
     return String(value ?? "-")
         .replaceAll("&", "&amp;")
@@ -175,12 +128,8 @@ async function loadTodaysActivity() {
 // Viewer dashboard code below
 
 document.addEventListener("DOMContentLoaded", () => {
-    loadDashboardSummary();
     loadTodaysActivity();
-    loadIncompleteFormsSummary();
-    setInterval(loadDashboardSummary, 30000);
     setInterval(loadTodaysActivity, 30000);
-    setInterval(loadIncompleteFormsSummary, 30000);
     const user =
     JSON.parse(
         localStorage.getItem("user")
