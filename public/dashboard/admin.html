@@ -5,6 +5,7 @@
     <title>Admin Dashboard | SBI Shed</title>
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/admin-master-cards.css">
+    <link rel="stylesheet" href="../css/admin-schedule-forms.css">
 </head>
 <body>
     <header class="admin-header">
@@ -14,6 +15,7 @@
     <main class="admin-shell">
         <aside class="admin-nav">
             <button class="nav-button active" data-view="overview">Overview</button>
+            <button class="nav-button" data-resource="scheduleForms">Schedule Forms</button>
             <p>Master Data</p>
             <button class="nav-button" data-resource="departments">Departments</button><button class="nav-button" data-resource="sections">Sections</button>
             <button class="nav-button" data-resource="designations">Designations</button><button class="nav-button" data-resource="employees">Employees</button>
@@ -24,8 +26,8 @@
         <section class="admin-content">
             <p id="pageMessage" class="page-message" role="status"></p>
             <div id="overviewView">
-                <div class="welcome-panel"><p class="eyebrow">Secure administration</p><h2>Master Data &amp; Demo Controls</h2><p>Schedule form templates, submissions and historical schedule records are deliberately excluded from this editor.</p></div>
-                <div class="summary-grid"><article><span>Editable masters</span><strong>10</strong></article><article><span>Session security</span><strong>Server-side</strong></article><article><span>Schedule forms</span><strong>Protected</strong></article></div>
+                <div class="welcome-panel"><p class="eyebrow">Secure administration</p><h2>Master Data &amp; Demo Controls</h2><p>All schedule-form templates are available in read-only preview. Filled forms and historical records remain protected.</p></div>
+                <div class="summary-grid"><article><span>Editable masters</span><strong>10</strong></article><article><span>Session security</span><strong>Server-side</strong></article><article><span>Schedule forms</span><strong>Read only</strong></article></div>
                 <section class="panel master-control-panel">
                     <div class="panel-heading"><div><p class="eyebrow">Direct access</p><h2>Master Table Controls</h2><p>Master select karke records dekhein, add karein, update karein ya delete karein.</p></div></div>
                     <div class="master-card-grid">
@@ -52,10 +54,18 @@
                 <div class="panel-heading"><div><p class="eyebrow">Authorized editor</p><h2 id="resourceTitle">Master Data</h2></div><button id="addRecordBtn" type="button">Add Record</button></div>
                 <div class="table-wrap"><table><thead id="masterHead"></thead><tbody id="masterBody"></tbody></table></div>
             </div>
+            <div id="scheduleFormsView" hidden>
+                <div class="panel-heading schedule-heading"><div><p class="eyebrow">Read-only library</p><h2>Schedule Forms</h2><p>Admin can preview every active form; staff-filled data cannot be changed here.</p></div><label>Choose form<select id="scheduleTemplateSelect" aria-label="Choose schedule form"></select></label></div>
+                <section class="schedule-preview-panel">
+                    <div class="schedule-preview-toolbar"><button id="previousTemplateBtn" class="secondary" type="button">← Previous</button><div><h3 id="scheduleTemplateTitle">Select a form</h3><p id="scheduleTemplateMeta"></p></div><button id="nextTemplateBtn" class="secondary" type="button">Next →</button></div>
+                    <div id="scheduleTemplatePreview" class="schedule-template-preview"><p class="schedule-empty">Loading schedule forms...</p></div>
+                </section>
+            </div>
         </section>
     </main>
     <dialog id="recordDialog"><form id="recordForm"><div class="dialog-title"><h2 id="recordDialogTitle">Edit record</h2><button type="button" data-close>×</button></div><div id="recordFields" class="record-fields"></div><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save Record</button></div></form></dialog>
     <footer>An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
+    <script src="../js/bilingual-schedule-activities.js"></script>
     <script src="../js/admin.js"></script>
     <script src="../js/admin-master-cards.js"></script>
 </body></html>

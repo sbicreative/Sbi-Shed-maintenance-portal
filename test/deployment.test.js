@@ -77,3 +77,15 @@ test("portal and Incharge demo preparation features remain deployed together", (
     assert.match(inchargeClient, /loadTodaysActivity/);
     assert.match(assignRoute, /router\.get\("\/today"/);
 });
+
+test("Admin can browse all active schedule form templates in read-only preview", () => {
+    const admin = fs.readFileSync(path.join(__dirname, "..", "public", "dashboard", "admin.html"), "utf8");
+    const adminClient = fs.readFileSync(path.join(__dirname, "..", "public", "js", "admin.js"), "utf8");
+    const adminRoute = fs.readFileSync(path.join(__dirname, "..", "routes", "adminMasterRoutes.js"), "utf8");
+    assert.match(admin, /data-resource="scheduleForms"/);
+    assert.match(admin, /id="scheduleTemplatePreview"/);
+    assert.match(adminClient, /schedule-form-templates/);
+    assert.match(adminClient, /template_schema/);
+    assert.match(adminRoute, /from\("schedule_form_master"\)/);
+    assert.match(adminRoute, /eq\("status", "Active"\)/);
+});

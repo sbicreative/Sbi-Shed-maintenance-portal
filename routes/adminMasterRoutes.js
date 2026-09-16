@@ -29,6 +29,16 @@ function payload(def, body) {
 }
 
 router.get("/definitions", (req, res) => res.json({ success: true, resources: definitions }));
+router.get("/schedule-form-templates", async (req, res) => {
+    const { data, error } = await supabase
+        .from("schedule_form_master")
+        .select("id, form_name, form_code, department, section, schedule_types, status, version, source_file_name, template_schema")
+        .eq("status", "Active")
+        .order("department", { ascending: true })
+        .order("form_name", { ascending: true });
+    if (error) return res.status(500).json({ success: false, message: error.message });
+    res.json({ success: true, templates: data || [] });
+});
 router.get("/:resource", async (req, res) => {
     const def = definition(req, res); if (!def) return;
     const { data, error } = await supabase.from(def.table).select("*").order("id", { ascending: false }).limit(500);
