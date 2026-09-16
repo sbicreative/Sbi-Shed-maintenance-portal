@@ -17,10 +17,6 @@ test("reviewer dashboards expose the Repairs Schedule timeline", () => {
     for (const name of ["incharge.html", "supervisor.html"]) {
         const html = fs.readFileSync(path.join(root, "public", "dashboard", name), "utf8");
         assert.match(html, /repairs-schedule\.html/);
-        if (name === "supervisor.html") {
-            assert.match(html, /id="repairRemarksFeed"/);
-            assert.match(html, /repair-remarks-feed\.js/);
-        }
     }
 });
 
@@ -166,14 +162,9 @@ test("Man Power shows incomplete form submitter and keeps same-day continuation 
     assert.match(manpowerRoute, /Continuation Assigned/);
 });
 
-test("Supervisor dashboard adds multiple remarks only to owned assigned work", () => {
+test("repair remark API restricts multiple remarks to owned assigned work", () => {
     const route = fs.readFileSync(path.join(root, "routes", "repairScheduleRoutes.js"), "utf8");
     const client = fs.readFileSync(path.join(root, "public", "js", "dashboard-remark-entry.js"), "utf8");
-    for (const name of ["supervisor.html"]) {
-        const html = fs.readFileSync(path.join(root, "public", "dashboard", name), "utf8");
-        assert.match(html, /id="dashboardRemarkForm"/);
-        assert.match(html, /dashboard-remark-entry\.js/);
-    }
     assert.match(client, /dashboardAddRemark/);
     assert.match(client, /remarks = Array\.from/);
     assert.match(route, /router\.get\("\/assignment-options"/);

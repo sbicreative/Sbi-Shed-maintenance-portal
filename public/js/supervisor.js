@@ -16,6 +16,12 @@ if (!user) {
 const supervisorId =
     user.supervisor_master_id || user.id;
 
+function escapeDashboardText(value) {
+    const element = document.createElement('span');
+    element.textContent = value == null ? '' : String(value);
+    return element.innerHTML;
+}
+
 function localDateValue() {
     const now = new Date();
     return [
@@ -39,10 +45,6 @@ async function loadDashboardSummary() {
             summary.total_assigned_locos ?? 0;
         document.getElementById("availableStaff").textContent =
             summary.available_staff ?? 0;
-        document.getElementById("pendingWork").textContent =
-            summary.pending_work ?? 0;
-        document.getElementById("completedToday").textContent =
-            summary.completed_today ?? 0;
     } catch (error) {
         console.error("Supervisor Summary Error:", error);
         await loadDashboardSummaryFallback();
@@ -91,14 +93,6 @@ async function loadDashboardSummaryFallback() {
             locos.size;
         document.getElementById("availableStaff").textContent =
             Array.isArray(staff) ? staff.length : 0;
-        document.getElementById("pendingWork").textContent =
-            rows.filter(item =>
-                String(item.status).toLowerCase() !== "completed"
-            ).length;
-        document.getElementById("completedToday").textContent =
-            rows.filter(item =>
-                String(item.status).toLowerCase() === "completed"
-            ).length;
     } catch (error) {
         console.error("Supervisor Summary Fallback Error:", error);
     }
@@ -364,7 +358,7 @@ async function loadAssignedWork() {
 
         const response =
     await fetch(
-        `/api/supervisors/assigned-work/${supervisorId}`
+        `/api/supervisors/assigned-work/${supervisorId}?assign_date=${localDateValue()}`
     );
 
         const data =
@@ -400,7 +394,7 @@ async function loadAssignedWork() {
                 </td>
 
                 <td>
-                    ${item.assign_work_header?.schedule_id || ""}
+                    ${item.assign_work_header?.schedule_master?.schedule_name || ""}
                 </td>
 
                 <td>
@@ -408,7 +402,7 @@ async function loadAssignedWork() {
                 </td>
 
                 <td>
-                    ${item.status}
+                    ${escapeDashboardText(item.remarks || "-")}
                 </td>
 
             `;
@@ -432,7 +426,7 @@ async function loadAssignedWork() {
 
         const response =
     await fetch(
-        `/api/supervisors/assigned-work/${supervisorId}`
+        `/api/supervisors/assigned-work/${supervisorId}?assign_date=${localDateValue()}`
     );
         const data =
             await response.json();
@@ -469,7 +463,7 @@ async function loadAssignedWork() {
                 </td>
 
                 <td>
-                    ${item.assign_work_header.schedule_id}
+                    ${item.assign_work_header.schedule_master?.schedule_name || "-"}
                 </td>
 
                 <td>
@@ -477,7 +471,7 @@ async function loadAssignedWork() {
                 </td>
 
                 <td>
-                    ${item.status}
+                    ${escapeDashboardText(item.remarks || "-")}
                 </td>
 
             `;
