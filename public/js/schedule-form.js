@@ -318,6 +318,13 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     label
                 );
                 field.dataset.requiredAnswer = String(required);
+                if (
+                    columns.action !== null &&
+                    cellIndex === columns.action &&
+                    field.tagName === "TEXTAREA"
+                ) {
+                    field.dataset.bulkOkEligible = "true";
+                }
                 const attribution = attributions[key];
                 if (attribution && field.value.trim()) {
                     field.readOnly = true;
@@ -336,6 +343,103 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
     });
 
     updateCompletion();
+}
+
+function scheduleSectionHeading(row) {
+    const text = [...row.cells]
+        .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join(" ");
+    const letter = text.match(/^\(?([A-H])\)?(?:[.):-]|\s)\s*(.+)$/);
+    if (letter) return `${letter[1].toUpperCase()} — ${letter[2]}`;
+    const numbered = text.match(/^(\d+)\.0\s+(.+)$/);
+    return numbered ? `${numbered[1]} — ${numbered[2]}` : "";
+}
+
+function initializeScheduleSections(container) {
+    container.querySelectorAll("table").forEach((table, tableIndex) => {
+        const rows = [...table.rows];
+        const headingIndexes = rows
+            .map((row, index) => ({ index, title: scheduleSectionHeading(row) }))
+            .filter(item => item.title);
+        const sections = headingIndexes.length
+            ? headingIndexes.map((item, index) => ({
+                title: item.title,
+                start: item.index,
+                end: headingIndexes[index + 1]?.index ?? rows.length
+            }))
+            : [{
+                title: tableIndex === 0 ? "Schedule checks" : `Schedule checks ${tableIndex + 1}`,
+                start: Math.min(1, rows.length),
+                end: rows.length
+            }];
+        if (!rows.length) return;
+
+        const commonRows = headingIndexes.length
+            ? rows.slice(0, headingIndexes[0].index)
+            : rows.slice(0, Math.min(1, rows.length));
+        const list = document.createElement("div");
+        list.className = "schedule-section-list";
+        list.setAttribute("aria-label", "Schedule sections");
+
+        const closeAll = () => {
+            rows.forEach(row => { row.hidden = true; });
+            table.hidden = true;
+            list.querySelectorAll(".schedule-section-card").forEach(card => {
+                card.classList.remove("open");
+                card.querySelector(".schedule-section-toggle")?.setAttribute("aria-expanded", "false");
+                const symbol = card.querySelector(".schedule-section-toggle b");
+                if (symbol) symbol.textContent = "＋";
+                const action = card.querySelector(".mark-section-ok");
+                if (action) action.hidden = true;
+            });
+        };
+
+        sections.forEach((section, sectionIndex) => {
+            const card = document.createElement("div");
+            card.className = "schedule-section-card";
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "schedule-section-toggle";
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.innerHTML = `<span>${section.title.replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character])}</span><b>＋</b>`;
+            const markAll = document.createElement("button");
+            markAll.type = "button";
+            markAll.className = "mark-section-ok";
+            markAll.textContent = "Mark All OK";
+            markAll.hidden = true;
+            const sectionRows = rows.slice(section.start, section.end);
+            const eligibleFields = () => sectionRows
+                .flatMap(row => [...row.querySelectorAll('[data-bulk-ok-eligible="true"]')])
+                .filter(field => !field.disabled && !field.readOnly);
+            markAll.disabled = eligibleFields().length === 0;
+            toggle.addEventListener("click", () => {
+                const opening = !card.classList.contains("open");
+                closeAll();
+                if (!opening) return;
+                table.hidden = false;
+                commonRows.forEach(row => { row.hidden = false; });
+                sectionRows.forEach(row => { row.hidden = false; });
+                card.classList.add("open");
+                toggle.setAttribute("aria-expanded", "true");
+                toggle.querySelector("b").textContent = "−";
+                markAll.hidden = false;
+            });
+            markAll.addEventListener("click", () => {
+                eligibleFields().forEach(field => {
+                    if (field.value.trim()) return;
+                    field.value = "OK";
+                    field.dispatchEvent(new Event("input", { bubbles: true }));
+                });
+                updateCompletion();
+            });
+            card.append(toggle, markAll);
+            list.appendChild(card);
+        });
+
+        table.before(list);
+        closeAll();
+    });
 }
 
 function validateIcExceptions() {
@@ -404,7 +508,8 @@ function updateCompletion() {
 function setReadOnly(readOnly) {
     document.querySelectorAll(
         "[data-answer-key], #staffRemarks, #supervisorSelect, " +
-        ".staff-remark-input, #addStaffRemarkBtn, .remove-remark-btn"
+        ".staff-remark-input, #addStaffRemarkBtn, .remove-remark-btn, " +
+        ".mark-section-ok"
     ).forEach(field => {
         field.disabled = readOnly;
     });
@@ -537,6 +642,7 @@ async function loadScheduleForm() {
             window.BilingualScheduleActivities?.enhance(
                 container
             );
+            initializeScheduleSections(container);
         } else {
             updateCompletion();
         }

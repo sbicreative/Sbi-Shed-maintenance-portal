@@ -72,3 +72,13 @@ test("database permits only one active Lead Staff per work", () => {
     assert.match(leadMigration, /assign_work_detail_id BIGINT/);
     assert.match(leadMigration, /uq_schedule_form_work_detail/);
 });
+
+test("schedule forms open as sections and bulk OK only action fields", () => {
+    const client = fs.readFileSync(path.resolve(__dirname, "../public/js/schedule-form.js"), "utf8");
+    assert.match(client, /function initializeScheduleSections\(container\)/);
+    assert.match(client, /scheduleSectionHeading\(row\)/);
+    assert.match(client, /dataset\.bulkOkEligible = "true"/);
+    assert.match(client, /field\.value = "OK"/);
+    assert.match(client, /if \(field\.value\.trim\(\)\) return/);
+    assert.match(client, /field\.tagName === "TEXTAREA"/);
+});
