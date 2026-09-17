@@ -37,7 +37,17 @@ router.get("/schedule-form-templates", async (req, res) => {
         .order("department", { ascending: true })
         .order("form_name", { ascending: true });
     if (error) return res.status(500).json({ success: false, message: error.message });
-    res.json({ success: true, templates: data || [] });
+    const repairDepartments = new Set();
+    const templates = (data || []).filter(template => {
+        if (template.template_schema?.dynamic_type !== "repair_remarks") return true;
+        const department = String(template.department || "General").trim().toLowerCase();
+        if (repairDepartments.has(department)) return false;
+        repairDepartments.add(department);
+        template.form_name = `${template.department || "General"} Repair Schedule Form`;
+        template.schedule_types = [];
+        return true;
+    });
+    res.json({ success: true, templates });
 });
 router.get("/:resource", async (req, res) => {
     const def = definition(req, res); if (!def) return;

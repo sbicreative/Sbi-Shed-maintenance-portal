@@ -88,4 +88,5 @@ test("Admin can browse all active schedule form templates in read-only preview",
     assert.match(adminClient, /template_schema/);
     assert.match(adminRoute, /from\("schedule_form_master"\)/);
     assert.match(adminRoute, /eq\("status", "Active"\)/);
+    assert.match(adminRoute, /repairDepartments\.has\(department\)/);
 });

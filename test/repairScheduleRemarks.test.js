@@ -73,6 +73,13 @@ test("Incharge selects one or more pending loco remarks for Repairs work", () =>
     assert.match(formRoute, /selectedIds\.has\(Number\(item\.id\)\)/);
 });
 
+test("Repairs always use one canonical dynamic form per department", () => {
+    const route = fs.readFileSync(path.join(root, "routes", "scheduleFormRoutes.js"), "utf8");
+    assert.match(route, /repairsAssignment\s*\?\s*templateQuery\.ilike\("department", department\)/);
+    assert.match(route, /dynamic_type ===\s*"repair_remarks"/);
+    assert.match(route, /sort\(\(left, right\) => Number\(left\.id\) - Number\(right\.id\)\)\[0\]/);
+});
+
 test("dashboard logo references match case-sensitive production filenames", () => {
     const dashboardDir = path.join(root, "public", "dashboard");
     for (const name of fs.readdirSync(dashboardDir).filter(name => name.endsWith(".html"))) {

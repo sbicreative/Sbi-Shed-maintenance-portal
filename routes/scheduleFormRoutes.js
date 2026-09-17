@@ -200,8 +200,10 @@ async function findTemplate(assignment) {
     const scheduleName =
         assignment.detail?.assign_work_header
             ?.schedule_master?.schedule_name || "";
+    const repairsAssignment = isRepairsAssignment(assignment);
+    const department = assignment.employee?.department || "";
 
-    const { data, error } = await supabase
+    let templateQuery = supabase
         .from("schedule_form_master")
         .select(`
             id,
@@ -216,10 +218,22 @@ async function findTemplate(assignment) {
             version,
             is_active
         `)
-        .eq("is_active", true)
-        .ilike("section", section);
+        .eq("is_active", true);
+    templateQuery = repairsAssignment
+        ? templateQuery.ilike("department", department)
+        : templateQuery.ilike("section", section);
+    const { data, error } = await templateQuery;
 
     if (error) throw error;
+
+    if (repairsAssignment) {
+        return (data || [])
+            .filter(template =>
+                template.template_schema?.dynamic_type ===
+                "repair_remarks"
+            )
+            .sort((left, right) => Number(left.id) - Number(right.id))[0] || null;
+    }
 
     const normalizedWork = normalize(workName);
     const normalizedSchedule = normalize(scheduleName);
