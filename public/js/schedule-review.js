@@ -115,10 +115,6 @@ function renderReviewRows() {
         `).join("");
     }
 
-    const uniqueLocos =
-        new Set(rows.map(item => item.loco_no)).size;
-    document.getElementById("totalLocos").textContent =
-        uniqueLocos;
     document.getElementById("totalWorks").textContent =
         rows.length;
     document.getElementById("approvedForms").textContent =

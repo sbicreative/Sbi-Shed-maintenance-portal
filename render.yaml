@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    branch: codex/render-deploy
+    branch: codex/modified-deploy
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health

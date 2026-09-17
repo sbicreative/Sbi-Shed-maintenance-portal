@@ -86,97 +86,6 @@
     <div class="dashboard">
 
 
-        <!-- SUMMARY -->
-
-        <section class="summary">
-
-            <div class="card">
-
-                <i class="fa-solid fa-train"></i>
-
-                <h2 id="totalLocos">0</h2>
-
-                <p>Total Locos</p>
-
-            </div>
-
-            <div class="card">
-
-                <i class="fa-solid fa-screwdriver-wrench"></i>
-
-                <h2 id="workingLocos">0</h2>
-
-                <p>Working Today</p>
-
-            </div>
-
-            <div class="card">
-
-                <i class="fa-solid fa-clock"></i>
-
-                <h2 id="pendingWork">0</h2>
-
-                <p>Pending Review</p>
-
-            </div>
-
-            <div class="card">
-
-                <i class="fa-solid fa-circle-check"></i>
-
-                <h2 id="completedToday">0</h2>
-
-                <p>Completed Today</p>
-
-            </div>
-
-            <div class="card">
-                <i class="fa-solid fa-file-circle-exclamation"></i>
-                <h2 id="incompleteForms">0</h2>
-                <p>Incomplete Schedule Forms</p>
-                <small id="incompleteSchedules">-</small>
-            </div>
-        </section>
-
-        <section class="charge-handover-card" aria-labelledby="chargeHandoverTitle">
-            <div class="charge-handover-heading">
-                <div>
-                    <p>Temporary authority</p>
-                    <h2 id="chargeHandoverTitle">Charge Handover</h2>
-                </div>
-                <span id="chargeStatusBadge">Permanent Incharge</span>
-            </div>
-            <p id="actingChargeNotice" class="acting-charge-notice" hidden></p>
-            <form id="chargeHandoverForm">
-                <div class="charge-form-grid">
-                    <label>
-                        Acting Incharge
-                        <select id="actingInchargeSelect" required>
-                            <option value="">Select Supervisor</option>
-                        </select>
-                    </label>
-                    <label>
-                        From Date
-                        <input id="chargeStartDate" type="date" required>
-                    </label>
-                    <label>
-                        To Date
-                        <input id="chargeEndDate" type="date" required>
-                    </label>
-                    <label>
-                        Reason
-                        <input id="chargeReason" type="text"
-                               placeholder="Leave / Training / Duty">
-                    </label>
-                </div>
-                <p id="chargeHandoverMessage" class="charge-handover-message" hidden></p>
-                <button id="saveChargeHandoverBtn" type="submit">
-                    Hand Over Charge
-                </button>
-            </form>
-        </section>
-
-
         <!-- ================= QUICK ACTION ================= -->
 
         <section class="quick-actions">
@@ -264,35 +173,48 @@
 
         </section>
 
-        <section class="dashboard-remark-entry" aria-labelledby="dashboardRemarkTitle">
-            <div class="dashboard-remark-entry-heading">
-                <div><p>Assigned work remarks</p><h2 id="dashboardRemarkTitle">Add Multiple Remarks</h2></div>
-                <button id="dashboardAddRemark" type="button">+ Add Row</button>
+        <section class="charge-handover-card" aria-labelledby="chargeHandoverTitle">
+            <div class="charge-handover-heading">
+                <div>
+                    <p>Temporary authority</p>
+                    <h2 id="chargeHandoverTitle">Charge Handover</h2>
+                </div>
+                <span id="chargeStatusBadge">Permanent Incharge</span>
             </div>
-            <form id="dashboardRemarkForm">
-                <label for="dashboardRemarkAssignment">Assigned Loco / Work</label>
-                <select id="dashboardRemarkAssignment" required><option value="">Loading assigned work…</option></select>
-                <div id="dashboardRemarkRows" class="dashboard-remark-rows"></div>
-                <div class="dashboard-remark-actions"><p id="dashboardRemarkMessage" role="status"></p><button type="submit">Save Remarks</button></div>
+            <p id="actingChargeNotice" class="acting-charge-notice" hidden></p>
+            <form id="chargeHandoverForm">
+                <div class="charge-form-grid">
+                    <label>
+                        Acting Incharge
+                        <select id="actingInchargeSelect" required>
+                            <option value="">Select Supervisor</option>
+                        </select>
+                    </label>
+                    <label>
+                        From Date
+                        <input id="chargeStartDate" type="date" required>
+                    </label>
+                    <label>
+                        To Date
+                        <input id="chargeEndDate" type="date" required>
+                    </label>
+                    <label>
+                        Reason
+                        <input id="chargeReason" type="text"
+                               placeholder="Leave / Training / Duty">
+                    </label>
+                </div>
+                <p id="chargeHandoverMessage" class="charge-handover-message" hidden></p>
+                <button id="saveChargeHandoverBtn" type="submit">
+                    Hand Over Charge
+                </button>
             </form>
-        </section>
-
-        <section class="repair-remarks-panel" aria-labelledby="repairRemarksTitle">
-            <div class="repair-remarks-panel-header">
-                <h2 id="repairRemarksTitle">Repair Remarks <span id="repairRemarksCount" class="repair-remarks-count">0</span></h2>
-                <a href="repairs-schedule.html">View full timeline</a>
-            </div>
-            <div id="repairRemarksFeed" class="repair-remarks-feed">
-                <p class="remarks-feed-empty">Loading Supervisor and Staff remarks…</p>
-            </div>
         </section>
 
     </div>
 
-    <script src="../js/incharge.js?v=20260821-1"></script>
+    <script src="../js/incharge.js?v=20260910-1"></script>
     <script src="../js/charge-handover.js"></script>
-    <script src="../js/dashboard-remark-entry.js?v=20260814-1"></script>
-    <script src="../js/repair-remarks-feed.js?v=20260813-1"></script>
     <script src="/js/pwa.js?v=20260814-2"></script>
 
 </body>

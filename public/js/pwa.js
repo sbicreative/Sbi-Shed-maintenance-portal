@@ -9,7 +9,7 @@
         const responsiveStyles = document.createElement("link");
         responsiveStyles.rel = "stylesheet";
         responsiveStyles.href =
-            "/css/pwa-responsive.css?v=20260814-2";
+            "/css/pwa-responsive.css?v=20260916-1";
         responsiveStyles.dataset.pwaResponsive = "true";
         document.head.appendChild(responsiveStyles);
     }
