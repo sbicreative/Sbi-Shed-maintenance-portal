@@ -5,14 +5,31 @@
 .schedule-preview-toolbar h3, .schedule-preview-toolbar p { margin: 2px 0; }
 .schedule-preview-toolbar p { color: var(--muted); font-size: 12px; }
 .schedule-template-preview { overflow: auto; padding: 18px; background: #f7f5ef; }
+.admin-assignment-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 14px 18px 0; background: #f7f5ef; }
+.admin-assignment-meta > div { min-height: 58px; padding: 9px 10px; border: 1px solid #263d31; border-radius: 4px; background: #fff; }
+.admin-assignment-meta span, .admin-assignment-meta strong { display: block; }
+.admin-assignment-meta span { margin-bottom: 6px; color: #52645b; font-size: 11px; font-weight: 700; }
+.admin-assignment-meta strong { color: #607069; font-size: 13px; }
 .schedule-template-preview > table, .schedule-template-preview .docx-wrapper table { min-width: 850px; background: #fff; }
 .schedule-template-preview table { border-collapse: collapse; }
 .schedule-template-preview td, .schedule-template-preview th { white-space: normal; border: 1px solid #333; color: #111; }
 .schedule-template-preview img { max-width: 100%; height: auto; }
+.schedule-template-preview .admin-template-logo { width: 72px; height: 72px; object-fit: contain; }
+.admin-schedule-section-list { display: grid; gap: 8px; margin: 12px 0; }
+.admin-schedule-section { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid #c7d4cc !important; background: #f2f6f3 !important; color: var(--forest) !important; text-align: left; }
+.admin-schedule-section.open { border-color: var(--teal) !important; background: #e7f3ed !important; }
+.admin-schedule-section b { font-size: 20px; }
+.admin-schedule-section-content { min-width: 0; overflow-x: auto; margin: 0 0 4px; }
+.admin-schedule-section-content[hidden] { display: none !important; }
+.admin-schedule-section-content table { width: 100%; margin: 0; }
+.admin-section-demo-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.admin-demo-ok{padding:9px 12px!important;background:#2e7d32!important;color:#fff!important;white-space:nowrap}.admin-demo-ok:disabled{opacity:.55;cursor:not-allowed}.admin-demo-ok-value{background:#e2f4e8!important;color:#126038!important;font-weight:800}.schedule-row-number{width:44px;min-width:44px;text-align:center;font-weight:800;color:#173d2b;background:#f2f6f3!important}
+.schedule-template-preview tr[hidden] { display: none !important; }
+.template-manager-actions,.template-editor-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:#f8faf8}.template-manager-actions span{margin-left:auto;color:var(--muted);font-size:12px}.template-action-link{display:inline-block;padding:9px 13px;border-radius:7px;background:#e7ece8;color:var(--forest);font-size:12px;font-weight:750;text-decoration:none}.template-editor-toolbar label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700}.template-editor-toolbar select{padding:8px;border:1px solid #bfc8c1;border-radius:6px}.schedule-template-preview.template-editing{outline:3px solid #e2a749;outline-offset:-3px}.template-editing td,.template-editing th{cursor:text}.template-editing .template-selected-row{outline:2px solid #d08322;outline-offset:-2px}.template-editing .template-selected-cell{background:#fff2c7!important;box-shadow:inset 0 0 0 2px #b76520}
 .schedule-template-preview input, .schedule-template-preview textarea, .schedule-template-preview select { pointer-events: none; }
 .schedule-activity-hindi { display: block; margin-top: 4px; color: #263d31; font-size: .9em; font-weight: 600; }
 .schedule-empty { padding: 40px; text-align: center; color: var(--muted); }
 @media (max-width: 760px) {
+  .admin-assignment-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .schedule-heading { align-items: stretch; flex-direction: column; }
   .schedule-heading label { min-width: 0; width: 100%; }
   .schedule-preview-toolbar { grid-template-columns: 1fr 1fr; }

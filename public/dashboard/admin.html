@@ -5,7 +5,7 @@
     <title>Admin Dashboard | SBI Shed</title>
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/admin-master-cards.css">
-    <link rel="stylesheet" href="../css/admin-schedule-forms.css">
+    <link rel="stylesheet" href="../css/admin-schedule-forms.css?v=20260917-7">
 </head>
 <body>
     <header class="admin-header">
@@ -55,9 +55,12 @@
                 <div class="table-wrap"><table><thead id="masterHead"></thead><tbody id="masterBody"></tbody></table></div>
             </div>
             <div id="scheduleFormsView" hidden>
-                <div class="panel-heading schedule-heading"><div><p class="eyebrow">Read-only library</p><h2>Schedule Forms</h2><p>Admin can preview every active form; staff-filled data cannot be changed here.</p></div><label>Choose form<select id="scheduleTemplateSelect" aria-label="Choose schedule form"></select></label></div>
+                <div class="panel-heading schedule-heading"><div><p class="eyebrow">Template manager</p><h2>Schedule Forms</h2><p>Reference master देखें और Staff को दिखने वाला actual version edit करें.</p></div><label>Choose form<select id="scheduleTemplateSelect" aria-label="Choose schedule form"></select></label></div>
                 <section class="schedule-preview-panel">
                     <div class="schedule-preview-toolbar"><button id="previousTemplateBtn" class="secondary" type="button">← Previous</button><div><h3 id="scheduleTemplateTitle">Select a form</h3><p id="scheduleTemplateMeta"></p></div><button id="nextTemplateBtn" class="secondary" type="button">Next →</button></div>
+                    <div class="template-manager-actions"><a id="referenceFormLink" class="template-action-link" target="_blank" rel="noopener">Reference Master</a><button id="editStaffTemplateBtn" type="button">Edit Staff Version</button><span id="templateEditStatus">View mode</span></div>
+                    <div id="templateEditorToolbar" class="template-editor-toolbar" hidden><button id="addTemplateSectionBtn" type="button">+ Section</button><button id="addTemplateRowBtn" type="button">+ Row</button><button id="moveTemplateRowUpBtn" type="button">↑ Row</button><button id="moveTemplateRowDownBtn" type="button">↓ Row</button><button id="deleteTemplateRowBtn" class="danger" type="button">Delete Row</button><label>Selected cell type<select id="templateFieldType"><option value="text">OK / Text</option><option value="value">Measurement</option><option value="yes_no">Yes / No</option><option value="remarks">Remark</option></select></label><button id="cancelTemplateEditBtn" class="secondary" type="button">Cancel</button><button id="saveTemplateVersionBtn" type="button">Save New Version</button></div>
+                    <div class="admin-assignment-meta" aria-label="Fields automatically filled from assignment"><div><span>Loco No.</span><strong>Auto-filled</strong></div><div><span>Loco Class</span><strong>Auto-filled</strong></div><div><span>Date of Schedule</span><strong>Auto-filled</strong></div><div><span>Schedule</span><strong>Auto-filled</strong></div></div>
                     <div id="scheduleTemplatePreview" class="schedule-template-preview"><p class="schedule-empty">Loading schedule forms...</p></div>
                 </section>
             </div>
@@ -66,6 +69,6 @@
     <dialog id="recordDialog"><form id="recordForm"><div class="dialog-title"><h2 id="recordDialogTitle">Edit record</h2><button type="button" data-close>×</button></div><div id="recordFields" class="record-fields"></div><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save Record</button></div></form></dialog>
     <footer>An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
     <script src="../js/bilingual-schedule-activities.js"></script>
-    <script src="../js/admin.js"></script>
+    <script src="../js/admin.js?v=20260918-1"></script>
     <script src="../js/admin-master-cards.js"></script>
 </body></html>

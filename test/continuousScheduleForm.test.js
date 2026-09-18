@@ -78,7 +78,23 @@ test("schedule forms open as sections and bulk OK only action fields", () => {
     assert.match(client, /function initializeScheduleSections\(container\)/);
     assert.match(client, /scheduleSectionHeading\(row\)/);
     assert.match(client, /dataset\.bulkOkEligible = "true"/);
-    assert.match(client, /field\.value = "OK"/);
+    assert.match(client, /field\.value = "Checked \/ Found OK"/);
     assert.match(client, /if \(field\.value\.trim\(\)\) return/);
     assert.match(client, /field\.tagName === "TEXTAREA"/);
+    assert.match(client, /\[A-J\]/);
+    assert.match(client, /removeRepetitiveJeSignatureRows/);
+    assert.match(client, /normalizePointANumbering/);
+});
+
+test("assigned schedule identity is auto-filled and read-only for Staff", () => {
+    const page = fs.readFileSync(path.resolve(__dirname, "../public/dashboard/schedule-form.html"), "utf8");
+    const client = fs.readFileSync(path.resolve(__dirname, "../public/js/schedule-form.js"), "utf8");
+    const routes = fs.readFileSync(path.resolve(__dirname, "../routes/scheduleFormRoutes.js"), "utf8");
+
+    assert.match(page, /id="locoClass"/);
+    assert.match(page, /Date of Schedule/);
+    assert.match(client, /class="schedule-document-meta"/);
+    assert.match(client, /documentLocoClass/);
+    assert.match(client, /header\.assign_date/);
+    assert.match(routes, /loco_type_master\s*\(\s*loco_type\s*\)/);
 });

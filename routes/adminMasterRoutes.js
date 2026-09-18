@@ -28,6 +28,13 @@ function payload(def, body) {
     return Object.fromEntries(def.fields.filter(field => Object.hasOwn(body, field)).map(field => [field, body[field] === "" ? null : body[field]]));
 }
 
+function sanitizeTemplateHtml(value) {
+    return String(value || "")
+        .replace(/<\/?(?:script|iframe|object|embed|style)\b[^>]*>/gi, "")
+        .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        .replace(/(?:href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, "");
+}
+
 router.get("/definitions", (req, res) => res.json({ success: true, resources: definitions }));
 router.get("/schedule-form-templates", async (req, res) => {
     const { data, error } = await supabase
@@ -48,6 +55,28 @@ router.get("/schedule-form-templates", async (req, res) => {
         return true;
     });
     res.json({ success: true, templates });
+});
+router.get("/schedule-form-templates/:id/history", async (req, res) => {
+    const { data, error } = await supabase
+        .from("schedule_form_template_versions")
+        .select("id,version,edited_by,created_at")
+        .eq("schedule_form_master_id", req.params.id)
+        .order("version", { ascending: false });
+    if (error) return res.status(503).json({ success: false, message: "Template version migration is not installed yet." });
+    res.json({ success: true, versions: data || [] });
+});
+router.post("/schedule-form-templates/:id/version", async (req, res) => {
+    const documentHtml = sanitizeTemplateHtml(req.body?.document_html);
+    if (documentHtml.length < 20 || documentHtml.length > 5_000_000) {
+        return res.status(400).json({ success: false, message: "Template HTML is empty or too large." });
+    }
+    const { data, error } = await supabase.rpc("save_schedule_form_template_version", {
+        p_template_id: Number(req.params.id),
+        p_document_html: documentHtml,
+        p_editor: req.admin.username
+    });
+    if (error) return res.status(503).json({ success: false, message: `Template version migration is required: ${error.message}` });
+    res.json({ success: true, result: data?.[0] || null });
 });
 router.get("/:resource", async (req, res) => {
     const def = definition(req, res); if (!def) return;

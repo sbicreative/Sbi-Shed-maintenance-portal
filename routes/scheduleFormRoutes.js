@@ -159,7 +159,10 @@ async function getAssignment(staffId, distributionId) {
                     assign_date,
                     loco_master (
                         id,
-                        loco_no
+                        loco_no,
+                        loco_type_master (
+                            loco_type
+                        )
                     ),
                     temporary_loco_master (
                         id,

@@ -160,6 +160,16 @@ function removeSignatureRemarksColumns(container) {
     });
 }
 
+function removeRepetitiveJeSignatureRows(container) {
+    container.querySelectorAll("tr,p").forEach(element => {
+        const text = element.textContent.replace(/\s+/g, " ").trim();
+        if (
+            text.length < 120 &&
+            /(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE).*(?:हस्ताक्षर|signature)|(?:हस्ताक्षर|signature).*(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE)/i.test(text)
+        ) element.remove();
+    });
+}
+
 
 function populateReviewFields(answers, attributions = {}) {
     document.querySelectorAll("#templateContainer table")
@@ -318,16 +328,24 @@ async function loadReviewForm() {
     reviewRecord = result;
     const { form, assignment, template } = result;
     const header = assignment.detail.assign_work_header || {};
+    const locoNo =
+        header.loco_master?.loco_no ||
+        header.temporary_loco_master?.loco_no || "-";
+    const locoClass =
+        header.loco_master?.loco_type_master?.loco_type ||
+        header.temporary_loco_master?.loco_type || "-";
+    const scheduleName = header.schedule_master?.schedule_name || "-";
+    const scheduleDate =
+        header.assign_date || assignment.distribution.assigned_date || "-";
 
     document.getElementById("formStatus").textContent =
         form.status;
     document.getElementById("staffName").textContent =
         assignment.employee.name;
-    document.getElementById("locoNo").textContent =
-        header.loco_master?.loco_no ||
-        header.temporary_loco_master?.loco_no || "-";
-    document.getElementById("scheduleName").textContent =
-        header.schedule_master?.schedule_name || "-";
+    document.getElementById("locoNo").textContent = locoNo;
+    document.getElementById("locoClass").textContent = locoClass;
+    document.getElementById("scheduleName").textContent = scheduleName;
+    document.getElementById("assignDate").textContent = scheduleDate;
     document.getElementById("workName").textContent =
         assignment.detail.work_master?.work_name || "-";
     document.getElementById("formTitle").textContent =
@@ -352,10 +370,21 @@ async function loadReviewForm() {
             <img src="../images/SBI-logo.jpeg"
                 alt="SBI Shed logo">
         </div>
+        <div class="schedule-document-meta" aria-label="Assigned schedule details">
+            <div><span>Loco No.</span><strong id="documentLocoNo"></strong></div>
+            <div><span>Loco Class</span><strong id="documentLocoClass"></strong></div>
+            <div><span>Date of Schedule</span><strong id="documentScheduleDate"></strong></div>
+            <div><span>Schedule</span><strong id="documentScheduleName"></strong></div>
+        </div>
         ${sanitizeReviewHtml(
             template.template_schema?.document_html || ""
         )}
     `;
+    document.getElementById("documentLocoNo").textContent = locoNo;
+    document.getElementById("documentLocoClass").textContent = locoClass;
+    document.getElementById("documentScheduleDate").textContent = scheduleDate;
+    document.getElementById("documentScheduleName").textContent = scheduleName;
+    removeRepetitiveJeSignatureRows(container);
     removeSignatureRemarksColumns(container);
     populateReviewFields(form.form_answers || {}, form.answer_attributions || {});
     showAttributions(form.answer_attributions || {});

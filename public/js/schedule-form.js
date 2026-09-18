@@ -305,12 +305,20 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 const label = `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`;
                 const usesTypedControls = window.IcFormControls
                     ?.isTypedSchedule(scheduleName);
-                const config = usesTypedControls
+                const explicitType = cell.dataset.adminFieldType;
+                const explicitConfig = explicitType === "value"
+                    ? { type: "value", kind: "value" }
+                    : explicitType === "yes_no"
+                        ? { type: "select", kind: "choice", options: ["Yes", "No"] }
+                        : explicitType === "remarks"
+                            ? { type: "text", kind: "remarks" }
+                            : null;
+                const config = explicitConfig || (usesTypedControls
                     ? window.IcFormControls.classify(
                         row.textContent,
                         columnContext(table, rowIndex, cellIndex)
                     )
-                    : { type: "text", kind: "text" };
+                    : { type: "text", kind: "text" });
                 const field = buildAnswerField(
                     config,
                     key,
@@ -319,9 +327,11 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 );
                 field.dataset.requiredAnswer = String(required);
                 if (
-                    columns.action !== null &&
-                    cellIndex === columns.action &&
-                    field.tagName === "TEXTAREA"
+                    field.tagName === "TEXTAREA" &&
+                    (
+                        (columns.action !== null && cellIndex === columns.action) ||
+                        (columns.action === null && (columns.remark === null || cellIndex !== columns.remark))
+                    )
                 ) {
                     field.dataset.bulkOkEligible = "true";
                 }
@@ -350,10 +360,43 @@ function scheduleSectionHeading(row) {
         .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
         .filter(Boolean)
         .join(" ");
-    const letter = text.match(/^\(?([A-H])\)?(?:[.):-]|\s)\s*(.+)$/);
+    const letter = text.match(/^\(?([A-J])\)?(?:[.):-]|\s)\s*(.+)$/);
     if (letter) return `${letter[1].toUpperCase()} — ${letter[2]}`;
     const numbered = text.match(/^(\d+)\.0\s+(.+)$/);
     return numbered ? `${numbered[1]} — ${numbered[2]}` : "";
+}
+
+function removeRepetitiveJeSignatureRows(container) {
+    container.querySelectorAll("tr,p").forEach(element => {
+        const text = element.textContent.replace(/\s+/g, " ").trim();
+        if (
+            text.length < 120 &&
+            /(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE).*(?:हस्ताक्षर|signature)|(?:हस्ताक्षर|signature).*(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE)/i.test(text)
+        ) element.remove();
+    });
+}
+
+function normalizePointANumbering(sectionRows, sectionTitle) {
+    if (!/^A\s+—/i.test(sectionTitle)) return;
+    let number = 1;
+    sectionRows.forEach(row => {
+        if (scheduleSectionHeading(row)) return;
+        const cells = [...row.cells];
+        if (cells.length < 2) return;
+        const detail = cells.slice(1)
+            .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
+            .filter(Boolean)
+            .join(" ");
+        if (
+            detail.length < 5 ||
+            /^(?:check list|description|standard value|actual value|cab[- ]?1|cab[- ]?2|function test|axle no|sn\b|क्र\.?\s*सं)/i.test(detail)
+        ) return;
+        const firstCell = cells[0];
+        const firstText = firstCell.textContent.replace(/\s+/g, " ").trim();
+        if (firstText && !/^\d+$/.test(firstText)) return;
+        firstCell.replaceChildren(String(number++));
+        firstCell.classList.add("schedule-row-number");
+    });
 }
 
 function initializeScheduleSections(container) {
@@ -382,22 +425,12 @@ function initializeScheduleSections(container) {
         list.className = "schedule-section-list";
         list.setAttribute("aria-label", "Schedule sections");
 
-        const closeAll = () => {
-            rows.forEach(row => { row.hidden = true; });
-            table.hidden = true;
-            list.querySelectorAll(".schedule-section-card").forEach(card => {
-                card.classList.remove("open");
-                card.querySelector(".schedule-section-toggle")?.setAttribute("aria-expanded", "false");
-                const symbol = card.querySelector(".schedule-section-toggle b");
-                if (symbol) symbol.textContent = "＋";
-                const action = card.querySelector(".mark-section-ok");
-                if (action) action.hidden = true;
-            });
-        };
-
         sections.forEach((section, sectionIndex) => {
             const card = document.createElement("div");
             card.className = "schedule-section-card";
+            const content = document.createElement("div");
+            content.className = "schedule-section-content";
+            content.hidden = true;
             const toggle = document.createElement("button");
             toggle.type = "button";
             toggle.className = "schedule-section-toggle";
@@ -406,39 +439,48 @@ function initializeScheduleSections(container) {
             const markAll = document.createElement("button");
             markAll.type = "button";
             markAll.className = "mark-section-ok";
-            markAll.textContent = "Mark All OK";
+            markAll.textContent = "Select All";
             markAll.hidden = true;
             const sectionRows = rows.slice(section.start, section.end);
+            normalizePointANumbering(sectionRows, section.title);
+            const sectionTable = table.cloneNode(false);
+            [...table.children]
+                .filter(child => ["CAPTION", "COLGROUP"].includes(child.tagName))
+                .forEach(child => sectionTable.appendChild(child.cloneNode(true)));
+            const sectionBody = document.createElement("tbody");
+            commonRows.forEach(row => sectionBody.appendChild(row.cloneNode(true)));
+            sectionRows.forEach(row => {
+                row.hidden = false;
+                sectionBody.appendChild(row);
+            });
+            sectionTable.appendChild(sectionBody);
+            content.appendChild(sectionTable);
             const eligibleFields = () => sectionRows
                 .flatMap(row => [...row.querySelectorAll('[data-bulk-ok-eligible="true"]')])
                 .filter(field => !field.disabled && !field.readOnly);
             markAll.disabled = eligibleFields().length === 0;
             toggle.addEventListener("click", () => {
                 const opening = !card.classList.contains("open");
-                closeAll();
-                if (!opening) return;
-                table.hidden = false;
-                commonRows.forEach(row => { row.hidden = false; });
-                sectionRows.forEach(row => { row.hidden = false; });
-                card.classList.add("open");
-                toggle.setAttribute("aria-expanded", "true");
-                toggle.querySelector("b").textContent = "−";
-                markAll.hidden = false;
+                card.classList.toggle("open", opening);
+                content.hidden = !opening;
+                toggle.setAttribute("aria-expanded", String(opening));
+                toggle.querySelector("b").textContent = opening ? "−" : "＋";
+                markAll.hidden = !opening;
             });
             markAll.addEventListener("click", () => {
                 eligibleFields().forEach(field => {
                     if (field.value.trim()) return;
-                    field.value = "OK";
+                    field.value = "Checked / Found OK";
                     field.dispatchEvent(new Event("input", { bubbles: true }));
                 });
                 updateCompletion();
             });
             card.append(toggle, markAll);
-            list.appendChild(card);
+            list.append(card, content);
         });
 
         table.before(list);
-        closeAll();
+        table.remove();
     });
 }
 
@@ -570,17 +612,26 @@ async function loadScheduleForm() {
 
         loadedSubmission = submission;
 
-        document.getElementById("staffName").textContent =
-            assignment.employee.name;
-        document.getElementById("locoNo").textContent =
+        const locoNo =
             header.loco_master?.loco_no ||
             header.temporary_loco_master?.loco_no || "-";
-        document.getElementById("scheduleName").textContent =
+        const locoClass =
+            header.loco_master?.loco_type_master?.loco_type ||
+            header.temporary_loco_master?.loco_type || "-";
+        const scheduleName =
             header.schedule_master?.schedule_name || "-";
+        const scheduleDate =
+            header.assign_date ||
+            assignment.distribution.assigned_date || "-";
+
+        document.getElementById("staffName").textContent =
+            assignment.employee.name;
+        document.getElementById("locoNo").textContent = locoNo;
+        document.getElementById("locoClass").textContent = locoClass;
+        document.getElementById("scheduleName").textContent = scheduleName;
         document.getElementById("workName").textContent =
             assignment.detail.work_master?.work_name || "-";
-        document.getElementById("assignDate").textContent =
-            assignment.distribution.assigned_date || "-";
+        document.getElementById("assignDate").textContent = scheduleDate;
         document.getElementById("formTitle").textContent =
             template.form_name;
         document.getElementById("sourceFile").textContent =
@@ -630,9 +681,20 @@ async function loadScheduleForm() {
                 <img src="../images/SBI-logo.jpeg"
                     alt="SBI Shed logo">
             </div>
+            <div class="schedule-document-meta" aria-label="Assigned schedule details">
+                <div><span>Loco No.</span><strong id="documentLocoNo"></strong></div>
+                <div><span>Loco Class</span><strong id="documentLocoClass"></strong></div>
+                <div><span>Date of Schedule</span><strong id="documentScheduleDate"></strong></div>
+                <div><span>Schedule</span><strong id="documentScheduleName"></strong></div>
+            </div>
             ${templateContent}
         `;
+        document.getElementById("documentLocoNo").textContent = locoNo;
+        document.getElementById("documentLocoClass").textContent = locoClass;
+        document.getElementById("documentScheduleDate").textContent = scheduleDate;
+        document.getElementById("documentScheduleName").textContent = scheduleName;
         if (!isPdf) {
+            removeRepetitiveJeSignatureRows(container);
             removeSignatureRemarksColumns(container);
             createAnswerFields(
                 submission?.form_answers || {},
