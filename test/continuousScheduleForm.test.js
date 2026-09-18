@@ -85,6 +85,9 @@ test("schedule forms open as sections and bulk OK only action fields", () => {
     assert.match(client, /\[A-J\]/);
     assert.match(client, /removeRepetitiveJeSignatureRows/);
     assert.match(client, /normalizePointANumbering/);
+    assert.match(client, /annotateLogicalColumns/);
+    assert.match(client, /looksLikeMaintenanceWorkTable/);
+    assert.match(client, /logicalCellIndex === columns\.name/);
 });
 
 test("assigned schedule identity is auto-filled and read-only for Staff", () => {
