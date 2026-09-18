@@ -327,7 +327,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 );
                 field.dataset.requiredAnswer = String(required);
                 if (
-                    field.tagName === "TEXTAREA" &&
+                    ["TEXTAREA", "SELECT"].includes(field.tagName) &&
                     (
                         (columns.action !== null && cellIndex === columns.action) ||
                         (columns.action === null && (columns.remark === null || cellIndex !== columns.remark))
@@ -470,6 +470,12 @@ function initializeScheduleSections(container) {
             markAll.addEventListener("click", () => {
                 eligibleFields().forEach(field => {
                     if (field.value.trim()) return;
+                    if (
+                        field.tagName === "SELECT" &&
+                        ![...field.options].some(option => option.value === "Checked / Found OK")
+                    ) {
+                        field.add(new Option("Checked / Found OK", "Checked / Found OK"));
+                    }
                     field.value = "Checked / Found OK";
                     field.dispatchEvent(new Event("input", { bubbles: true }));
                 });

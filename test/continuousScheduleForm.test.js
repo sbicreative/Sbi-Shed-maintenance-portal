@@ -80,7 +80,8 @@ test("schedule forms open as sections and bulk OK only action fields", () => {
     assert.match(client, /dataset\.bulkOkEligible = "true"/);
     assert.match(client, /field\.value = "Checked \/ Found OK"/);
     assert.match(client, /if \(field\.value\.trim\(\)\) return/);
-    assert.match(client, /field\.tagName === "TEXTAREA"/);
+    assert.match(client, /\["TEXTAREA", "SELECT"\]\.includes\(field\.tagName\)/);
+    assert.match(client, /field\.add\(new Option\("Checked \/ Found OK"/);
     assert.match(client, /\[A-J\]/);
     assert.match(client, /removeRepetitiveJeSignatureRows/);
     assert.match(client, /normalizePointANumbering/);
