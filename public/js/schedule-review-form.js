@@ -54,9 +54,43 @@ function sanitizeReviewHtml(html) {
     return value.body.innerHTML;
 }
 
+function annotateReviewLogicalColumns(table) {
+    const occupied = [];
+    let width = 0;
+    [...table.rows].forEach(row => {
+        let column = 0;
+        [...row.cells].forEach(cell => {
+            while (occupied[column] > 0) column += 1;
+            const span = Number(cell.colSpan) || 1;
+            const rowSpan = Number(cell.rowSpan) || 1;
+            cell.dataset.logicalColumn = String(column);
+            if (rowSpan > 1) for (let index = column; index < column + span; index += 1) {
+                occupied[index] = Math.max(occupied[index] || 0, rowSpan);
+            }
+            column += span;
+            width = Math.max(width, column);
+        });
+        for (let index = 0; index < occupied.length; index += 1) {
+            occupied[index] = Math.max(0, (occupied[index] || 0) - 1);
+        }
+    });
+    return width;
+}
+
+function reviewMaintenanceWorkTable(table) {
+    return [...table.rows].some(row => {
+        const cells = [...row.cells];
+        const serial = cells.find(cell => Number(cell.dataset.logicalColumn) === 0)?.textContent.replace(/\s+/g, " ").trim();
+        const detail = cells.find(cell => Number(cell.dataset.logicalColumn) === 1)?.textContent.replace(/\s+/g, " ").trim();
+        return /^(?:[A-J]|\d+)$/.test(serial || "") && String(detail || "").length > 8;
+    });
+}
+
 function prepareReviewColumns(table) {
     const columns = { action: null, name: null, remark: null };
-    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach((cell, index) => {
+    const width = annotateReviewLogicalColumns(table);
+    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach(cell => {
+        const index = Number(cell.dataset.logicalColumn);
         const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
         if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
             columns.action = index;
@@ -71,6 +105,11 @@ function prepareReviewColumns(table) {
             cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
         }
     }));
+    if (columns.action === null && width >= 4 && reviewMaintenanceWorkTable(table)) {
+        columns.action = 2;
+        columns.name = 3;
+        if (width >= 5) columns.remark = 4;
+    }
     return columns;
 }
 
@@ -141,6 +180,16 @@ function removeSignatureRemarksColumns(container) {
             })
         );
 
+        if (targetColumn === null) {
+            const logicalWidth = Math.max(0, ...layout.flatMap(rowCells => rowCells.map(({ end }) => end)));
+            const structuredWorkTable = layout.some(rowCells => {
+                const serial = rowCells.find(({ start }) => start === 0)?.cell.textContent.replace(/\s+/g, " ").trim();
+                const detail = rowCells.find(({ start }) => start === 1)?.cell.textContent.replace(/\s+/g, " ").trim();
+                return /^(?:[A-J]|\d+)$/.test(serial || "") && String(detail || "").length > 8;
+            });
+            if (logicalWidth >= 5 && structuredWorkTable) targetColumn = 4;
+        }
+
         if (targetColumn === null) return;
 
         layout.forEach(rowCells => {
@@ -177,6 +226,7 @@ function populateReviewFields(answers, attributions = {}) {
             const columns = prepareReviewColumns(table);
             [...table.rows].forEach((row, rowIndex) => {
                 [...row.cells].forEach((cell, cellIndex) => {
+                    const logicalCellIndex = Number(cell.dataset.logicalColumn ?? cellIndex);
                     if (
                         cell.textContent.replace(/\s+/g, " ").trim()
                     ) return;
@@ -185,9 +235,11 @@ function populateReviewFields(answers, attributions = {}) {
                         reviewStaffName(cell, cell.dataset.attributionFor, answers, attributions);
                         return;
                     }
-                    if (columns.name !== null && cellIndex === columns.name) {
+                    if (columns.name !== null && logicalCellIndex === columns.name) {
+                        const actionCellIndex = [...row.cells]
+                            .findIndex(item => Number(item.dataset.logicalColumn) === columns.action);
                         cell.dataset.legacyAnswerKey = `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
-                        reviewStaffName(cell, `t${tableIndex}_r${rowIndex}_c${columns.action}`, answers, attributions);
+                        reviewStaffName(cell, `t${tableIndex}_r${rowIndex}_c${actionCellIndex}`, answers, attributions);
                         return;
                     }
 

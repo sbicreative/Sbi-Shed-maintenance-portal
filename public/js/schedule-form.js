@@ -60,9 +60,47 @@ function safeTemplateHtml(html) {
     return documentValue.body.innerHTML;
 }
 
+function annotateLogicalColumns(table) {
+    const occupied = [];
+    let width = 0;
+    [...table.rows].forEach(row => {
+        let column = 0;
+        [...row.cells].forEach(cell => {
+            while (occupied[column] > 0) column += 1;
+            const span = Number(cell.colSpan) || 1;
+            const rowSpan = Number(cell.rowSpan) || 1;
+            cell.dataset.logicalColumn = String(column);
+            if (rowSpan > 1) {
+                for (let index = column; index < column + span; index += 1) {
+                    occupied[index] = Math.max(occupied[index] || 0, rowSpan);
+                }
+            }
+            column += span;
+            width = Math.max(width, column);
+        });
+        for (let index = 0; index < occupied.length; index += 1) {
+            occupied[index] = Math.max(0, (occupied[index] || 0) - 1);
+        }
+    });
+    return width;
+}
+
+function looksLikeMaintenanceWorkTable(table) {
+    return [...table.rows].some(row => {
+        const cells = [...row.cells];
+        const serial = cells.find(cell => Number(cell.dataset.logicalColumn) === 0)
+            ?.textContent.replace(/\s+/g, " ").trim();
+        const detail = cells.find(cell => Number(cell.dataset.logicalColumn) === 1)
+            ?.textContent.replace(/\s+/g, " ").trim();
+        return /^(?:[A-J]|\d+)$/.test(serial || "") && String(detail || "").length > 8;
+    });
+}
+
 function prepareBilingualColumns(table) {
     const columns = { action: null, name: null, remark: null };
-    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach((cell, index) => {
+    const width = annotateLogicalColumns(table);
+    [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach(cell => {
+        const index = Number(cell.dataset.logicalColumn);
         const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
         if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
             columns.action = index;
@@ -77,6 +115,11 @@ function prepareBilingualColumns(table) {
             cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
         }
     }));
+    if (columns.action === null && width >= 4 && looksLikeMaintenanceWorkTable(table)) {
+        columns.action = 2;
+        columns.name = 3;
+        if (width >= 5) columns.remark = 4;
+    }
     return columns;
 }
 
@@ -94,7 +137,8 @@ function renderStaffName(cell, key, savedAnswers, attributions) {
 function columnContext(table, rowIndex, cellIndex) {
     const labels = [];
     for (let index = 0; index <= rowIndex; index += 1) {
-        const cell = table.rows[index]?.cells[cellIndex];
+        const cell = [...(table.rows[index]?.cells || [])]
+            .find(item => Number(item.dataset.logicalColumn) === cellIndex);
         if (!cell) continue;
         const text = cell.textContent.replace(/\s+/g, " ").trim();
         if (text) labels.push(text);
@@ -251,6 +295,16 @@ function removeSignatureRemarksColumns(container) {
             })
         );
 
+        if (targetColumn === null) {
+            const logicalWidth = Math.max(0, ...layout.flatMap(rowCells => rowCells.map(({ end }) => end)));
+            const structuredWorkTable = layout.some(rowCells => {
+                const serial = rowCells.find(({ start }) => start === 0)?.cell.textContent.replace(/\s+/g, " ").trim();
+                const detail = rowCells.find(({ start }) => start === 1)?.cell.textContent.replace(/\s+/g, " ").trim();
+                return /^(?:[A-J]|\d+)$/.test(serial || "") && String(detail || "").length > 8;
+            });
+            if (logicalWidth >= 5 && structuredWorkTable) targetColumn = 4;
+        }
+
         if (targetColumn === null) return;
 
         layout.forEach(rowCells => {
@@ -279,6 +333,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
         const columns = prepareBilingualColumns(table);
         [...table.rows].forEach((row, rowIndex) => {
             [...row.cells].forEach((cell, cellIndex) => {
+                const logicalCellIndex = Number(cell.dataset.logicalColumn ?? cellIndex);
                 const plainText =
                     cell.textContent.replace(/\s+/g, " ").trim();
 
@@ -290,8 +345,10 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     return;
                 }
 
-                if (columns.name !== null && cellIndex === columns.name) {
-                    const actionKey = `t${tableIndex}_r${rowIndex}_c${columns.action}`;
+                if (columns.name !== null && logicalCellIndex === columns.name) {
+                    const actionCellIndex = [...row.cells]
+                        .findIndex(item => Number(item.dataset.logicalColumn) === columns.action);
+                    const actionKey = `t${tableIndex}_r${rowIndex}_c${actionCellIndex}`;
                     cell.dataset.legacyAnswerKey = `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
                     renderStaffName(cell, actionKey, savedAnswers, attributions);
                     return;
@@ -301,7 +358,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
                 const required = cell.dataset.requiredAnswer !== undefined
                     ? cell.dataset.requiredAnswer === "true"
-                    : !(columns.remark !== null && cellIndex === columns.remark);
+                    : !(columns.remark !== null && logicalCellIndex === columns.remark);
                 const label = `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`;
                 const usesTypedControls = window.IcFormControls
                     ?.isTypedSchedule(scheduleName);
@@ -316,7 +373,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 const config = explicitConfig || (usesTypedControls
                     ? window.IcFormControls.classify(
                         row.textContent,
-                        columnContext(table, rowIndex, cellIndex)
+                        columnContext(table, rowIndex, logicalCellIndex)
                     )
                     : { type: "text", kind: "text" });
                 const field = buildAnswerField(
@@ -329,8 +386,8 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 if (
                     ["TEXTAREA", "SELECT"].includes(field.tagName) &&
                     (
-                        (columns.action !== null && cellIndex === columns.action) ||
-                        (columns.action === null && (columns.remark === null || cellIndex !== columns.remark))
+                        (columns.action !== null && logicalCellIndex === columns.action) ||
+                        (columns.action === null && (columns.remark === null || logicalCellIndex !== columns.remark))
                     )
                 ) {
                     field.dataset.bulkOkEligible = "true";
