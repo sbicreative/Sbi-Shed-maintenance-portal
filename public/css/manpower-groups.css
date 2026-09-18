@@ -1,0 +1,22 @@
+.manpower-page .grouped-manpower-table { min-width:850px; }
+.grouped-work-list { display:grid; gap:12px; }
+.distribution-work-unit { padding:12px; border:1px solid #d5ddd7; border-radius:8px; text-align:left; }
+.distribution-work-unit > strong { display:block; margin-bottom:10px; color:#244b37; }
+.incomplete-return-strip { padding:8px; margin-bottom:10px; background:#fff3d2; border-left:3px solid #b97914; font-size:12px; }
+.grouped-manpower-table .existing-remarks-list ol { padding-left:22px; }
+.grouped-manpower-table .existing-remarks-list li { padding-bottom:8px; white-space:pre-wrap; }
+.grouped-manpower-table .existing-remarks-list small { display:block; color:#64716a; }
+@media(max-width:768px) {
+    .manpower-page .table-container:has(.grouped-manpower-table) { overflow:visible !important; }
+    .manpower-page table.grouped-manpower-table { display:block; min-width:0 !important; width:100% !important; }
+    .manpower-page table.grouped-manpower-table thead { display:none !important; }
+    .manpower-page table.grouped-manpower-table tbody { display:grid; gap:14px; }
+    .manpower-page table.grouped-manpower-table tbody tr { display:grid; grid-template-columns:minmax(0,1fr); padding:12px; border:1px solid #d5ddd7; border-radius:9px; gap:10px; }
+    .manpower-page table.grouped-manpower-table tbody td { display:block !important; width:100%; min-width:0; padding:0; border:0; text-align:left; }
+    .manpower-page table.grouped-manpower-table tbody td::before { content:attr(data-mobile-label); display:block; font-weight:700; margin-bottom:5px; color:#244b37; }
+    .manpower-page table.grouped-manpower-table td[colspan]::before { display:none; }
+    .grouped-manpower-table .distribution-remarks-panel { min-width:0; }
+    .grouped-manpower-table .staff-select-row { display:flex; flex-wrap:wrap; }
+    .grouped-manpower-table .staff-select { flex:1 1 180px; min-width:0; }
+    .grouped-manpower-table .supervisor-remark-input { min-width:0; }
+}

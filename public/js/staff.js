@@ -32,7 +32,7 @@ function requireStaffLogin() {
         );
         document.getElementById("assignedWorkBody").innerHTML = `
             <tr>
-                <td colspan="9">Employee mapping is required.</td>
+                <td colspan="7">Employee mapping is required.</td>
             </tr>
         `;
         return false;
@@ -80,7 +80,7 @@ async function loadAssignedWork() {
     const body = document.getElementById("assignedWorkBody");
     body.innerHTML = `
         <tr>
-            <td colspan="9">Loading assigned work...</td>
+            <td colspan="7">Loading assigned work...</td>
         </tr>
     `;
     showMessage("");
@@ -102,7 +102,7 @@ async function loadAssignedWork() {
     } catch (error) {
         body.innerHTML = `
             <tr>
-                <td colspan="9">Unable to load assigned work.</td>
+                <td colspan="7">Unable to load assigned work.</td>
             </tr>
         `;
         showMessage(error.message, true);
@@ -177,7 +177,7 @@ function renderWorkTable() {
                 <td>&nbsp;</td>
             </tr>
             <tr class="empty-work-message">
-                <td colspan="9">
+                <td colspan="7">
                     No work assigned for today.
                 </td>
             </tr>
@@ -228,6 +228,68 @@ function renderWorkTable() {
             </tr>
         `;
     }).join("");
+    groupStaffWorkRows(items, body);
+}
+
+function groupStaffWorkRows(items, body) {
+    const groups = new Map();
+    const rows = Array.from(body.rows);
+    items.forEach((item, index) => {
+        const header = item.work_detail?.assign_work_header || {};
+        const key = JSON.stringify([item.assigned_date,
+            header.loco_id || header.loco_master?.loco_no,
+            header.temporary_loco_id || header.temporary_loco_master?.loco_no,
+            header.schedule_id || header.schedule_master?.schedule_name,
+            item.assigned_by || item.assigned_by_name]);
+        const row = rows[index];
+        let group = groups.get(key);
+        if (!group) {
+            group = { row, works: document.createElement('div'), remarks: new Map() };
+            group.works.className = 'staff-grouped-works';
+            groups.set(key, group);
+        }
+        const unit = document.createElement('section');
+        unit.className = 'staff-work-unit';
+        const title = document.createElement('strong');
+        title.textContent = item.work_detail?.work_master?.work_name || '-';
+        unit.appendChild(title);
+        const status = document.createElement('div');
+        status.className = 'staff-work-status';
+        status.append(...Array.from(row.cells[7].childNodes));
+        unit.appendChild(status);
+        const actions = document.createElement('div');
+        actions.className = 'staff-work-actions';
+        actions.append(...Array.from(row.cells[8].childNodes));
+        unit.appendChild(actions);
+        group.works.appendChild(unit);
+        (item.loco_repair_remarks || []).forEach(remark => {
+            const key = JSON.stringify([remark.remark_text, remark.author_name, remark.author_role]);
+            group.remarks.set(key, remark);
+        });
+        if (group.row !== row) row.remove();
+    });
+    let serial = 0;
+    groups.forEach(group => {
+        const cells = Array.from(group.row.cells);
+        cells[0].textContent = ++serial;
+        cells[4].replaceChildren(group.works);
+        const list = document.createElement('ol');
+        list.className = 'staff-shared-remarks';
+        group.remarks.forEach(remark => {
+            const li = document.createElement('li');
+            li.textContent = remark.remark_text;
+            const author = document.createElement('small');
+            author.textContent = `${remark.author_name || ''} (${remark.author_role || ''})`;
+            li.appendChild(author);
+            list.appendChild(li);
+        });
+        cells[5].replaceChildren(list);
+        if (!group.remarks.size) cells[5].textContent = 'No remarks';
+        const labels = ['S.No.', 'Date', 'Loco No.', 'Schedule', 'Assigned Work', 'Remarks', 'Assigned By'];
+        labels.forEach((label, index) => { cells[index].dataset.mobileLabel = label; });
+        cells[7].remove();
+        cells[8].remove();
+    });
 }
 
 async function updateWorkStatus(distributionId, status, button) {

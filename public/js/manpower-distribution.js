@@ -431,7 +431,7 @@ async function loadAssignedWork() {
 
         <tr>
 
-            <td colspan="8">
+            <td colspan="5">
                 Loading assigned work...
             </td>
 
@@ -473,7 +473,7 @@ async function loadAssignedWork() {
 
             tbody.innerHTML = `
                 <tr class="mobile-full-row">
-                    <td colspan="8">No work assigned for the selected date.</td>
+                    <td colspan="5">No work assigned for the selected date.</td>
                 </tr>
             `;
 
@@ -600,6 +600,7 @@ async function loadAssignedWork() {
             }
         );
 
+        groupAssignedWorkRows(data, tbody);
         addManpowerButtonEvents();
 
         document
@@ -647,7 +648,7 @@ async function loadAssignedWork() {
 
             <tr>
 
-                <td colspan="8">
+                <td colspan="5">
                     Unable to load assigned work
                 </td>
 
@@ -862,6 +863,66 @@ function refreshStaffAvailability() {
 // SAVE DISTRIBUTION
 // ======================================================
 
+function groupAssignedWorkRows(data, tbody) {
+    const groups = new Map();
+    const rows = Array.from(tbody.rows);
+    data.forEach((item, index) => {
+        const header = item.assign_work_header || {};
+        const key = JSON.stringify([header.loco_id || header.loco_master?.loco_no,
+            header.temporary_loco_id || header.temporary_loco_master?.loco_no,
+            header.schedule_id || header.schedule_master?.schedule_name, header.assign_date]);
+        const row = rows[index];
+        let group = groups.get(key);
+        if (!group) {
+            group = { row, works: document.createElement('div'), remarks: new Map() };
+            group.works.className = 'grouped-work-list';
+            groups.set(key, group);
+        }
+        const unit = document.createElement('section');
+        unit.className = 'distribution-work-unit';
+        const title = document.createElement('strong');
+        title.textContent = item.work_master?.work_name || 'Assigned work';
+        unit.appendChild(title);
+        if (item.incomplete_submission) {
+            const strip = document.createElement('div');
+            strip.className = 'incomplete-return-strip';
+            strip.textContent = `Incomplete · Returned By: ${item.incomplete_submission.submitted_by_name || 'Staff'}`;
+            unit.appendChild(strip);
+        }
+        unit.appendChild(row.querySelector('.manpower-picker'));
+        group.works.appendChild(unit);
+        (item.repair_remarks || []).forEach(remark => {
+            const text = String(remark.remark_text || '').trim();
+            if (text) group.remarks.set(text, { text, author: remark.author_name || remark.author_role || '' });
+        });
+        String(item.remarks || '').split('\n').forEach(value => {
+            const text = value.trim();
+            if (text && !group.remarks.has(text)) group.remarks.set(text, { text, author: 'Incharge' });
+        });
+        if (group.row !== row) row.remove();
+    });
+    let serial = 0;
+    groups.forEach(group => {
+        const cells = Array.from(group.row.cells);
+        cells[0].textContent = ++serial;
+        cells[3].replaceChildren(group.works);
+        cells[3].dataset.mobileLabel = 'Work / Staff';
+        const history = cells[5].querySelector('.existing-remarks-list');
+        const list = document.createElement('ol');
+        for (const remark of group.remarks.values()) {
+            const entry = document.createElement('li');
+            entry.textContent = remark.text;
+            const author = document.createElement('small');
+            author.textContent = remark.author ? ` — ${remark.author}` : '';
+            entry.appendChild(author);
+            list.appendChild(entry);
+        }
+        history.replaceChildren(list);
+        if (!group.remarks.size) history.textContent = 'No existing remarks.';
+        [cells[4], cells[6], cells[7]].forEach(cell => cell.remove());
+    });
+}
+
 async function saveDistribution() {
 
     const saveButton =
@@ -871,6 +932,7 @@ async function saveDistribution() {
 
     const assignments = [];
     const allSelectedStaffIds = [];
+    const remarkedGroups = new Set();
 
     const pickers =
         document.querySelectorAll(
@@ -885,7 +947,7 @@ async function saveDistribution() {
         const row =
             picker.closest("tr");
 
-        const remarks = Array.from(
+        const remarks = remarkedGroups.has(row) ? [] : Array.from(
             row?.querySelectorAll(".supervisor-remark-input") || []
         ).map(input => input.value.trim()).filter(Boolean);
 
@@ -917,6 +979,7 @@ async function saveDistribution() {
         }
 
         staffRows.sort((left, right) => Number(right.isLead) - Number(left.isLead));
+        if (staffRows.length) remarkedGroups.add(row);
         staffRows.forEach(({ staffId, isLead }) => {
             assignments.push({
                 assign_work_detail_id:
@@ -929,6 +992,7 @@ async function saveDistribution() {
                     author_name:
                         user.name || "Supervisor",
                 is_lead: isLead,
+                remarks_scope: 'loco',
                 remarks: isLead ? remarks : []
             });
         });

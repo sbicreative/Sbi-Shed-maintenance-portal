@@ -105,11 +105,18 @@ async function loadTodaysActivity() {
             activityTable.innerHTML = '<tr><td colspan="4">No Record Found</td></tr>';
             return;
         }
-        activityTable.innerHTML = result.data.map(item => `
+        const groups = new Map();
+        for (const item of result.data) {
+            const key = JSON.stringify([item.loco_key || item.loco_no,
+                item.schedule_id || item.schedule_name, item.supervisor_id || item.supervisor_name]);
+            if (!groups.has(key)) groups.set(key, { ...item, works: new Set() });
+            groups.get(key).works.add(item.work_name);
+        }
+        activityTable.innerHTML = [...groups.values()].map(item => `
             <tr>
                 <td>${escapeActivityValue(item.loco_no)}</td>
                 <td>${escapeActivityValue(item.schedule_name)}</td>
-                <td>${escapeActivityValue(item.work_name)}</td>
+                <td><ul class="activity-work-list">${[...item.works].map(work => `<li>${escapeActivityValue(work)}</li>`).join("")}</ul></td>
                 <td>${escapeActivityValue(item.supervisor_name)}</td>
             </tr>`).join("");
     } catch (error) {

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const supabase = require("../config/supabase");
+const { loadLocoRemarks } = require("../lib/assignmentLocoRemarks");
 const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 
 function sameText(left, right) {
@@ -569,6 +570,7 @@ router.get("/", async (req, res) => {
         }
 
         const details = data || [];
+        const locoRemarks = await loadLocoRemarks(details);
         const detailIds = details.map(item => Number(item.id)).filter(Boolean);
         let remarkRows = [];
         if (detailIds.length) {
@@ -589,7 +591,8 @@ router.get("/", async (req, res) => {
 
         res.json(details.map(detail => ({
             ...detail,
-            repair_remarks: remarksByDetail.get(Number(detail.id)) || []
+            repair_remarks: [...(locoRemarks.get(Number(detail.assign_work_header?.id)) || []),
+                ...(remarksByDetail.get(Number(detail.id)) || [])]
         })));
 
     }
@@ -704,7 +707,7 @@ router.post("/", async (req, res) => {
                     temporary_loco_id: header.temporary_loco_id || header.temporary_loco_master?.id,
                     assign_work_header_id: header.id,
                     schedule_id: header.schedule_id || header.schedule_master?.id,
-                    assign_work_detail_id: detailId,
+                    assign_work_detail_id: req.body.remarks_scope === 'loco' ? null : detailId,
                     manpower_distribution_id: distributionId,
                     source_type: "manpower_distribution",
                     source_action: incompleteForm ? "continuation_assign" : "assign"

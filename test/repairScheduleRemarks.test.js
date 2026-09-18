@@ -102,11 +102,12 @@ test("legacy remark fields remain in their established write routes", () => {
     }
 });
 
-test("Incharge can submit multiple work-level remarks without overwriting history", () => {
+test("Incharge submits loco remarks once while preserving legacy work remarks", () => {
     const client = fs.readFileSync(path.join(root, "public", "js", "assign-work.js"), "utf8");
     const route = fs.readFileSync(path.join(root, "routes", "assignWorkRoutes.js"), "utf8");
     assert.match(client, /add-remark-btn/);
-    assert.match(client, /data-remark-key/);
+    assert.match(client, /loco_remarks:/);
+    assert.match(route, /source_type: "assign_work_header"/);
     assert.match(route, /for \(const remarkText of sourceWork\?\.remarks \|\| \[\]\)/);
     assert.match(route, /remarks\.join\("\\n"\)/);
 });
@@ -161,8 +162,8 @@ test("Man Power shows incomplete form submitter and keeps same-day continuation 
     const client = fs.readFileSync(path.join(root, "public", "js", "manpower-distribution.js"), "utf8");
     const supervisorRoute = fs.readFileSync(path.join(root, "routes", "supervisorRoutes.js"), "utf8");
     const manpowerRoute = fs.readFileSync(path.join(root, "routes", "manpowerRoutes.js"), "utf8");
-    assert.match(html, /Assigned By \/ Submitted By/);
-    assert.match(client, /Submitted By:/);
+    assert.doesNotMatch(html, /<th>Assigned By|<th>Status/);
+    assert.match(client, /Returned By:/);
     assert.match(client, /incompleteSubmission \? "Incomplete"/);
     assert.match(supervisorRoute, /incomplete_submission:/);
     assert.match(supervisorRoute, /submitted_by_name:/);
@@ -181,10 +182,12 @@ test("repair remark API restricts multiple remarks to owned assigned work", () =
     assert.match(route, /source_type: "dashboard_remark"/);
 });
 
-test("Assign Work uses an aligned two-row phone layout without hiding remarks", () => {
+test("Assign Work uses labelled single-column loco blocks on phones", () => {
     const html = fs.readFileSync(path.join(root, "public", "dashboard", "assign-work.html"), "utf8");
-    const css = fs.readFileSync(path.join(root, "public", "css", "assign-work.css"), "utf8");
+    const css = fs.readFileSync(path.join(root, "public", "css", "assign-work-picker.css"), "utf8");
     assert.match(html, /<body class="assign-work-page">/);
-    assert.match(css, /\.assign-work-page \.table-container tbody tr \{ display:grid; grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-    assert.match(css, /td:nth-child\(6\) \{ grid-column:span 2; \}/);
+    assert.match(css, /grid-template-columns:minmax\(0,1fr\)/);
+    assert.match(css, /thead \{ display:none; \}/);
+    assert.match(css, /content:attr\(data-mobile-label\)/);
+    assert.match(css, /@media \(max-width:600px\)/);
 });

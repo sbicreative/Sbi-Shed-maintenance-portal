@@ -504,7 +504,7 @@ function isRepairsWork(workMasterId) {
 async function loadRepairRemarkOptions(workRow) {
     const container = workRow.querySelector(".repair-remark-selector");
     const workSelect = workRow.querySelector(".workDropdown");
-    if (!container || !isRepairsWork(workSelect.value)) {
+    if (!container || !workSelect?.checked || !isRepairsWork(workSelect.value)) {
         if (container) container.innerHTML = "";
         return;
     }
@@ -556,346 +556,107 @@ async function loadRepairRemarkOptions(workRow) {
 // One loco = One supervisor = Multiple works
 // ==========================================
 
-let remarkGroupSequence = 0;
-
-function nextRemarkGroupKey() {
-    remarkGroupSequence += 1;
-    return `work-remarks-${remarkGroupSequence}`;
+function locoRemarksMarkup() {
+    return `<div class="loco-remarks">
+        <div class="remark-input-list">
+            <div class="remark-input-row">
+                <input type="text" class="remarks" aria-label="Loco remark" placeholder="Enter loco remark">
+                <button type="button" class="add-remark-btn" aria-label="Add another loco remark">+</button>
+            </div>
+        </div>
+    </div>`;
 }
 
-function remarkGroupMarkup(key, title = "Select Work") {
-    return `
-        <div class="multi-remarks-group" data-remark-key="${key}">
-            <div class="multi-remarks-heading">
-                <strong>${title}</strong>
-                <button type="button" class="add-remark-btn">+ Add Remark</button>
+function renderWorkPicker(row) {
+    const scheduleId = row.querySelector(".scheduleDropdown").value;
+    const works = workList.filter(item => Number(item.schedule_id) === Number(scheduleId));
+    row.querySelector(".work-list").innerHTML = !scheduleId
+        ? '<span class="work-selection-hint">Select Schedule first.</span>'
+        : `<details class="work-picker">
+            <summary>Select works <span class="work-selection-count">0 selected</span></summary>
+            <div class="work-picker-actions">
+                <label><input type="checkbox" class="select-all-works"> Select All</label>
             </div>
-            <div class="remark-input-list">
-                <div class="remark-input-row">
-                    <input type="text" class="remarks" placeholder="Enter Incharge remark">
-                    <button type="button" class="remove-remark-btn" aria-label="Remove remark">×</button>
-                </div>
+            <div class="work-picker-options">${works.map(item => `
+                <div class="work-row">
+                    <label class="work-option"><input type="checkbox" class="workDropdown" value="${Number(item.id)}">
+                        <span>${escapeHtml(item.work_name)}</span></label>
+                    <div class="repair-remark-selector"></div>
+                </div>`).join("") || '<p>No works for this schedule.</p>'}
             </div>
-        </div>`;
+        </details>
+        <ul class="selected-work-list" aria-live="polite"></ul>`;
+}
+
+function updateWorkSelection(row) {
+    const choices = [...row.querySelectorAll(".workDropdown")];
+    const selected = choices.filter(input => input.checked);
+    const count = row.querySelector(".work-selection-count");
+    if (count) count.textContent = `${selected.length} selected`;
+    const all = row.querySelector(".select-all-works");
+    if (all) {
+        all.checked = choices.length > 0 && selected.length === choices.length;
+        all.indeterminate = selected.length > 0 && selected.length < choices.length;
+    }
+    const list = row.querySelector(".selected-work-list");
+    if (list) list.innerHTML = selected.map(input =>
+        `<li>${escapeHtml(workList.find(item => Number(item.id) === Number(input.value))?.work_name || "")}</li>`
+    ).join("");
 }
 
 function addLocoRow() {
-
-    const initialRemarkKey = nextRemarkGroupKey();
-    workTableBody
-        .querySelector(".empty-work-row")
-        ?.remove();
-
-    const row =
-        document.createElement("tr");
-
+    workTableBody.querySelector(".empty-work-row")?.remove();
+    const row = document.createElement("tr");
     row.className = "assignment-row";
-
     row.innerHTML = `
-
         <td class="serial" data-mobile-label="S.No."></td>
-
-
-        <td data-mobile-label="Loco No.">
-
-            <select class="locoDropdown">
-
-                <option value="">
-                    Select Loco
-                </option>
-
-                ${getLocoOptions()}
-
-            </select>
-
-        </td>
-
-
-        <td data-mobile-label="Schedule">
-
-            <select class="scheduleDropdown">
-
-                <option value="">
-                    Select Schedule
-                </option>
-
-                ${getScheduleOptions()}
-
-            </select>
-
-        </td>
-
-
-        <td data-mobile-label="Assign Work">
-
-            <div class="work-list">
-
-                <div class="work-row" data-remark-key="${initialRemarkKey}">
-
-                    <select class="workDropdown">
-
-                        ${getWorkOptions()}
-
-                    </select>
-
-                    <button
-                        type="button"
-                        class="add-work-btn">
-
-                        +
-
-                    </button>
-
-                    <div class="repair-remark-selector"></div>
-
-                </div>
-
-            </div>
-
-        </td>
-
-
-        <td data-mobile-label="Supervisor">
-
-            <select class="supervisorDropdown">
-
-                <option value="">
-                    Select Supervisor
-                </option>
-
-                ${getSupervisorOptions()}
-
-            </select>
-
-        </td>
-
-
-        <td data-mobile-label="Remarks">
-
-            <div class="work-remarks-list">
-                ${remarkGroupMarkup(initialRemarkKey)}
-            </div>
-
-        </td>
-
-
-        <td data-mobile-label="Action">
-
-            <button
-                type="button"
-                class="delete-loco-btn">
-
-                Delete
-
-            </button>
-
-        </td>
-
-    `;
-
+        <td data-mobile-label="Loco No."><select class="locoDropdown" aria-label="Loco">
+            <option value="">Select Loco</option>${getLocoOptions()}</select></td>
+        <td data-mobile-label="Schedule"><select class="scheduleDropdown" aria-label="Schedule">
+            <option value="">Select Schedule</option>${getScheduleOptions()}</select></td>
+        <td data-mobile-label="Assign Work"><div class="work-list"></div></td>
+        <td data-mobile-label="Supervisor"><select class="supervisorDropdown" aria-label="Supervisor">
+            <option value="">Select Supervisor</option>${getSupervisorOptions()}</select></td>
+        <td data-mobile-label="Remarks">${locoRemarksMarkup()}</td>
+        <td data-mobile-label="Action"><button type="button" class="delete-loco-btn">Delete</button></td>`;
     workTableBody.appendChild(row);
-
+    renderWorkPicker(row);
     updateSerial();
-
 }
 
-
-// ==========================================
-// SCHEDULE CHANGE
-// Load only selected schedule's works
-// ==========================================
-
-workTableBody.addEventListener(
-    "change",
-    async function (e) {
-
-        if (
-            !e.target.classList.contains(
-                "scheduleDropdown"
-            )
-        ) {
-
-            return;
-
-        }
-
-        const row =
-            e.target.closest("tr");
-
-        const scheduleId =
-            e.target.value;
-
-        const workDropdowns =
-            row.querySelectorAll(
-                ".workDropdown"
-            );
-
-        workDropdowns.forEach(dropdown => {
-
-            dropdown.innerHTML =
-                getWorkOptions(scheduleId);
-
-        });
-
-        row.querySelectorAll(".multi-remarks-heading strong")
-            .forEach(label => { label.textContent = "Select Work"; });
-
-        row.querySelectorAll(".repair-remark-selector")
-            .forEach(container => { container.innerHTML = ""; });
-
-    }
-);
-
-
-// ==========================================
-// ADD / REMOVE MULTIPLE WORKS
-// ==========================================
-
-document.addEventListener(
-    "click",
-    function (e) {
-
-        // Add another work
-
-        if (
-            e.target.classList.contains(
-                "add-work-btn"
-            )
-        ) {
-
-            const tableRow =
-                e.target.closest("tr");
-
-            const scheduleId =
-                tableRow.querySelector(
-                    ".scheduleDropdown"
-                ).value;
-
-            if (!scheduleId) {
-
-                alert(
-                    "First select Schedule."
-                );
-
-                return;
-
-            }
-
-            const workListBox =
-                e.target.closest(
-                    ".work-list"
-                );
-
-            const workRow =
-                document.createElement("div");
-
-            const remarkKey = nextRemarkGroupKey();
-
-            workRow.className = "work-row";
-            workRow.dataset.remarkKey = remarkKey;
-
-            workRow.innerHTML = `
-
-                <select class="workDropdown">
-
-                    ${getWorkOptions(scheduleId)}
-
-                </select>
-
-                <button
-                    type="button"
-                    class="remove-work-btn">
-
-                    ×
-
-                </button>
-
-                <div class="repair-remark-selector"></div>
-
-            `;
-
-            workListBox.appendChild(
-                workRow
-            );
-
-            tableRow.querySelector(".work-remarks-list")
-                .insertAdjacentHTML("beforeend", remarkGroupMarkup(remarkKey));
-
-        }
-
-
-        // Remove selected work row
-
-        if (
-            e.target.classList.contains(
-                "remove-work-btn"
-            )
-        ) {
-            const workRow = e.target.closest(".work-row");
-            const remarkKey = workRow.dataset.remarkKey;
-            workRow.closest("tr").querySelector(
-                `.multi-remarks-group[data-remark-key="${remarkKey}"]`
-            )?.remove();
-            workRow.remove();
-
-        }
-
-        if (e.target.classList.contains("add-remark-btn")) {
-            e.target.closest(".multi-remarks-group")
-                .querySelector(".remark-input-list")
-                .insertAdjacentHTML("beforeend", `
-                    <div class="remark-input-row">
-                        <input type="text" class="remarks" placeholder="Enter Incharge remark">
-                        <button type="button" class="remove-remark-btn" aria-label="Remove remark">×</button>
-                    </div>`);
-        }
-
-        if (e.target.classList.contains("remove-remark-btn")) {
-            const list = e.target.closest(".remark-input-list");
-            if (list.querySelectorAll(".remark-input-row").length === 1) {
-                list.querySelector(".remarks").value = "";
-            } else {
-                e.target.closest(".remark-input-row").remove();
-            }
-        }
-
-
-        // Delete complete loco row
-
-        if (
-            e.target.classList.contains(
-                "delete-loco-btn"
-            )
-        ) {
-
-            e.target
-                .closest("tr")
-                .remove();
-
-            updateSerial();
-
-        }
-
-    }
-);
-
 workTableBody.addEventListener("change", async event => {
-    if (event.target.classList.contains("locoDropdown")) {
-        for (const workRow of event.target.closest("tr").querySelectorAll(".work-row")) {
-            await loadRepairRemarkOptions(workRow);
-        }
-        return;
+    const row = event.target.closest("tr.assignment-row");
+    if (!row) return;
+    if (event.target.classList.contains("scheduleDropdown")) {
+        renderWorkPicker(row);
+    } else if (event.target.classList.contains("select-all-works")) {
+        const selected = event.target.checked;
+        row.querySelectorAll(".workDropdown").forEach(input => { input.checked = selected; });
+        updateWorkSelection(row);
+        for (const workRow of row.querySelectorAll(".work-row")) await loadRepairRemarkOptions(workRow);
+    } else if (event.target.classList.contains("workDropdown")) {
+        updateWorkSelection(row);
+        await loadRepairRemarkOptions(event.target.closest(".work-row"));
+    } else if (event.target.classList.contains("locoDropdown")) {
+        for (const workRow of row.querySelectorAll(".work-row")) await loadRepairRemarkOptions(workRow);
     }
-    if (!event.target.classList.contains("workDropdown")) return;
-    const workRow = event.target.closest(".work-row");
-    const remarkKey = workRow.dataset.remarkKey;
-    const selectedText = event.target.options[event.target.selectedIndex]?.textContent.trim() || "Select Work";
-    workRow.closest("tr").querySelector(
-        `.multi-remarks-group[data-remark-key="${remarkKey}"] .multi-remarks-heading strong`
-    ).textContent = selectedText;
-    await loadRepairRemarkOptions(workRow);
 });
 
+workTableBody.addEventListener("click", event => {
+    if (event.target.closest(".add-remark-btn")) {
+        const list = event.target.closest(".loco-remarks").querySelector(".remark-input-list");
+        list.insertAdjacentHTML("beforeend", `<div class="remark-input-row">
+            <input type="text" class="remarks" aria-label="Loco remark" placeholder="Enter loco remark">
+            <button type="button" class="remove-remark-btn" aria-label="Remove remark">×</button>
+        </div>`);
+        list.lastElementChild.querySelector("input").focus();
+    }
+    if (event.target.closest(".remove-remark-btn")) event.target.closest(".remark-input-row").remove();
+    if (event.target.closest(".delete-loco-btn")) {
+        event.target.closest("tr").remove();
+        updateSerial();
+    }
+});
 
 // ==========================================
 // SERIAL NUMBER
@@ -1000,6 +761,28 @@ document
 
             try {
 
+                // Validate the full batch before saving the first loco.
+                const assignmentKeys = new Set();
+                for (const row of rows) {
+                    const values = [".locoDropdown", ".scheduleDropdown", ".supervisorDropdown"]
+                        .map(selector => row.querySelector(selector).value);
+                    const selected = [...row.querySelectorAll(".workDropdown:checked")];
+                    if (values.some(value => !value) || !selected.length) {
+                        throw new Error("Loco, Schedule, Supervisor and Work are required.");
+                    }
+                    const key = JSON.stringify(values);
+                    if (assignmentKeys.has(key)) {
+                        throw new Error("Use one row for the same loco, schedule and supervisor. Select all its works together.");
+                    }
+                    assignmentKeys.add(key);
+                    for (const work of selected) {
+                        if (isRepairsWork(work.value) && !work.closest(".work-row")
+                            .querySelector(".repairRemarkDropdown")?.selectedOptions.length) {
+                            throw new Error("For Repairs, select pending repair remarks or uncheck Repairs.");
+                        }
+                    }
+                }
+
                 for (const row of rows) {
 
                     const locoValue = row.querySelector(
@@ -1018,7 +801,7 @@ document
 
                     const workDropdowns =
                         row.querySelectorAll(
-                            ".workDropdown"
+                            ".workDropdown:checked"
                         );
 
                     const works = [];
@@ -1027,13 +810,6 @@ document
                         item => {
 
                             if (item.value) {
-
-                                const remarkGroup = row.querySelector(
-                                    `.multi-remarks-group[data-remark-key="${item.closest(".work-row").dataset.remarkKey}"]`
-                                );
-                                const remarks = Array.from(
-                                    remarkGroup?.querySelectorAll(".remarks") || []
-                                ).map(input => input.value.trim()).filter(Boolean);
 
                                 const repairRemarkIds = Array.from(
                                     item.closest(".work-row").querySelector(".repairRemarkDropdown")?.selectedOptions || []
@@ -1046,7 +822,6 @@ document
                                             item.value
                                         ),
 
-                                    remarks,
 
                                     repair_remark_ids:
                                         repairRemarkIds
@@ -1126,6 +901,9 @@ document
 
                         author_name:
                             user.name || "Incharge",
+
+                        loco_remarks: [...new Set(Array.from(row.querySelectorAll(".loco-remarks .remarks"))
+                            .map(input => input.value.trim()).filter(Boolean))],
 
                         works:
                             uniqueWorks

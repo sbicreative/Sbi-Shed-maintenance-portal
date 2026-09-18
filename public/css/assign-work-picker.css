@@ -1,0 +1,49 @@
+.assign-work-page .work-picker { border:1px solid #bdc9c1; border-radius:7px; background:#fff; padding:8px; }
+.assign-work-page .work-picker summary { cursor:pointer; color:#244b37; font-weight:700; }
+.assign-work-page .work-selection-count { display:block; font-size:12px; color:#5d6b63; font-weight:400; margin-top:3px; }
+.assign-work-page .work-picker-actions { padding:9px 0; border-bottom:1px solid #dce3de; }
+.assign-work-page .work-picker-options { max-height:280px; overflow:auto; padding:5px 0; }
+.assign-work-page .work-picker .work-row { display:block; margin:0; padding:5px 0; border-bottom:1px solid #edf0ed; }
+.assign-work-page .work-picker label { display:flex; gap:8px; align-items:flex-start; text-align:left; cursor:pointer; font-size:12px; line-height:1.4; }
+.assign-work-page .work-picker input[type="checkbox"] { width:16px !important; min-width:16px !important; height:16px !important; min-height:16px !important; flex:0 0 16px; margin:2px 0 0 !important; padding:0 !important; }
+.assign-work-page .selected-work-list { margin:8px 0 0; padding-left:18px; text-align:left; font-size:12px; line-height:1.5; }
+.assign-work-page .selected-work-list:empty { display:none; }
+.assign-work-page .work-selection-hint { color:#67756c; font-size:12px; }
+.assign-work-page .loco-remarks .remark-input-row { display:flex; gap:5px; align-items:center; margin-bottom:6px; }
+.assign-work-page .loco-remarks .remarks { min-width:0; flex:1; width:100%; }
+.assign-work-page .loco-remarks .add-remark-btn,
+.assign-work-page .loco-remarks .remove-remark-btn { flex:0 0 32px; width:32px !important; min-height:34px; margin:0; padding:5px; font-size:17px; }
+.assign-work-page .repair-remark-selector:empty { display:none; }
+.activity-work-list { margin:0; padding-left:18px; text-align:left; line-height:1.6; }
+
+/* Each phone assignment keeps its labels beside the relevant controls. */
+@media (max-width:600px) {
+    .assign-work-page .table-container { border:0; overflow:visible; }
+    .assign-work-page .table-container thead { display:none; }
+    .assign-work-page .table-container tbody { display:grid; gap:14px; }
+    .assign-work-page .table-container tbody tr {
+        display:grid; grid-template-columns:minmax(0,1fr); gap:10px;
+        padding:12px; border:1px solid #d5ddd7; border-radius:10px; background:#fffdf8;
+    }
+    .assign-work-page .table-container tbody td,
+    .assign-work-page .table-container tbody td:nth-child(6) {
+        display:block; grid-column:1; width:100%; min-width:0;
+        padding:0; border:0; background:transparent; text-align:left; font-size:14px; line-height:1.4;
+    }
+    .assign-work-page .table-container tbody td::before {
+        content:attr(data-mobile-label); display:block; margin-bottom:5px;
+        color:#244b37; font-size:13px; font-weight:700;
+    }
+    .assign-work-page .table-container tbody td.serial { border-bottom:1px solid #d5ddd7; padding-bottom:7px; }
+    .assign-work-page .table-container tbody td.serial::before { content:"Loco entry "; display:inline; }
+    .assign-work-page .table-container td input,
+    .assign-work-page .table-container td select { min-height:44px; padding:10px; font-size:14px; border-radius:6px; }
+    .assign-work-page .work-picker label { font-size:14px; padding:5px 0; }
+    .assign-work-page .selected-work-list { font-size:14px; }
+    .assign-work-page .loco-remarks .add-remark-btn,
+    .assign-work-page .loco-remarks .remove-remark-btn { flex-basis:44px; width:44px !important; min-height:44px; }
+    .assign-work-page .table-container .delete-loco-btn { min-height:44px; font-size:14px; }
+    .assign-work-page .table-container tbody tr.empty-work-row { display:block; }
+    .assign-work-page .table-container tbody tr.empty-work-row td { display:none; }
+    .assign-work-page .table-container tbody tr.empty-work-row::before { content:"Use + Add Loco to start an assignment."; color:#67756c; font-size:14px; }
+}
