@@ -181,6 +181,7 @@ body {
     overflow-wrap: anywhere;
 }
 .schedule-row-number{width:44px;min-width:44px;text-align:center;font-weight:800;color:#173d2b;background:#f2f6f3}
+.schedule-shift-grid{table-layout:fixed}.schedule-shift-grid td{text-align:center;vertical-align:middle}.schedule-shift-grid td:first-child{width:22%;font-weight:750;text-align:left}.schedule-shift-grid .schedule-grid-corner{background:#f2f6f3}.schedule-shift-grid .ic-value-input{min-width:90px;width:100%;text-align:center}
 
 .form-document-title {
     text-align: center;

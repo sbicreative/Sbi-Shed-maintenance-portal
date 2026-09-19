@@ -97,12 +97,14 @@ function looksLikeMaintenanceWorkTable(table) {
 }
 
 function prepareBilingualColumns(table) {
-    const columns = { action: null, name: null, remark: null };
+    const columns = { serial: null, work: null, action: null, name: null, remark: null };
     const width = annotateLogicalColumns(table);
     [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach(cell => {
         const index = Number(cell.dataset.logicalColumn);
         const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
-        if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
+        if (/^(?:sr\.?\s*no\.?|s\.?\s*no\.?|sn|क्र\.?\s*सं)/.test(text)) {
+            columns.serial = index;
+        } else if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
             columns.action = index;
             cell.innerHTML = "Action Taken<br><small>की गई कार्रवाई</small>";
         } else if (/name of tcn|name of staff|टीसीएन का नाम/.test(text)) {
@@ -112,6 +114,7 @@ function prepareBilingualColumns(table) {
             columns.remark = index;
             cell.innerHTML = "Remark<br><small>टिप्पणी</small>";
         } else if (/detail of work|description of activities|items to check|कार्य.*निरीक्षण का विवरण/.test(text)) {
+            columns.work = index;
             cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
         }
     }));
@@ -121,6 +124,11 @@ function prepareBilingualColumns(table) {
         if (width >= 5) columns.remark = 4;
     }
     return columns;
+}
+
+function isScheduleShiftGrid(table) {
+    const text = table.textContent.replace(/\s+/g, " ").trim();
+    return /upper deck/i.test(text) && /under truck/i.test(text) && /date\s*\/\s*shift/i.test(text);
 }
 
 function renderStaffName(cell, key, savedAnswers, attributions) {
@@ -331,13 +339,35 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
 
     tables.forEach((table, tableIndex) => {
         const columns = prepareBilingualColumns(table);
+        const shiftGrid = isScheduleShiftGrid(table);
+        if (shiftGrid) table.classList.add("schedule-shift-grid");
+        let generatedSerial = 1;
         [...table.rows].forEach((row, rowIndex) => {
             [...row.cells].forEach((cell, cellIndex) => {
                 const logicalCellIndex = Number(cell.dataset.logicalColumn ?? cellIndex);
                 const plainText =
                     cell.textContent.replace(/\s+/g, " ").trim();
 
-                if (plainText) return;
+                if (plainText) {
+                    if (columns.serial !== null && logicalCellIndex === columns.serial && /^\d+$/.test(plainText)) {
+                        generatedSerial = Math.max(generatedSerial, Number(plainText) + 1);
+                    }
+                    return;
+                }
+
+                if (columns.serial !== null && logicalCellIndex === columns.serial) {
+                    cell.textContent = String(generatedSerial++);
+                    cell.classList.add("schedule-row-number");
+                    return;
+                }
+
+                if (
+                    shiftGrid && logicalCellIndex === 0 &&
+                    [...row.cells].some(item => item !== cell && item.textContent.replace(/\s+/g, " ").trim())
+                ) {
+                    cell.classList.add("schedule-grid-corner");
+                    return;
+                }
 
                 const explicitAttributionKey = cell.dataset.attributionFor;
                 if (explicitAttributionKey) {
@@ -363,7 +393,11 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 const usesTypedControls = window.IcFormControls
                     ?.isTypedSchedule(scheduleName);
                 const explicitType = cell.dataset.adminFieldType;
-                const explicitConfig = explicitType === "value"
+                const explicitConfig = shiftGrid
+                    ? { type: "value", kind: "header-detail" }
+                    : columns.work !== null && logicalCellIndex === columns.work
+                        ? { type: "text", kind: "work-detail" }
+                    : explicitType === "value"
                     ? { type: "value", kind: "value" }
                     : explicitType === "yes_no"
                         ? { type: "select", kind: "choice", options: ["Yes", "No"] }
@@ -430,6 +464,15 @@ function removeRepetitiveJeSignatureRows(container) {
             text.length < 120 &&
             /(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE).*(?:हस्ताक्षर|signature)|(?:हस्ताक्षर|signature).*(?:जू\.?\s*इंजी|जे\/एसएसई|JE\/SSE)/i.test(text)
         ) element.remove();
+    });
+}
+
+function removeScheduleSignatureRows(container) {
+    container.querySelectorAll("tr").forEach(row => {
+        const labels = [...row.cells]
+            .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
+            .filter(Boolean);
+        if (labels.length === 1 && /^(?:signature|हस्ताक्षर)$/i.test(labels[0])) row.remove();
     });
 }
 
@@ -758,6 +801,7 @@ async function loadScheduleForm() {
         document.getElementById("documentScheduleName").textContent = scheduleName;
         if (!isPdf) {
             removeRepetitiveJeSignatureRows(container);
+            removeScheduleSignatureRows(container);
             removeSignatureRemarksColumns(container);
             createAnswerFields(
                 submission?.form_answers || {},
