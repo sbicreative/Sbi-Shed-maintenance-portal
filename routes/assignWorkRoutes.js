@@ -27,7 +27,7 @@ router.get("/today", async (req, res) => {
                 id,
                 work_master (work_name),
                 assign_work_header!inner (
-                    assign_date, created_by, supervisor_id,
+                    id, assign_date, created_by, supervisor_id, loco_id, temporary_loco_id, schedule_id,
                     loco_master (loco_no),
                     temporary_loco_master (loco_no),
                     schedule_master (schedule_name)
@@ -57,6 +57,10 @@ router.get("/today", async (req, res) => {
             data: (data || []).map(item => {
                 const header = item.assign_work_header || {};
                 return {
+                    assignment_id: header.id,
+                    loco_key: header.loco_id ? `master:${header.loco_id}` : `temporary:${header.temporary_loco_id}`,
+                    schedule_id: header.schedule_id,
+                    supervisor_id: header.supervisor_id,
                     loco_no: header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "-",
                     schedule_name: header.schedule_master?.schedule_name || "-",
                     work_name: item.work_master?.work_name || "-",
@@ -174,6 +178,7 @@ router.post("/", async (req, res) => {
             supervisor_id,
             created_by,
             author_name,
+            loco_remarks,
             works
         } = req.body;
 
@@ -242,7 +247,11 @@ router.post("/", async (req, res) => {
         // Prepare Multiple Work Rows
         // ==============================================
 
-        const normalizedWorks = works.map(work => {
+        const locoRemarks = [...new Set((Array.isArray(loco_remarks) ? loco_remarks : [])
+            .map(value => String(value || "").trim()).filter(Boolean))];
+        const normalizedWorks = works.filter((work, index, all) =>
+            index === all.findIndex(item => Number(item.work_master_id) === Number(work.work_master_id))
+        ).map(work => {
             const remarks = Array.isArray(work.remarks)
                 ? work.remarks.map(value => String(value || "").trim()).filter(Boolean)
                 : [String(work.remarks || "").trim()].filter(Boolean);
@@ -358,6 +367,22 @@ router.post("/", async (req, res) => {
 
             });
 
+        }
+
+        for (const remarkText of locoRemarks) {
+            await appendRepairRemark({
+                remark_text: remarkText,
+                author_id: created_by,
+                author_name,
+                author_role: "Incharge",
+                assignment_date: assign_date,
+                loco_id: loco_id || null,
+                temporary_loco_id: temporaryLocoId,
+                assign_work_header_id: headerData.id,
+                schedule_id,
+                source_type: "assign_work_header",
+                source_action: "assign"
+            });
         }
 
         for (const detail of detailData || []) {

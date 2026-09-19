@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const supabase = require("../config/supabase");
+const { loadLocoRemarks } = require("../lib/assignmentLocoRemarks");
 
 router.get("/dashboard-summary/:supervisorId", async (req, res) => {
     try {
@@ -397,6 +398,7 @@ router.get(
             }
 
             const assignedWork = data || [];
+            const locoRemarks = await loadLocoRemarks(assignedWork);
             const detailIds = assignedWork.map(item => Number(item.id)).filter(Boolean);
             const creatorIds = [...new Set(assignedWork
                 .map(item => Number(item.assign_work_header?.created_by))
@@ -462,6 +464,9 @@ router.get(
 
                 return {
                     ...item,
+                    repair_remarks: locoRemarks.get(Number(item.assign_work_header?.id)) || [],
+                    remarks: [item.remarks, ...(locoRemarks.get(Number(item.assign_work_header?.id)) || [])
+                        .map(remark => remark.remark_text)].filter(Boolean).join("\n"),
                     assigned_by_name: creatorNames.get(creatorId) || "Incharge",
                     incomplete_submission: form
                         ? {

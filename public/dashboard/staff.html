@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../css/common.css">
     <link rel="stylesheet" href="../css/staff.css">
     <link rel="stylesheet" href="../css/maintenance-theme.css?v=20260804-8">
+    <link rel="stylesheet" href="../css/staff-groups.css?v=20260918-1">
 </head>
 <body class="staff-dashboard-page" data-dashboard-role="staff">
     <header class="main-header">
@@ -52,7 +53,7 @@
             </div>
 
             <div class="table-wrap">
-                <table data-mobile-layout="staff-work">
+                <table class="staff-grouped-table" data-mobile-layout="single">
                     <thead>
                         <tr>
                             <th>S.No.</th>
@@ -62,13 +63,11 @@
                             <th>Assigned Work</th>
                             <th>Remarks</th>
                             <th>Assigned By</th>
-                            <th>Status</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="assignedWorkBody">
                         <tr>
-                            <td colspan="9">Loading assigned work...</td>
+                            <td colspan="7">Loading assigned work...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -77,7 +76,7 @@
 
     </main>
 
-    <script src="../js/staff.js"></script>
+    <script src="../js/staff.js?v=20260918-1"></script>
     <script src="/js/pwa.js"></script>
 </body>
 </html>
