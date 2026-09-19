@@ -352,140 +352,47 @@ window.onload = function () {
     setInterval(loadIncompleteFormsSummary, 30000);
 
 }
-async function loadAssignedWork() {
-
-    try {
-
-        const response =
-    await fetch(
-        `/api/supervisors/assigned-work/${supervisorId}?assign_date=${localDateValue()}`
-    );
-
-        const data =
-            await response.json();
-
-        const tbody =
-            document.getElementById("activityTable");
-
-        tbody.innerHTML = "";
-
-        if (!data.length) {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4">
-                        No Record Found
-                    </td>
-                </tr>
-            `;
-
-            return;
+function groupSupervisorWork(items) {
+    const groups = new Map();
+    for (const item of items) {
+        const header = item.assign_work_header || {};
+        const loco = header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "-";
+        const schedule = header.schedule_master?.schedule_name || "-";
+        const key = JSON.stringify([header.loco_id || loco, header.temporary_loco_id || null,
+            header.schedule_id || schedule, header.assign_date || ""]);
+        if (!groups.has(key)) groups.set(key, { loco, schedule, works: new Set(), remarks: new Set() });
+        const group = groups.get(key);
+        if (item.work_master?.work_name) group.works.add(item.work_master.work_name);
+        for (const value of String(item.remarks || "").split("\n")) {
+            if (value.trim()) group.remarks.add(value.trim());
         }
-
-        data.forEach(item => {
-
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-
-                <td>
-                    ${item.assign_work_header?.loco_master?.loco_no ||
-                    item.assign_work_header?.temporary_loco_master?.loco_no || ""}
-                </td>
-
-                <td>
-                    ${item.assign_work_header?.schedule_master?.schedule_name || ""}
-                </td>
-
-                <td>
-                    ${item.work_master?.work_name || ""}
-                </td>
-
-                <td>
-                    ${escapeDashboardText(item.remarks || "-")}
-                </td>
-
-            `;
-
-            tbody.appendChild(row);
-
-        });
-
+        for (const remark of item.repair_remarks || []) {
+            if (remark.remark_text?.trim()) group.remarks.add(remark.remark_text.trim());
+        }
     }
-
-    catch (err) {
-
-        console.error(err);
-
-    }
-
+    return [...groups.values()];
 }
+
 async function loadAssignedWork() {
-
+    const tbody = document.getElementById("activityTable");
     try {
-
-        const response =
-    await fetch(
-        `/api/supervisors/assigned-work/${supervisorId}?assign_date=${localDateValue()}`
-    );
-        const data =
-            await response.json();
-
-        const tbody =
-            document.getElementById("activityTable");
-
-        tbody.innerHTML = "";
-
-        if (!data.length) {
-
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4">
-                        No Record Found
-                    </td>
-                </tr>
-            `;
-
-            return;
-
-        }
-
-        data.forEach(item => {
-
-            const row =
-                document.createElement("tr");
-
-            row.innerHTML = `
-
-                <td>
-                    ${item.assign_work_header.loco_master?.loco_no ||
-                    item.assign_work_header.temporary_loco_master?.loco_no || ""}
-                </td>
-
-                <td>
-                    ${item.assign_work_header.schedule_master?.schedule_name || "-"}
-                </td>
-
-                <td>
-                    ${item.work_master.work_name}
-                </td>
-
-                <td>
-                    ${escapeDashboardText(item.remarks || "-")}
-                </td>
-
-            `;
-
-            tbody.appendChild(row);
-
-        });
-
-    }
-
-    catch (err) {
-
+        const response = await fetch(
+            `/api/supervisors/assigned-work/${supervisorId}?assign_date=${localDateValue()}`
+        );
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data)) throw new Error(data.message || "Unable to load work.");
+        const groups = groupSupervisorWork(data);
+        tbody.innerHTML = groups.length ? groups.map(group => `
+            <tr>
+                <td>${escapeDashboardText(group.loco)}</td>
+                <td>${escapeDashboardText(group.schedule)}</td>
+                <td><ul class="supervisor-group-list">${[...group.works].map(work =>
+                    `<li>${escapeDashboardText(work)}</li>`).join("")}</ul></td>
+                <td>${group.remarks.size ? `<ol class="supervisor-group-list">${[...group.remarks].map(remark =>
+                    `<li>${escapeDashboardText(remark)}</li>`).join("")}</ol>` : "-"}</td>
+            </tr>`).join("") : '<tr><td colspan="4">No Record Found</td></tr>';
+    } catch (err) {
         console.error(err);
-
+        tbody.innerHTML = '<tr><td colspan="4">Unable to load assigned work. Please refresh.</td></tr>';
     }
-
 }

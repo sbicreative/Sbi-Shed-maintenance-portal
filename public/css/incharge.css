@@ -582,3 +582,5 @@ table{
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+.supervisor-group-list { margin:0; padding-left:20px; text-align:left; line-height:1.6; }
+.supervisor-group-list li + li { margin-top:5px; }
