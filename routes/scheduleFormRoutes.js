@@ -117,8 +117,8 @@ async function buildRepairTemplate(assignment, template) {
         selectedIds = new Set((links || []).map(item => Number(item.repair_schedule_remark_id)));
     }
     const assignedPending = pending.filter(item => selectedIds.has(Number(item.id)));
-    const rows = assignedPending.map((item, index) => `<tr><td><strong>${index + 1}.</strong> ${escapeHtml(item.remark_text)}<small>${escapeHtml(new Date(item.created_at).toLocaleString("en-IN"))} · ${escapeHtml(item.author_name)} (${escapeHtml(item.author_role)})</small></td><td data-answer-key="repair_${item.id}" data-required-answer="true"></td><td data-attribution-for="repair_${item.id}"></td><td data-answer-key="repair_remark_${item.id}" data-required-answer="false"></td></tr>`).join("");
-    return { ...template, template_schema: { ...(template.template_schema || {}), dynamic_type: "repair_remarks", document_html: `<table><thead><tr><th>Work item<br><small>कार्य विवरण</small></th><th>Action Taken<br><small>की गई कार्रवाई</small></th><th>Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small></th><th>Remark<br><small>टिप्पणी</small></th></tr></thead><tbody>${rows || '<tr><td colspan="4">No pending repair remarks.</td></tr>'}</tbody></table>` } };
+    const rows = assignedPending.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item.remark_text)}</td><td data-answer-key="repair_${item.id}" data-required-answer="true"></td><td data-attribution-for="repair_${item.id}"></td></tr>`).join("");
+    return { ...template, template_schema: { ...(template.template_schema || {}), dynamic_type: "repair_remarks", document_html: `<table><thead><tr><th>SN</th><th>Deficiency Noticed<br><small>पाई गई कमी</small></th><th>Action Taken<br><small>की गई कार्रवाई</small></th><th>Name of TCN<br><small>तकनीशियन का नाम</small></th></tr></thead><tbody>${rows || '<tr><td colspan="4">No pending repair remarks.</td></tr>'}</tbody></table>` } };
 }
 
 async function getAssignment(staffId, distributionId) {
