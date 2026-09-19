@@ -102,7 +102,7 @@ function prepareBilingualColumns(table) {
     [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach(cell => {
         const index = Number(cell.dataset.logicalColumn);
         const text = cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
-        if (/^(?:sr\.?\s*no\.?|s\.?\s*no\.?|sn|क्र\.?\s*सं)/.test(text)) {
+        if (/^(?:sr\.?\s*no\.?|s\.?\s*no\.?|sn|क्र\.?\s*सं|क्रसं)/.test(text)) {
             columns.serial = index;
         } else if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
             columns.action = index;
@@ -110,9 +110,9 @@ function prepareBilingualColumns(table) {
         } else if (/name of tcn|name of staff|टीसीएन का नाम/.test(text)) {
             columns.name = index;
             cell.innerHTML = "Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small>";
-        } else if (/sign\s*\/\s*remarks?|remarks?$|हस्ताक्षर.*टिप्पणी/.test(text)) {
+        } else if (/sign\s*\/\s*remarks?|remarks?(?:,.*)?$|हस्ताक्षर.*टिप्पणी/.test(text)) {
             columns.remark = index;
-            cell.innerHTML = "Remark<br><small>टिप्पणी</small>";
+            cell.innerHTML = "Remarks / TCN Name<br><small>टिप्पणी / तकनीशियन का नाम</small>";
         } else if (/detail of work|description of activities|items to check|कार्य.*निरीक्षण का विवरण/.test(text)) {
             columns.work = index;
             cell.innerHTML = "Work item<br><small>कार्य विवरण</small>";
@@ -124,6 +124,31 @@ function prepareBilingualColumns(table) {
         if (width >= 5) columns.remark = 4;
     }
     return columns;
+}
+
+function isIncomingOutgoingInspection() {
+    const text = document.getElementById("templateContainer")
+        ?.textContent.replace(/\s+/g, " ") || "";
+    return /incoming\s*\/\s*out\s*going inspection/i.test(text) ||
+        (/inspection wing electrical/i.test(text) && /vigilance control device/i.test(text));
+}
+
+function isIncomingStructuralRow(row) {
+    const text = row.textContent.replace(/\s+/g, " ").trim();
+    if (!text) return false;
+    return Boolean(
+        scheduleSectionHeading(row) ||
+        /^(?:जाँच की सूची\s*)?check list$/i.test(text) ||
+        /while loco is energised/i.test(text) ||
+        /vcd becomes active/i.test(text) ||
+        /^(?:i{1,3}|iv|v)\)\s/i.test(text) ||
+        /check following led indication/i.test(text) ||
+        /^(?:sn\s+)?indication\s+status of indication/i.test(text) ||
+        /from 60 to 68|after 76|^std\s+observed/i.test(text) ||
+        /^(?:starting\s+stable\s*){2}$/i.test(text) ||
+        /^(?:description|विवरण).*standard value.*actual value/i.test(text) ||
+        /^(?:fault code\s+error log\s+action taken)$/i.test(text)
+    );
 }
 
 function isScheduleShiftGrid(table) {
@@ -337,9 +362,11 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
         "#templateContainer table"
     );
 
+    const incomingInspection = isIncomingOutgoingInspection();
     tables.forEach((table, tableIndex) => {
         const columns = prepareBilingualColumns(table);
         const shiftGrid = isScheduleShiftGrid(table);
+        const customerFeedbackTable = /customer feed\s*back\s*\/\s*bookings/i.test(table.textContent);
         if (shiftGrid) table.classList.add("schedule-shift-grid");
         let generatedSerial = 1;
         [...table.rows].forEach((row, rowIndex) => {
@@ -352,6 +379,23 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     if (columns.serial !== null && logicalCellIndex === columns.serial && /^\d+$/.test(plainText)) {
                         generatedSerial = Math.max(generatedSerial, Number(plainText) + 1);
                     }
+                    return;
+                }
+
+                if (incomingInspection && isIncomingStructuralRow(row)) {
+                    cell.classList.add("schedule-structural-cell");
+                    return;
+                }
+
+                const incomingRowText = row.textContent.replace(/\s+/g, " ").trim();
+                const ledStatusRow = /^(?:LED Indication|Buzzer sound|VCD Pneumatic Valve|Penalty brake|Re-setting of VCD)/i
+                    .test(incomingRowText.replace(/^\s+/, ""));
+                if (
+                    incomingInspection &&
+                    ledStatusRow &&
+                    !/observed/i.test(columnContext(table, rowIndex, logicalCellIndex))
+                ) {
+                    cell.classList.add("schedule-structural-cell");
                     return;
                 }
 
@@ -393,6 +437,12 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 const usesTypedControls = window.IcFormControls
                     ?.isTypedSchedule(scheduleName);
                 const explicitType = cell.dataset.adminFieldType;
+                const incomingConfig = incomingInspection
+                    ? {
+                        type: "value",
+                        kind: customerFeedbackTable ? "text" : "value"
+                    }
+                    : null;
                 const explicitConfig = shiftGrid
                     ? { type: "value", kind: "header-detail" }
                     : columns.work !== null && logicalCellIndex === columns.work
@@ -404,7 +454,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                         : explicitType === "remarks"
                             ? { type: "text", kind: "remarks" }
                             : null;
-                const config = explicitConfig || (usesTypedControls
+                const config = explicitConfig || incomingConfig || (usesTypedControls
                     ? window.IcFormControls.classify(
                         row.textContent,
                         columnContext(table, rowIndex, logicalCellIndex)
@@ -418,7 +468,8 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 );
                 field.dataset.requiredAnswer = String(required);
                 if (
-                    ["TEXTAREA", "SELECT"].includes(field.tagName) &&
+                    (["TEXTAREA", "SELECT"].includes(field.tagName) ||
+                        (incomingInspection && field.tagName === "INPUT")) &&
                     (
                         (columns.action !== null && logicalCellIndex === columns.action) ||
                         (columns.action === null && (columns.remark === null || logicalCellIndex !== columns.remark))

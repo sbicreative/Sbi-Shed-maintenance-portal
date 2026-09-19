@@ -1,4 +1,4 @@
-const CACHE_NAME = "sbi-shed-shell-v9";
+const CACHE_NAME = "sbi-shed-shell-v10";
 const APP_SHELL = [
     "/", "/portal.html", "/tracking/", "/tracking/index.html",
     "/dashboard/login.html", "/dashboard/assign-work.html", "/dashboard/incharge.html",

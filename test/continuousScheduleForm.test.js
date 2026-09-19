@@ -61,8 +61,18 @@ test("locked bilingual format auto-renders Staff attribution", () => {
     for (const source of [staffForm, reviewForm]) {
         assert.match(source, /Action Taken<br><small>की गई कार्रवाई<\/small>/);
         assert.match(source, /Name of TCN\/Staff<br><small>तकनीशियन\/कर्मचारी का नाम<\/small>/);
-        assert.match(source, /Remark<br><small>टिप्पणी<\/small>/);
+        assert.match(source, /Remarks \/ TCN Name<br><small>टिप्पणी \/ तकनीशियन का नाम<\/small>/);
     }
+});
+
+test("incoming inspection uses typed value fields and suppresses controls on structural rows", () => {
+    const staffForm = fs.readFileSync(path.resolve(__dirname, "../public/js/schedule-form.js"), "utf8");
+    assert.match(staffForm, /function isIncomingOutgoingInspection\(\)/);
+    assert.match(staffForm, /function isIncomingStructuralRow\(row\)/);
+    assert.match(staffForm, /incomingInspection\s*\?\s*\{/);
+    assert.match(staffForm, /customer feed\\s\*back/);
+    assert.match(staffForm, /vcd becomes active/);
+    assert.match(staffForm, /check following led indication/);
 });
 
 test("database permits only one active Lead Staff per work", () => {
