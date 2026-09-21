@@ -90,3 +90,29 @@ test("Admin can browse all active schedule form templates in read-only preview",
     assert.match(adminRoute, /eq\("status", "Active"\)/);
     assert.match(adminRoute, /repairDepartments\.has\(department\)/);
 });
+
+test("Admin Schedule Editor changes table structure and formatting only in version edit mode", () => {
+    const admin = fs.readFileSync(path.join(__dirname, "..", "public", "dashboard", "admin.html"), "utf8");
+    const adminClient = fs.readFileSync(path.join(__dirname, "..", "public", "js", "admin.js"), "utf8");
+    assert.match(admin, /id="addTemplateColumnBtn"/);
+    assert.match(admin, /id="deleteTemplateColumnBtn"/);
+    assert.match(admin, /id="templateRowHeight"/);
+    assert.match(admin, /id="templateColumnWidth"/);
+    assert.match(admin, /id="templateFontSize"/);
+    assert.match(admin, /id="templateTextAlign"/);
+    assert.match(adminClient, /function tableLogicalLayout\(table\)/);
+    assert.match(adminClient, /function protectAutoFilledFields\(preview\)/);
+    assert.match(adminClient, /function cleanEditedTemplateHtml\(\)/);
+    assert.match(adminClient, /saveTemplateVersionBtn/);
+});
+
+test("Admin demo reset removes the audit-log dependency and verifies scoped cleanup", () => {
+    const admin = fs.readFileSync(path.join(__dirname, "..", "public", "dashboard", "admin.html"), "utf8");
+    const adminClient = fs.readFileSync(path.join(__dirname, "..", "public", "js", "admin.js"), "utf8");
+    const demoRoute = fs.readFileSync(path.join(__dirname, "..", "routes", "adminDemoRoutes.js"), "utf8");
+    assert.doesNotMatch(admin, /id="auditBody"|Reset Audit Log/);
+    assert.doesNotMatch(demoRoute, /admin_audit_log/);
+    assert.match(demoRoute, /Reset verification failed/);
+    assert.match(demoRoute, /remarksDeleted:\s*true/);
+    assert.match(adminClient, /All linked remarks will also be deleted/);
+});

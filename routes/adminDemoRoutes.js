@@ -6,9 +6,6 @@ const { requireAdmin, requireCsrf } = require("../lib/adminAuth");
 const router = express.Router();
 router.use(requireAdmin, requireCsrf);
 
-async function audit(actor, action, sessionId, details, result) {
-    await supabase.from("admin_audit_log").insert({ actor, action, demo_session_id: sessionId || null, details, result });
-}
 async function activeSession() {
     const { data, error } = await supabase.from("demo_sessions").select("*").eq("status", "Active").maybeSingle();
     if (error) throw error;
@@ -40,9 +37,7 @@ async function remove(table, values) {
 router.get("/status", async (req, res) => {
     try {
         const session = await activeSession();
-        const { data: logs, error } = await supabase.from("admin_audit_log").select("id,actor,action,details,result,created_at").order("created_at", { ascending: false }).limit(20);
-        if (error) throw error;
-        res.json({ success: true, session, logs: logs || [] });
+        res.json({ success: true, session });
     } catch (error) { res.status(503).json({ success: false, message: `Demo control schema unavailable: ${error.message}` }); }
 });
 
@@ -53,7 +48,6 @@ router.post("/start", async (req, res) => {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(demoDate)) return res.status(400).json({ success: false, message: "Valid demo date required." });
         const { data, error } = await supabase.from("demo_sessions").insert({ demo_date: demoDate, started_by: req.admin.username }).select("*").single();
         if (error) throw error;
-        await audit(req.admin.username, "DEMO_STARTED", data.id, { demo_date: demoDate }, "success");
         res.status(201).json({ success: true, session: data });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
@@ -63,7 +57,6 @@ router.post("/preview", async (req, res) => {
         const session = await activeSession();
         if (!session) return res.status(404).json({ success: false, message: "No active demo session." });
         const preview = await previewFor(session);
-        await audit(req.admin.username, "DEMO_RESET_PREVIEWED", session.id, preview.counts, "success");
         res.json({ success: true, session, counts: preview.counts, previewToken: preview.previewToken, confirmationPhrase: `END DEMO ${session.id}` });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
@@ -81,12 +74,18 @@ router.post("/end-reset", async (req, res) => {
         await remove("manpower_distribution", preview.ids.distributions);
         await remove("assign_work_details", preview.ids.details);
         await remove("assign_work_header", preview.ids.headers);
+
+        const remainingHeaders = await ids("assign_work_header", "assign_date", session.demo_date);
+        const remainingDetails = await ids("assign_work_details", "assign_header_id", preview.ids.headers);
+        const remainingDistributions = await ids("manpower_distribution", "assign_work_detail_id", preview.ids.details);
+        const remainingForms = await ids("schedule_form_details", "manpower_distribution_id", preview.ids.distributions);
+        if (remainingHeaders.length || remainingDetails.length || remainingDistributions.length || remainingForms.length) {
+            throw new Error("Reset verification failed: some demo records or remarks remain.");
+        }
         const { error } = await supabase.from("demo_sessions").update({ status: "Ended", ended_by: req.admin.username, ended_at: new Date().toISOString() }).eq("id", session.id);
         if (error) throw error;
-        await audit(req.admin.username, "DEMO_ENDED_AND_RESET", session.id, preview.counts, "success");
-        res.json({ success: true, counts: preview.counts });
+        res.json({ success: true, counts: preview.counts, remarksDeleted: true });
     } catch (error) {
-        await audit(req.admin.username, "DEMO_END_RESET_FAILED", session?.id, { message: error.message }, "failed").catch(() => {});
         res.status(500).json({ success: false, message: error.message });
     }
 });

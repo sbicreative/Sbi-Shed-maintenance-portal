@@ -5,7 +5,7 @@
     <title>Admin Dashboard | SBI Shed</title>
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/admin-master-cards.css">
-    <link rel="stylesheet" href="../css/admin-schedule-forms.css?v=20260917-7">
+    <link rel="stylesheet" href="../css/admin-schedule-forms.css?v=20260921-1">
 </head>
 <body>
     <header class="admin-header">
@@ -48,7 +48,6 @@
                     <div id="startDemoControls" class="demo-row"><label>Demo date<input id="demoDate" type="date"></label><button id="startDemoBtn" type="button">Start Demo Session</button></div>
                     <div id="activeDemoControls" hidden><p id="demoDetails"></p><button id="previewResetBtn" class="secondary" type="button">Preview End &amp; Reset</button><div id="resetPreview" class="reset-preview" hidden></div></div>
                 </section>
-                <section class="panel"><div class="panel-heading"><div><p class="eyebrow">Permanent record</p><h2>Reset Audit Log</h2></div></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Result</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
             </div>
             <div id="masterView" hidden>
                 <div class="panel-heading"><div><p class="eyebrow">Authorized editor</p><h2 id="resourceTitle">Master Data</h2></div><button id="addRecordBtn" type="button">Add Record</button></div>
@@ -59,7 +58,30 @@
                 <section class="schedule-preview-panel">
                     <div class="schedule-preview-toolbar"><button id="previousTemplateBtn" class="secondary" type="button">← Previous</button><div><h3 id="scheduleTemplateTitle">Select a form</h3><p id="scheduleTemplateMeta"></p></div><button id="nextTemplateBtn" class="secondary" type="button">Next →</button></div>
                     <div class="template-manager-actions"><a id="referenceFormLink" class="template-action-link" target="_blank" rel="noopener">Reference Master</a><button id="editStaffTemplateBtn" type="button">Edit Staff Version</button><span id="templateEditStatus">View mode</span></div>
-                    <div id="templateEditorToolbar" class="template-editor-toolbar" hidden><button id="addTemplateSectionBtn" type="button">+ Section</button><button id="addTemplateRowBtn" type="button">+ Row</button><button id="moveTemplateRowUpBtn" type="button">↑ Row</button><button id="moveTemplateRowDownBtn" type="button">↓ Row</button><button id="deleteTemplateRowBtn" class="danger" type="button">Delete Row</button><label>Selected cell type<select id="templateFieldType"><option value="text">OK / Text</option><option value="value">Measurement</option><option value="yes_no">Yes / No</option><option value="remarks">Remark</option></select></label><button id="cancelTemplateEditBtn" class="secondary" type="button">Cancel</button><button id="saveTemplateVersionBtn" type="button">Save New Version</button></div>
+                    <div id="templateEditorToolbar" class="template-editor-toolbar" hidden>
+                        <div class="template-editor-group" aria-label="Table structure">
+                            <button id="addTemplateSectionBtn" type="button">+ Section</button>
+                            <button id="addTemplateRowBtn" type="button">+ Row</button>
+                            <button id="moveTemplateRowUpBtn" type="button">↑ Row</button>
+                            <button id="moveTemplateRowDownBtn" type="button">↓ Row</button>
+                            <button id="deleteTemplateRowBtn" class="danger" type="button">Delete Row</button>
+                            <button id="addTemplateColumnBtn" type="button">+ Column</button>
+                            <button id="deleteTemplateColumnBtn" class="danger" type="button">Delete Column</button>
+                        </div>
+                        <div class="template-editor-group" aria-label="Table dimensions">
+                            <label>Row height (px)<input id="templateRowHeight" type="number" min="20" max="500" step="1" placeholder="Auto"></label>
+                            <label>Column width (px)<input id="templateColumnWidth" type="number" min="40" max="1200" step="1" placeholder="Auto"></label>
+                        </div>
+                        <div class="template-editor-group" aria-label="Cell formatting">
+                            <label>Font size (px)<input id="templateFontSize" type="number" min="8" max="72" step="1" placeholder="Default"></label>
+                            <label>Alignment<select id="templateTextAlign"><option value="">Default</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+                            <label>Selected cell type<select id="templateFieldType"><option value="text">OK / Text</option><option value="value">Measurement</option><option value="yes_no">Yes / No</option><option value="remarks">Remark</option></select></label>
+                        </div>
+                        <div class="template-editor-group template-editor-save-actions">
+                            <button id="cancelTemplateEditBtn" class="secondary" type="button">Cancel</button>
+                            <button id="saveTemplateVersionBtn" type="button">Save New Version</button>
+                        </div>
+                    </div>
                     <div class="admin-assignment-meta" aria-label="Fields automatically filled from assignment"><div><span>Loco No.</span><strong>Auto-filled</strong></div><div><span>Loco Class</span><strong>Auto-filled</strong></div><div><span>Date of Schedule</span><strong>Auto-filled</strong></div><div><span>Schedule</span><strong>Auto-filled</strong></div></div>
                     <div id="scheduleTemplatePreview" class="schedule-template-preview"><p class="schedule-empty">Loading schedule forms...</p></div>
                 </section>
@@ -69,6 +91,6 @@
     <dialog id="recordDialog"><form id="recordForm"><div class="dialog-title"><h2 id="recordDialogTitle">Edit record</h2><button type="button" data-close>×</button></div><div id="recordFields" class="record-fields"></div><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save Record</button></div></form></dialog>
     <footer>An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
     <script src="../js/bilingual-schedule-activities.js"></script>
-    <script src="../js/admin.js?v=20260918-1"></script>
+    <script src="../js/admin.js?v=20260921-1"></script>
     <script src="../js/admin-master-cards.js"></script>
 </body></html>
