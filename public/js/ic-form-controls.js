@@ -6,7 +6,10 @@
         "Leakage Found",
         "Missing",
         "No",
-        "Abnormal"
+        "Abnormal",
+        "Not OK",
+        "Not Ok",
+        "NOT OK"
     ]);
 
     function normalize(value) {
@@ -100,14 +103,42 @@
     }
 
     function isAdverse(value) {
-        return adverseValues.has(String(value || "").trim());
+        const result = String(value || "").trim();
+        return adverseValues.has(result) || /^not\s+ok$/i.test(result);
+    }
+
+    function assessMeasurement(actualValue, standardValue) {
+        const actual = Number(String(actualValue || "").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/)?.[0]);
+        if (!Number.isFinite(actual)) return null;
+        const standard = String(standardValue || "")
+            .replace(/,/g, "")
+            .replace(/[–—]/g, "-")
+            .replace(/(\d)\s*-\s*(\d)/g, "$1 to $2")
+            .replace(/≤/g, "<=")
+            .replace(/≥/g, ">=")
+            .trim();
+        const numbers = [...standard.matchAll(/-?\d+(?:\.\d+)?/g)].map(match => Number(match[0]));
+        if (!numbers.length) return null;
+        const tolerance = standard.match(/(-?\d+(?:\.\d+)?)\s*(?:±|\+\/-)\s*(\d+(?:\.\d+)?)/);
+        if (tolerance) return Math.abs(actual - Number(tolerance[1])) <= Number(tolerance[2]);
+        if (/\b(?:between|from)\b/i.test(standard) || /\d\s*(?:-|to)\s*-?\d/i.test(standard)) {
+            const low = Math.min(numbers[0], numbers[1]);
+            const high = Math.max(numbers[0], numbers[1]);
+            return actual >= low && actual <= high;
+        }
+        if (/<=|less than|not more than|maximum|max\.?\b/i.test(standard)) return actual <= numbers[0];
+        if (/<|below/i.test(standard)) return actual < numbers[0];
+        if (/>=|at least|not less than|minimum|min\.?\b/i.test(standard)) return actual >= numbers[0];
+        if (/>|above|more than/i.test(standard)) return actual > numbers[0];
+        return Math.abs(actual - numbers[0]) < 1e-9;
     }
 
     const api = {
         isIcSchedule,
         isTypedSchedule,
         classify,
-        isAdverse
+        isAdverse,
+        assessMeasurement
     };
     globalObject.IcFormControls = api;
 

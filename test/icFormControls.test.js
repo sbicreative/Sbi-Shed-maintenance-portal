@@ -54,3 +54,15 @@ test("negative IC results are marked adverse", () => {
     assert.equal(rules.isAdverse("Defect Found"), true);
     assert.equal(rules.isAdverse("Checked OK"), false);
 });
+
+test("actual measurements are checked against common standard value formats", () => {
+    assert.equal(rules.assessMeasurement("7.2", "6.0 - 8.0 kg/cm²"), true);
+    assert.equal(rules.assessMeasurement("8.5", "6.0 - 8.0 kg/cm²"), false);
+    assert.equal(rules.assessMeasurement("7", "6-8 kg/cm²"), true);
+    assert.equal(rules.assessMeasurement("49", "< 50 mV"), true);
+    assert.equal(rules.assessMeasurement("50", "< 50 mV"), false);
+    assert.equal(rules.assessMeasurement("148", "150 ± 3 KN"), true);
+    assert.equal(rules.assessMeasurement("146", "150 ± 3 KN"), false);
+    assert.equal(rules.assessMeasurement("abc", "6 - 8"), null);
+    assert.equal(rules.isAdverse("Not OK"), true);
+});

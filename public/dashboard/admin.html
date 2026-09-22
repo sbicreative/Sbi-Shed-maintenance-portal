@@ -5,7 +5,7 @@
     <title>Admin Dashboard | SBI Shed</title>
     <link rel="stylesheet" href="../css/admin.css">
     <link rel="stylesheet" href="../css/admin-master-cards.css">
-    <link rel="stylesheet" href="../css/admin-schedule-forms.css?v=20260921-1">
+    <link rel="stylesheet" href="../css/admin-schedule-forms.css?v=20260922-1">
 </head>
 <body>
     <header class="admin-header">
@@ -59,6 +59,14 @@
                     <div class="schedule-preview-toolbar"><button id="previousTemplateBtn" class="secondary" type="button">← Previous</button><div><h3 id="scheduleTemplateTitle">Select a form</h3><p id="scheduleTemplateMeta"></p></div><button id="nextTemplateBtn" class="secondary" type="button">Next →</button></div>
                     <div class="template-manager-actions"><a id="referenceFormLink" class="template-action-link" target="_blank" rel="noopener">Reference Master</a><button id="editStaffTemplateBtn" type="button">Edit Staff Version</button><span id="templateEditStatus">View mode</span></div>
                     <div id="templateEditorToolbar" class="template-editor-toolbar" hidden>
+                        <div class="template-editor-group spreadsheet-command-group" aria-label="Spreadsheet commands">
+                            <button id="undoTemplateBtn" type="button" title="Undo (Ctrl+Z)">↶ Undo</button>
+                            <button id="redoTemplateBtn" type="button" title="Redo (Ctrl+Y)">↷ Redo</button>
+                            <button id="copyTemplateCellsBtn" type="button" title="Copy selected cells (Ctrl+C)">Copy</button>
+                            <button id="pasteTemplateCellsBtn" type="button" title="Paste into selected cell (Ctrl+V)">Paste</button>
+                            <button id="mergeTemplateCellsBtn" type="button">Merge</button>
+                            <button id="unmergeTemplateCellBtn" type="button">Unmerge</button>
+                        </div>
                         <div class="template-editor-group" aria-label="Table structure">
                             <button id="addTemplateSectionBtn" type="button">+ Section</button>
                             <button id="addTemplateRowBtn" type="button">+ Row</button>
@@ -91,6 +99,6 @@
     <dialog id="recordDialog"><form id="recordForm"><div class="dialog-title"><h2 id="recordDialogTitle">Edit record</h2><button type="button" data-close>×</button></div><div id="recordFields" class="record-fields"></div><div class="dialog-actions"><button type="button" class="secondary" data-close>Cancel</button><button type="submit">Save Record</button></div></form></dialog>
     <footer>An In-house Digital Initiative<br>Designed &amp; Developed by<br><strong>Bhawna Nidhi</strong><br>JE/Electrical, Locomotive Shed Sabarmati</footer>
     <script src="../js/bilingual-schedule-activities.js"></script>
-    <script src="../js/admin.js?v=20260921-1"></script>
+    <script src="../js/admin.js?v=20260922-1"></script>
     <script src="../js/admin-master-cards.js"></script>
 </body></html>

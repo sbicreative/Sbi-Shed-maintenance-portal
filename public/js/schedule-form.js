@@ -211,11 +211,68 @@ function buildAnswerField(config, key, savedValue, label) {
         field.closest("tr")?.classList.remove(
             "ic-row-needs-remarks"
         );
+        updateAnswerAssessment(field);
         updateCompletion();
     };
     field.addEventListener("input", handleFieldUpdate);
     field.addEventListener("change", handleFieldUpdate);
     return field;
+}
+
+function standardValueForField(field) {
+    const cell = field.closest("td,th");
+    const row = cell?.closest("tr");
+    if (!cell || !row) return "";
+    const targetColumn = Number(cell.dataset.logicalColumn);
+    const candidates = [...row.cells]
+        .filter(item => Number(item.dataset.logicalColumn) < targetColumn)
+        .map(item => item.textContent.replace(/\s+/g, " ").trim())
+        .filter(text => /\d/.test(text));
+    return candidates.at(-1) || "";
+}
+
+function updateAnswerAssessment(field, savedAnswers = {}) {
+    if (!field?.dataset.answerKey || field.dataset.fieldKind === "remarks") return;
+    const value = field.value.trim();
+    let acceptable = null;
+    if (field.tagName === "SELECT") {
+        acceptable = value ? !window.IcFormControls?.isAdverse(value) : null;
+    } else if (field.classList.contains("ic-value-input")) {
+        const standard = standardValueForField(field);
+        field.dataset.standardValue = standard;
+        acceptable = window.IcFormControls?.assessMeasurement(value, standard) ?? null;
+    }
+    field.classList.toggle("answer-valid", acceptable === true);
+    field.classList.toggle("answer-invalid", acceptable === false);
+    field.setAttribute("aria-invalid", String(acceptable === false));
+    const actionKey = `${field.dataset.answerKey}__action_taken`;
+    let block = field.closest("td,th")?.querySelector(`[data-action-for="${CSS.escape(field.dataset.answerKey)}"]`);
+    if (acceptable !== false) {
+        if (block) {
+            block.hidden = true;
+            block.querySelector("[data-answer-key]").disabled = true;
+        }
+        return;
+    }
+    if (!block) {
+        block = document.createElement("label");
+        block.className = "item-action-taken";
+        block.dataset.actionFor = field.dataset.answerKey;
+        block.innerHTML = '<span>Action Taken<br><small>की गई कार्रवाई</small></span>';
+        const action = document.createElement("textarea");
+        action.className = "cell-answer item-action-input";
+        action.dataset.answerKey = actionKey;
+        action.dataset.fieldKind = "action-taken";
+        action.dataset.requiredAnswer = "false";
+        action.placeholder = "Describe action taken / की गई कार्रवाई लिखें";
+        action.value = savedAnswers[actionKey] || "";
+        action.addEventListener("input", updateCompletion);
+        if (field.disabled || field.readOnly) action.disabled = true;
+        block.appendChild(action);
+        field.closest("td,th").appendChild(block);
+    }
+    block.hidden = false;
+    block.querySelector("[data-answer-key]").disabled = field.disabled || field.readOnly;
 }
 
 function syncStaffRemarksValue() {
@@ -490,6 +547,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 } else {
                     cell.replaceChildren(field);
                 }
+                updateAnswerAssessment(field, savedAnswers);
             });
         });
     });
@@ -685,8 +743,9 @@ function collectAnswers() {
 
     document.querySelectorAll("[data-answer-key]")
         .forEach(field => {
-            answers[field.dataset.answerKey] =
-                field.value.trim();
+            const hiddenAction = field.dataset.fieldKind === "action-taken" &&
+                field.closest(".item-action-taken")?.hidden;
+            answers[field.dataset.answerKey] = hiddenAction ? "" : field.value.trim();
         });
 
     return answers;

@@ -100,8 +100,16 @@ test("Admin Schedule Editor changes table structure and formatting only in versi
     assert.match(admin, /id="templateColumnWidth"/);
     assert.match(admin, /id="templateFontSize"/);
     assert.match(admin, /id="templateTextAlign"/);
+    assert.match(admin, /id="undoTemplateBtn"/);
+    assert.match(admin, /id="mergeTemplateCellsBtn"/);
     assert.match(adminClient, /function tableLogicalLayout\(table\)/);
     assert.match(adminClient, /function protectAutoFilledFields\(preview\)/);
+    assert.match(adminClient, /function templateCellRange\(table,startCell,endCell\)/);
+    assert.match(adminClient, /function copyTemplateSelection\(\)/);
+    assert.match(adminClient, /function pasteTemplateText\(text\)/);
+    assert.match(adminClient, /function mergeTemplateCells\(\)/);
+    assert.match(adminClient, /function restoreTemplateHistory\(direction\)/);
+    assert.match(adminClient, /addEventListener\("pointerdown"/);
     assert.match(adminClient, /function cleanEditedTemplateHtml\(\)/);
     assert.match(adminClient, /saveTemplateVersionBtn/);
 });

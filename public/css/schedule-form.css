@@ -365,6 +365,13 @@ body {
 
 .ic-answer-select { cursor: pointer; }
 .ic-value-input { min-width: 90px; }
+.cell-answer.answer-valid{border-color:#15803d!important;background:#ecfdf3!important;color:#166534!important;box-shadow:inset 0 0 0 1px #22c55e}
+.cell-answer.answer-invalid{border-color:#dc2626!important;background:#fff1f2!important;color:#991b1b!important;box-shadow:inset 0 0 0 1px #ef4444}
+.item-action-taken{display:grid;gap:5px;margin-top:8px;padding:8px;border:1px solid #ef4444;border-radius:7px;background:#fff7f7;text-align:left}
+.item-action-taken[hidden]{display:none!important}
+.item-action-taken span{color:#991b1b;font-size:12px;font-weight:800;line-height:1.25}
+.item-action-taken small{font-size:11px}
+.item-action-input{min-height:62px!important;background:#fff!important;resize:vertical}
 
 .ic-row-needs-remarks {
     background: #fff1f2 !important;
