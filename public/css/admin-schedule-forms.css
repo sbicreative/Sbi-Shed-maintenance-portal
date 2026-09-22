@@ -38,6 +38,10 @@
 .spreadsheet-command-group{background:#eef5ff;border-color:#b7cee5}
 .spreadsheet-command-group button{min-width:68px}
 .template-editing table::before{content:"Spreadsheet edit mode";display:table-caption;padding:6px 9px;background:#244f3a;color:#fff;font-size:11px;font-weight:800;text-align:left;caption-side:top}
+.schedule-preview-panel.spreadsheet-editor-active{display:flex;flex-direction:column;height:calc(100vh - 24px);min-height:520px;overflow:hidden}
+.spreadsheet-editor-active .schedule-preview-toolbar,.spreadsheet-editor-active .template-manager-actions,.spreadsheet-editor-active .template-editor-toolbar,.spreadsheet-editor-active .admin-assignment-meta{flex:0 0 auto}
+.spreadsheet-editor-active .schedule-template-preview{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.spreadsheet-editor-active .template-editor-toolbar{max-height:38vh;overflow:auto}
 @media (max-width: 760px) {
   .admin-assignment-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .schedule-heading { align-items: stretch; flex-direction: column; }
@@ -45,4 +49,6 @@
   .schedule-preview-toolbar { grid-template-columns: 1fr 1fr; }
   .schedule-preview-toolbar div { grid-column: 1 / -1; grid-row: 1; }
   .template-editor-group,.template-editor-save-actions { width: 100%; margin-left: 0; }
+  .schedule-preview-panel.spreadsheet-editor-active{height:calc(100dvh - 12px);min-height:440px}
+  .spreadsheet-editor-active .template-editor-toolbar{max-height:44vh}
 }
