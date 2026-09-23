@@ -194,6 +194,50 @@ const componentList = [
 
 let viewerData = [];
 let historicalData = [];
+let displayedData = [];
+const locoFilterBox = document.getElementById("locoFilterBox");
+const locoFilter = document.getElementById("locoFilter");
+const locoFilterOptions = document.getElementById("locoFilterOptions");
+const downloadResultsBtn = document.getElementById("downloadResultsBtn");
+
+function loadLocoFilterOptions() {
+    const locos = [...new Set(locoList.map(item => String(item.loco_no || item.locoNo || "")))]
+        .filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    locoFilterOptions.replaceChildren();
+    ["Select All Locos", ...locos].forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        locoFilterOptions.appendChild(option);
+    });
+}
+
+locoFilter.addEventListener("focus", () => locoFilter.select());
+locoFilter.addEventListener("input", clearResult);
+searchItem.addEventListener("change", clearResult);
+
+function csvCell(value) {
+    let text = String(value ?? "");
+    if (/^[\s]*[=+@-]/.test(text) || /^[\t\r\n]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+}
+
+downloadResultsBtn.addEventListener("click", () => {
+    if (!displayedData.length) return;
+    const rows = [["Sr.", "Loco No.", "Date", "Schedule", "Component / Work", "Schedule Form"]];
+    displayedData.forEach((item, index) => rows.push([
+        index + 1, item.locoNo, formatDate(item.date), item.schedule,
+        item.component, item.formName || ""
+    ]));
+    const csv = "\uFEFF" + rows.map(row => row.map(csvCell).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `maintenance-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 
 
 // =====================================================
@@ -220,6 +264,8 @@ window.addEventListener(
         await loadHistory();
 
         await loadHistoricalRecords();
+
+        loadLocoFilterOptions();
 
     }
 );
@@ -480,6 +526,11 @@ searchType.addEventListener(
         resetSearchItem();
 
         clearResult();
+
+        locoFilterBox.hidden = type !== "schedule" && type !== "component";
+        document.querySelector(".search-row").classList.toggle("has-loco-filter", !locoFilterBox.hidden);
+        locoFilter.value = "Select All Locos";
+        loadLocoFilterOptions();
 
 
         if (type === "loco") {
@@ -839,6 +890,22 @@ function searchViewerData(
     }
 
 
+    if (type === "schedule" || type === "component") {
+        const selectedLoco = locoFilter.value.trim();
+        if (!selectedLoco) {
+            clearResult();
+            alert("Please select a loco number or Select All Locos.");
+            locoFilter.focus();
+            return;
+        }
+        if (selectedLoco.toLowerCase() !== "select all locos") {
+            filteredData = filteredData.filter(item => String(item.locoNo) === selectedLoco);
+            resultTitle.textContent += " — Loco " + selectedLoco;
+        } else {
+            resultTitle.textContent += " — All Locos";
+        }
+    }
+
     renderViewerTable(filteredData);
 
 }
@@ -849,6 +916,9 @@ function searchViewerData(
 // =====================================================
 
 function renderViewerTable(data) {
+
+    displayedData = data.slice();
+    downloadResultsBtn.disabled = displayedData.length === 0;
 
     viewerTableBody.innerHTML = "";
 
@@ -1143,6 +1213,9 @@ scheduleFormModal.addEventListener(
 // =====================================================
 
 function clearResult() {
+
+    displayedData = [];
+    downloadResultsBtn.disabled = true;
 
     resultTitle.textContent =
 

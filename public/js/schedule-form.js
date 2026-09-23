@@ -97,7 +97,7 @@ function looksLikeMaintenanceWorkTable(table) {
 }
 
 function prepareBilingualColumns(table) {
-    const columns = { serial: null, work: null, action: null, name: null, remark: null };
+    const columns = { serial: null, work: null, action: null, name: null, remark: null, nameRemark: null };
     const width = annotateLogicalColumns(table);
     [...table.rows].slice(0, 8).forEach(row => [...row.cells].forEach(cell => {
         const index = Number(cell.dataset.logicalColumn);
@@ -107,6 +107,9 @@ function prepareBilingualColumns(table) {
         } else if (/action taken|की गयी कार्यवाही|कार्रवाई की गयी|की गई कार्रवाई/.test(text)) {
             columns.action = index;
             cell.innerHTML = "Action Taken<br><small>की गई कार्रवाई</small>";
+        } else if ((/name of tcn|name of staff|टीसीएन का नाम|तकनीशियन का नाम/.test(text)) && /remark|टिप्पणी/.test(text)) {
+            columns.nameRemark = index;
+            cell.innerHTML = "Name of TCN / Remarks<br><small>तकनीशियन का नाम / टिप्पणी</small>";
         } else if (/name of tcn|name of staff|टीसीएन का नाम/.test(text)) {
             columns.name = index;
             cell.innerHTML = "Name of TCN/Staff<br><small>तकनीशियन/कर्मचारी का नाम</small>";
@@ -156,10 +159,65 @@ function isScheduleShiftGrid(table) {
     return /upper deck/i.test(text) && /under truck/i.test(text) && /date\s*\/\s*shift/i.test(text);
 }
 
+function prepareCustomerFeedbackTable(table) {
+    if (table.dataset.multipleFeedbackReady) return;
+    table.dataset.multipleFeedbackReady = "true";
+    const rows = [...table.rows];
+    const entryRow = rows.find((row, index) =>
+        index > 0 && [...row.cells].every(cell =>
+            !cell.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (entryRow) {
+        for (let index = 0; index < 5; index += 1) {
+            const extraRow = entryRow.cloneNode(true);
+            extraRow.hidden = true;
+            extraRow.dataset.feedbackExtraHidden = "true";
+            entryRow.parentElement.appendChild(extraRow);
+        }
+    }
+    [...table.rows].slice(2).forEach((row, index) => {
+        const serialCell = row.cells[0];
+        if (serialCell) serialCell.textContent = String(index + 1);
+    });
+    const caption = table.caption || table.createCaption();
+    caption.innerHTML = '<button class="add-customer-feedback-row" type="button">+ Add Customer Feedback</button>';
+}
+
+function prepareIncomingPointATable(table) {
+    if (table.dataset.pointAReady) return;
+    table.dataset.pointAReady = "true";
+    const rows = [...table.rows];
+    const actualHeader = rows
+        .flatMap(row => [...row.cells])
+        .find(cell => /actual\s+value|वास्तविक\s+मान/i.test(
+            cell.textContent.replace(/\s+/g, " ").trim()
+        ));
+    actualHeader?.remove();
+
+    // Point A keeps the source CHECK LIST row as visible item 1.
+    // The first actionable Battery Voltage row is therefore item 2.
+    let point = 1;
+    let started = false;
+    rows.forEach(row => {
+        const cells = [...row.cells];
+        const detail = cells[1]?.textContent.replace(/\s+/g, " ").trim();
+        if (/battery voltage/i.test(detail || "")) started = true;
+        if (!started || !detail || !cells[2]?.textContent.replace(/\s+/g, " ").trim()) return;
+        point += 1;
+        row.dataset.incomingPointA = String(point);
+        const redundantActualCell = cells[3];
+        if (
+            redundantActualCell &&
+            !redundantActualCell.textContent.replace(/\s+/g, " ").trim()
+        ) redundantActualCell.remove();
+    });
+}
+
 function renderStaffName(cell, key, savedAnswers, attributions) {
     const attribution = attributions[key];
     const legacyName = savedAnswers[cell.dataset.legacyAnswerKey || ""];
-    const name = attribution?.staff_name || legacyName || "—";
+    const name = attribution?.staff_name || legacyName || scheduleUser?.name || "—";
     const time = attribution?.entered_at
         ? `<small>${new Date(attribution.entered_at).toLocaleString("en-IN")}</small>`
         : "";
@@ -247,6 +305,18 @@ function updateAnswerAssessment(field, savedAnswers = {}) {
     field.setAttribute("aria-invalid", String(acceptable === false));
     const actionKey = `${field.dataset.answerKey}__action_taken`;
     let block = field.closest("td,th")?.querySelector(`[data-action-for="${CSS.escape(field.dataset.answerKey)}"]`);
+    const existingActionField = [...(field.closest("tr")?.querySelectorAll(
+        '[data-answer-key][data-field-kind="remarks"], [data-answer-key][data-field-kind="action-taken"]'
+    ) || [])].find(item => item !== field && !item.closest(".item-action-taken") && !item.closest(".staff-name-cell"));
+    if (existingActionField) {
+        const required = acceptable === false;
+        existingActionField.hidden = !required;
+        existingActionField.disabled = !required || field.disabled || field.readOnly;
+        existingActionField.closest("td,th")?.classList.toggle("action-not-required", !required);
+        existingActionField.closest("td,th")?.classList.toggle("action-required", required);
+        block?.remove();
+        return;
+    }
     if (acceptable !== false) {
         if (block) {
             block.hidden = true;
@@ -421,9 +491,24 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
 
     const incomingInspection = isIncomingOutgoingInspection();
     tables.forEach((table, tableIndex) => {
+        const tableText = table.textContent.replace(/\s+/g, " ").trim();
+        const customerFeedbackTable = /customer feed\s*back\s*\/\s*bookings/i.test(tableText);
+        const incomingPointATable = /incoming \(when loco is energised\)/i.test(tableText) &&
+            /battery voltage/i.test(tableText);
+        if (customerFeedbackTable) prepareCustomerFeedbackTable(table);
+        if (incomingPointATable) prepareIncomingPointATable(table);
         const columns = prepareBilingualColumns(table);
+        if (customerFeedbackTable && columns.remark !== null) {
+            [...table.rows].slice(0, 3).forEach(row => {
+                const cell = [...row.cells].find(item =>
+                    Number(item.dataset.logicalColumn) === columns.remark
+                );
+                if (cell && /remark|टिप्पणी/i.test(cell.textContent)) {
+                    cell.innerHTML = "Remarks<br><small>टिप्पणी</small>";
+                }
+            });
+        }
         const shiftGrid = isScheduleShiftGrid(table);
-        const customerFeedbackTable = /customer feed\s*back\s*\/\s*bookings/i.test(table.textContent);
         if (shiftGrid) table.classList.add("schedule-shift-grid");
         let generatedSerial = 1;
         [...table.rows].forEach((row, rowIndex) => {
@@ -485,21 +570,49 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     return;
                 }
 
+                if (columns.nameRemark !== null && logicalCellIndex === columns.nameRemark) {
+                    const resultField = row.querySelector('[data-answer-key][data-field-kind="inspection"]');
+                    const resultKey = resultField?.dataset.answerKey || `t${tableIndex}_r${rowIndex}_result`;
+                    renderStaffName(cell, resultKey, savedAnswers, attributions);
+                    const remarkKey = `${resultKey}__staff_remarks`;
+                    const remarkField = buildAnswerField(
+                        { type: "text", kind: "remarks" }, remarkKey,
+                        savedAnswers[remarkKey], `Remarks row ${rowIndex + 1}`
+                    );
+                    remarkField.dataset.requiredAnswer = "false";
+                    const remarkAttribution = attributions[remarkKey];
+                    if (remarkAttribution && remarkField.value.trim()) {
+                        remarkField.readOnly = true;
+                        remarkField.classList.add("attributed-answer");
+                    }
+                    cell.appendChild(remarkField);
+                    return;
+                }
+
                 const key = cell.dataset.answerKey ||
                     `t${tableIndex}_r${rowIndex}_c${cellIndex}`;
-                const required = cell.dataset.requiredAnswer !== undefined
+                const required = customerFeedbackTable
+                    ? false
+                    : cell.dataset.requiredAnswer !== undefined
                     ? cell.dataset.requiredAnswer === "true"
-                    : !(columns.remark !== null && logicalCellIndex === columns.remark);
+                    : cell.dataset.adminFieldType !== "remarks" &&
+                        !(columns.remark !== null && logicalCellIndex === columns.remark);
                 const label = `Answer row ${rowIndex + 1}, column ${cellIndex + 1}`;
                 const usesTypedControls = window.IcFormControls
                     ?.isTypedSchedule(scheduleName);
                 const explicitType = cell.dataset.adminFieldType;
-                const incomingConfig = incomingInspection
-                    ? {
-                        type: "value",
-                        kind: customerFeedbackTable ? "text" : "value"
-                    }
+                const pointANumber = Number(row.dataset.incomingPointA || 0);
+                const pointAConfig = incomingPointATable && pointANumber
+                    ? [5,6,7,8,9,11,12,13,14,15,16,17,19,20,23].includes(pointANumber)
+                        ? { type: "select", kind: "inspection", options: ["Working", "Not Working", "N.A."] }
+                        : [21,22].includes(pointANumber)
+                            ? { type: "select", kind: "inspection", options: ["Same", "Different", "N.A."] }
+                            : { type: "value", kind: "value" }
                     : null;
+                const incomingConfig = incomingInspection ? {
+                    type: customerFeedbackTable ? "text" : "value",
+                    kind: customerFeedbackTable ? "text" : "value"
+                } : null;
                 const explicitConfig = shiftGrid
                     ? { type: "value", kind: "header-detail" }
                     : columns.work !== null && logicalCellIndex === columns.work
@@ -508,10 +621,12 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     ? { type: "value", kind: "value" }
                     : explicitType === "yes_no"
                         ? { type: "select", kind: "choice", options: ["Yes", "No"] }
+                        : explicitType === "inspection"
+                            ? { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] }
                         : explicitType === "remarks"
                             ? { type: "text", kind: "remarks" }
                             : null;
-                const config = explicitConfig || incomingConfig || (usesTypedControls
+                const config = explicitConfig || pointAConfig || incomingConfig || (usesTypedControls
                     ? window.IcFormControls.classify(
                         row.textContent,
                         columnContext(table, rowIndex, logicalCellIndex)
@@ -525,9 +640,11 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 );
                 field.dataset.requiredAnswer = String(required);
                 if (
+                    !customerFeedbackTable &&
                     (["TEXTAREA", "SELECT"].includes(field.tagName) ||
                         (incomingInspection && field.tagName === "INPUT")) &&
                     (
+                        field.dataset.fieldKind === "inspection" ||
                         (columns.action !== null && logicalCellIndex === columns.action) ||
                         (columns.action === null && (columns.remark === null || logicalCellIndex !== columns.remark))
                     )
@@ -551,6 +668,9 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
             });
         });
     });
+
+    document.querySelectorAll("[data-answer-key]")
+        .forEach(field => updateAnswerAssessment(field, savedAnswers));
 
     updateCompletion();
 }
@@ -659,7 +779,7 @@ function initializeScheduleSections(container) {
             const sectionBody = document.createElement("tbody");
             commonRows.forEach(row => sectionBody.appendChild(row.cloneNode(true)));
             sectionRows.forEach(row => {
-                row.hidden = false;
+                if (row.dataset.feedbackExtraHidden !== "true") row.hidden = false;
                 sectionBody.appendChild(row);
             });
             sectionTable.appendChild(sectionBody);
@@ -767,7 +887,7 @@ function setReadOnly(readOnly) {
     document.querySelectorAll(
         "[data-answer-key], #staffRemarks, #supervisorSelect, " +
         ".staff-remark-input, #addStaffRemarkBtn, .remove-remark-btn, " +
-        ".mark-section-ok"
+        ".mark-section-ok, .add-customer-feedback-row"
     ).forEach(field => {
         field.disabled = readOnly;
     });
@@ -1079,6 +1199,23 @@ document.addEventListener("DOMContentLoaded", () => {
         "click",
         () => addStaffRemarkRow()
     );
+
+    document.getElementById("templateContainer").addEventListener("click", event => {
+        const button = event.target.closest(".add-customer-feedback-row");
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const table = button.closest("table");
+        const nextRow = table?.querySelector('tr[data-feedback-extra-hidden="true"]');
+        if (!nextRow) {
+            button.disabled = true;
+            return;
+        }
+        nextRow.hidden = false;
+        delete nextRow.dataset.feedbackExtraHidden;
+        if (!table.querySelector('tr[data-feedback-extra-hidden="true"]')) button.disabled = true;
+        updateCompletion();
+    });
 
     document.getElementById("submitFormBtn").addEventListener(
         "click",

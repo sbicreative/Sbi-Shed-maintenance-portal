@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const mammoth = require("mammoth");
 const supabase = require("./config/supabase");
+const { summerDriveTemplate, monsoonDriveTemplate, winterDriveTemplate } = require("./lib/seasonalDriveTemplates");
 
 const masterRoot = path.join(
     __dirname,
@@ -10,6 +11,36 @@ const masterRoot = path.join(
 );
 
 const templates = [
+    {
+        code: "EL_SUMMER_DRIVE",
+        name: "Summer Drive Schedule Form",
+        section: "EL",
+        file: path.join("El schedule form", "EL 3-Phase  IAIBIC -Summer Drive 3.pdf"),
+        workNames: ["SUMMER DRIVE"],
+        scheduleTypes: ["IA"],
+        sourceType: "pdf",
+        documentHtml: summerDriveTemplate()
+    },
+    {
+        code: "EL_MONSOON_DRIVE",
+        name: "Monsoon Drive Schedule Form",
+        section: "EL",
+        file: path.join("El schedule form", "EL 3-Phase  IAIBIC -Monsoon Drive.pdf"),
+        workNames: ["MONSOON DRIVE"],
+        scheduleTypes: ["IA"],
+        sourceType: "pdf",
+        documentHtml: monsoonDriveTemplate()
+    },
+    {
+        code: "EL_WINTER_DRIVE",
+        name: "Winter Drive Schedule Form",
+        section: "EL",
+        file: path.join("El schedule form", "EL 3-Phase  IAIBIC-Winter drive.pdf"),
+        workNames: ["WINTER DRIVE"],
+        scheduleTypes: ["IA"],
+        sourceType: "pdf",
+        documentHtml: winterDriveTemplate()
+    },
     {
         code: "EL_INCOMING_OUTGOING",
         name: "EL Incoming and Outgoing Inspection",
@@ -279,6 +310,17 @@ async function buildTemplateSchema(template, fullPath) {
         template.sourceType ||
         path.extname(fullPath).slice(1).toLowerCase();
 
+    if (template.documentHtml) {
+        return {
+            format: "document_html_v1",
+            title: template.name,
+            work_names: template.workNames,
+            source_type: "pdf_reference_with_web_form",
+            document_html: template.documentHtml,
+            notes: "Fillable web form with original PDF retained as reference."
+        };
+    }
+
     if (sourceType === "pdf") {
         return {
             format: "pdf_reference_v1",
@@ -405,11 +447,14 @@ async function saveTemplate(template) {
 }
 
 async function importScheduleForms() {
+    const selectedTemplates = process.env.SEASONAL_ONLY === "1"
+        ? templates.filter(template => template.code.startsWith("EL_") && template.code.endsWith("_DRIVE"))
+        : templates;
     console.log(
-        `Importing ${templates.length} schedule form templates...`
+        `Importing ${selectedTemplates.length} schedule form templates...`
     );
 
-    for (const template of templates) {
+    for (const template of selectedTemplates) {
         await saveTemplate(template);
     }
 
