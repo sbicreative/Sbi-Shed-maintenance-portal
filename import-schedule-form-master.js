@@ -17,7 +17,7 @@ const templates = [
         section: "EL",
         file: path.join("El schedule form", "EL 3-Phase  IAIBIC -Summer Drive 3.pdf"),
         workNames: ["SUMMER DRIVE"],
-        scheduleTypes: ["IA"],
+        scheduleTypes: ["IA", "IB", "IC"],
         sourceType: "pdf",
         documentHtml: summerDriveTemplate()
     },
@@ -27,7 +27,7 @@ const templates = [
         section: "EL",
         file: path.join("El schedule form", "EL 3-Phase  IAIBIC -Monsoon Drive.pdf"),
         workNames: ["MONSOON DRIVE"],
-        scheduleTypes: ["IA"],
+        scheduleTypes: ["IA", "IB", "IC"],
         sourceType: "pdf",
         documentHtml: monsoonDriveTemplate()
     },
@@ -37,7 +37,7 @@ const templates = [
         section: "EL",
         file: path.join("El schedule form", "EL 3-Phase  IAIBIC-Winter drive.pdf"),
         workNames: ["WINTER DRIVE"],
-        scheduleTypes: ["IA"],
+        scheduleTypes: ["IA", "IB", "IC"],
         sourceType: "pdf",
         documentHtml: winterDriveTemplate()
     },

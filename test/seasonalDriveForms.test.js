@@ -51,5 +51,6 @@ test("seasonal-only import maps the confirmed work names", () => {
     assert.match(importer, /EL_SUMMER_DRIVE[\s\S]*workNames: \["SUMMER DRIVE"\]/);
     assert.match(importer, /EL_MONSOON_DRIVE[\s\S]*workNames: \["MONSOON DRIVE"\]/);
     assert.match(importer, /EL_WINTER_DRIVE[\s\S]*workNames: \["WINTER DRIVE"\]/);
+    assert.equal((importer.match(/scheduleTypes: \["IA", "IB", "IC"\]/g) || []).length >= 3, true);
     assert.match(importer, /process\.env\.SEASONAL_ONLY === "1"/);
 });
