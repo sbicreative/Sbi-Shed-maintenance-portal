@@ -31,10 +31,12 @@ test("FRC customer feedback and Point A use the confirmed controls", () => {
     assert.match(client, /type: customerFeedbackTable \? "text" : "value"/);
     assert.match(client, /Remarks<br><small>टिप्पणी<\/small>/);
     assert.match(client, /prepareIncomingPointATable/);
-    assert.match(client, /\[5,6,7,8,9,11,12,13,14,15,16,17,19,20,23\]/);
+    assert.match(client, /\[5,6,7,8,11,12,13,14,15,16,19,20,23\]/);
     assert.match(client, /options: \["Working", "Not Working", "N\.A\."\]/);
     assert.match(client, /\[21,22\]/);
     assert.match(client, /options: \["Same", "Different", "N\.A\."\]/);
+    assert.doesNotMatch(client, /dataset\.bulkOkDisabled = "true"/);
+    assert.match(client, /bulkOkAllowed/);
 });
 
 test("seasonal drive source PDFs are packaged for Render", () => {

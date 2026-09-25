@@ -83,15 +83,16 @@ test("database permits only one active Lead Staff per work", () => {
     assert.match(leadMigration, /uq_schedule_form_work_detail/);
 });
 
-test("schedule forms open as sections and bulk OK only action fields", () => {
+test("schedule forms open as sections and Select All applies each field's valid value", () => {
     const client = fs.readFileSync(path.resolve(__dirname, "../public/js/schedule-form.js"), "utf8");
     assert.match(client, /function initializeScheduleSections\(container\)/);
     assert.match(client, /scheduleSectionHeading\(row\)/);
     assert.match(client, /dataset\.bulkOkEligible = "true"/);
-    assert.match(client, /field\.value = "Checked \/ Found OK"/);
+    assert.match(client, /const positiveValues = \[/);
+    assert.match(client, /field\.dataset\.expectedValue/);
     assert.match(client, /if \(field\.value\.trim\(\)\) return/);
-    assert.match(client, /\["TEXTAREA", "SELECT"\]\.includes\(field\.tagName\)/);
-    assert.match(client, /field\.add\(new Option\("Checked \/ Found OK"/);
+    assert.match(client, /select\[data-answer-key\]\[data-field-kind="inspection"\]/);
+    assert.match(client, /field\.dispatchEvent\(new Event\("change"/);
     assert.match(client, /\[A-J\]/);
     assert.match(client, /removeRepetitiveJeSignatureRows/);
     assert.match(client, /normalizePointANumbering/);

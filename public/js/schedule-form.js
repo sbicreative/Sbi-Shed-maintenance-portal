@@ -188,16 +188,12 @@ function prepareIncomingPointATable(table) {
     if (table.dataset.pointAReady) return;
     table.dataset.pointAReady = "true";
     const rows = [...table.rows];
-    const actualHeader = rows
-        .flatMap(row => [...row.cells])
-        .find(cell => /actual\s+value|वास्तविक\s+मान/i.test(
+    rows.flatMap(row => [...row.cells])
+        .filter(cell => /^(?:वास्तविक\s+मान\s*)?actual\s+value$/i.test(
             cell.textContent.replace(/\s+/g, " ").trim()
-        ));
-    actualHeader?.remove();
-
-    // Point A keeps the source CHECK LIST row as visible item 1.
-    // The first actionable Battery Voltage row is therefore item 2.
-    let point = 1;
+        ))
+        .forEach(cell => cell.classList.add("point-a-actual-column-hidden"));
+    let point = 0;
     let started = false;
     rows.forEach(row => {
         const cells = [...row.cells];
@@ -206,11 +202,78 @@ function prepareIncomingPointATable(table) {
         if (!started || !detail || !cells[2]?.textContent.replace(/\s+/g, " ").trim()) return;
         point += 1;
         row.dataset.incomingPointA = String(point);
-        const redundantActualCell = cells[3];
-        if (
-            redundantActualCell &&
-            !redundantActualCell.textContent.replace(/\s+/g, " ").trim()
-        ) redundantActualCell.remove();
+        cells[3]?.classList.add("point-a-actual-column-hidden");
+    });
+}
+
+function moveGaugePressureRowsIntoPointA(container, savedAnswers = {}) {
+    const tables = [...container.querySelectorAll("table")];
+    const pointATable = tables.find(table =>
+        /incoming \(when loco is energised\)/i.test(table.textContent) &&
+        /battery voltage/i.test(table.textContent)
+    );
+    const gaugeTable = tables.find(table =>
+        /gauges and pressure switches/i.test(table.textContent)
+    );
+    if (!pointATable || !gaugeTable || pointATable === gaugeTable) return;
+
+    const gaugeRows = [...gaugeTable.rows];
+    const headingIndex = gaugeRows.findIndex(row =>
+        /^B\s*(?:[.):-]|—)/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    const candidates = gaugeRows.slice(Math.max(0, headingIndex + 1))
+        .filter(row => {
+            const cells = [...row.cells];
+            const serial = cells[0]?.textContent.replace(/\s+/g, " ").trim();
+            const detail = cells.slice(1).map(cell =>
+                cell.textContent.replace(/\s+/g, " ").trim()
+            ).join(" ");
+            return /^\d+$/.test(serial || "") && detail.length > 3;
+        })
+        .slice(0, 12);
+    if (!candidates.length) return;
+
+    const targetBody = pointATable.tBodies[0] || pointATable.createTBody();
+    candidates.forEach((row, index) => {
+        const sourceCells = [...row.cells];
+        const sourceFields = [...row.querySelectorAll("[data-answer-key]")];
+        const normalizedRow = document.createElement("tr");
+        normalizedRow.dataset.incomingPointA = String(23 + index);
+        normalizedRow.dataset.movedFromGaugePressure = "true";
+        const serialCell = document.createElement("td");
+        serialCell.textContent = String(23 + index);
+        const workCell = document.createElement("td");
+        workCell.innerHTML = sourceCells[1]?.innerHTML || "";
+        const standardCell = document.createElement("td");
+        standardCell.innerHTML = sourceCells[2]?.innerHTML || "";
+        normalizedRow.append(serialCell, workCell, standardCell);
+        for (let fieldIndex = 0; fieldIndex < 3; fieldIndex += 1) {
+            const valueCell = document.createElement("td");
+            if (fieldIndex === 0) {
+                valueCell.classList.add("point-a-actual-column-hidden");
+            }
+            const existingField = sourceFields[fieldIndex];
+            if (existingField) valueCell.appendChild(existingField);
+            normalizedRow.appendChild(valueCell);
+        }
+        const remarksCell = document.createElement("td");
+        const sourceKey = sourceFields[0]?.dataset.answerKey || `gauge_${index + 1}`;
+        const remarksKey = `${sourceKey}__staff_remarks`;
+        const remarksField = buildAnswerField(
+            { type: "text", kind: "remarks" },
+            remarksKey,
+            savedAnswers[remarksKey],
+            "Remarks / TCN Name"
+        );
+        remarksField.dataset.requiredAnswer = "false";
+        remarksCell.appendChild(remarksField);
+        normalizedRow.appendChild(remarksCell);
+        row.replaceWith(normalizedRow);
+        row = normalizedRow;
+        row.dataset.movedFromGaugePressure = "true";
+        targetBody.appendChild(row);
     });
 }
 
@@ -278,6 +341,9 @@ function buildAnswerField(config, key, savedValue, label) {
 }
 
 function standardValueForField(field) {
+    if (field?.dataset.standardValueOverride) {
+        return field.dataset.standardValueOverride;
+    }
     const cell = field.closest("td,th");
     const row = cell?.closest("tr");
     if (!cell || !row) return "";
@@ -289,12 +355,868 @@ function standardValueForField(field) {
     return candidates.at(-1) || "";
 }
 
+function preparePointNineDualValues(table, savedAnswers = {}) {
+    const row = table.querySelector('tr[data-incoming-point-a="9"]');
+    if (!row || row.dataset.dualValuesReady === "true") return;
+    row.dataset.dualValuesReady = "true";
+    const valueFields = [...row.querySelectorAll('input.ic-value-input[data-answer-key]')]
+        .filter(field => !field.closest(".point-a-actual-column-hidden"));
+    valueFields.forEach((field, cabIndex) => {
+        const cell = field.closest("td,th");
+        if (!cell) return;
+        const baseKey = field.dataset.answerKey;
+        const group = document.createElement("div");
+        group.className = "point-a-dual-values";
+        [
+            { suffix: "cut_out", label: "Cut-out", standard: "10.0 ± 0.20" },
+            { suffix: "cut_in", label: "Cut-in", standard: "8.0 ± 0.20" }
+        ].forEach(item => {
+            const label = document.createElement("label");
+            label.textContent = item.label;
+            const key = `${baseKey}__${item.suffix}`;
+            const input = buildAnswerField(
+                { type: "value", kind: "value" },
+                key,
+                savedAnswers[key],
+                `${item.label} value, Cab-${cabIndex + 1}`
+            );
+            input.dataset.standardValueOverride = item.standard;
+            input.dataset.requiredAnswer = field.dataset.requiredAnswer || "true";
+            label.appendChild(input);
+            group.appendChild(label);
+        });
+        cell.replaceChildren(group);
+    });
+}
+
+function prepareSingleCabValueRows(table) {
+    [17, 23, 24, 25].forEach(point => {
+        const row = table.querySelector(`tr[data-incoming-point-a="${point}"]`);
+        if (!row || row.dataset.singleValueReady === "true") return;
+        const cells = [...row.cells];
+        const hiddenActualIndex = cells.findIndex(cell =>
+            cell.classList.contains("point-a-actual-column-hidden")
+        );
+        const remarksIndex = cells.findIndex(cell =>
+            cell.querySelector('[data-field-kind="remarks"]')
+        );
+        const firstCell = cells[hiddenActualIndex + 1];
+        const secondCell = cells[hiddenActualIndex + 2];
+        if (!firstCell || !secondCell || remarksIndex <= hiddenActualIndex + 1) return;
+        row.dataset.singleValueReady = "true";
+        if (!firstCell.querySelector("[data-answer-key]")) {
+            const field = secondCell.querySelector("[data-answer-key]");
+            if (field) firstCell.appendChild(field);
+        }
+        firstCell.colSpan = (Number(firstCell.colSpan) || 1) +
+            (Number(secondCell.colSpan) || 1);
+        secondCell.remove();
+    });
+}
+
+function pointACabCells(row) {
+    const cells = [...row.cells];
+    const hiddenActualIndex = cells.findIndex(cell =>
+        cell.classList.contains("point-a-actual-column-hidden")
+    );
+    return hiddenActualIndex < 0
+        ? []
+        : [cells[hiddenActualIndex + 1], cells[hiddenActualIndex + 2]].filter(Boolean);
+}
+
+function preparePointTwentySevenToTwentyNine(table, savedAnswers = {}) {
+    const point27 = table.querySelector('tr[data-incoming-point-a="27"]');
+    if (point27 && point27.dataset.customInputReady !== "true") {
+        point27.dataset.customInputReady = "true";
+        const [firstCell, secondCell] = pointACabCells(point27);
+        if (firstCell && secondCell) {
+            const key = "point_a_27_checked_status";
+            const field = buildAnswerField(
+                { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+                key,
+                savedAnswers[key],
+                "Point 27 inspection result"
+            );
+            field.dataset.requiredAnswer = "true";
+            firstCell.replaceChildren(field);
+            firstCell.colSpan = (Number(firstCell.colSpan) || 1) +
+                (Number(secondCell.colSpan) || 1);
+            secondCell.remove();
+        }
+    }
+
+    const point28 = table.querySelector('tr[data-incoming-point-a="28"]');
+    if (point28 && point28.dataset.customInputReady !== "true") {
+        point28.dataset.customInputReady = "true";
+        pointACabCells(point28).forEach((cell, index) => {
+            const unit = `SR-${index + 1}`;
+            const key = `point_a_28_${unit.toLowerCase().replace("-", "_")}_level`;
+            const label = document.createElement("label");
+            label.className = "point-a-unit-result";
+            label.append(document.createTextNode(unit));
+            const field = buildAnswerField(
+                { type: "select", kind: "inspection", options: ["Level OK", "Level Not OK", "N.A."] },
+                key,
+                savedAnswers[key],
+                `${unit} oil level`
+            );
+            field.dataset.requiredAnswer = "true";
+            label.appendChild(field);
+            cell.replaceChildren(label);
+        });
+    }
+
+    const point29 = table.querySelector('tr[data-incoming-point-a="29"]');
+    if (point29 && point29.dataset.customInputReady !== "true") {
+        point29.dataset.customInputReady = "true";
+        const [firstCell, secondCell] = pointACabCells(point29);
+        if (firstCell && secondCell) {
+            const axleTable = document.createElement("table");
+            axleTable.className = "axle-current-grid";
+            const headerRow = axleTable.insertRow();
+            const valueRow = axleTable.insertRow();
+            for (let index = 1; index <= 4; index += 1) {
+                const header = document.createElement("th");
+                header.textContent = `Axle no. ${index}`;
+                headerRow.appendChild(header);
+                const valueCell = valueRow.insertCell();
+                const key = `point_a_29_axle_${index}`;
+                const field = buildAnswerField(
+                    { type: "value", kind: "value" },
+                    key,
+                    savedAnswers[key],
+                    `Earth return current, axle ${index}`
+                );
+                field.dataset.requiredAnswer = "true";
+                valueCell.appendChild(field);
+            }
+            firstCell.replaceChildren(axleTable);
+            firstCell.colSpan = (Number(firstCell.colSpan) || 1) +
+                (Number(secondCell.colSpan) || 1);
+            secondCell.remove();
+        }
+    }
+}
+
+function preparePointThirtyFunctionTest(table, savedAnswers = {}) {
+    const row = table.querySelector('tr[data-incoming-point-a="30"]');
+    if (!row || row.dataset.functionTestReady === "true") return;
+    const cells = [...row.cells];
+    const workCell = cells[1];
+    const standardCell = cells[2];
+    const [firstCabCell, secondCabCell] = pointACabCells(row);
+    if (!workCell || !standardCell || !firstCabCell || !secondCabCell) return;
+    row.dataset.functionTestReady = "true";
+    const items = [
+        ["Test function Earth Fault", "—"],
+        ["Control ckt Positive", "Positive PCLH + Earth (89.7)"],
+        ["Control ckt Negative", "Negative PCLH + Earth"],
+        ["Harmonic Filter", "Earth Link (89.6)"],
+        ["Aux. Ckt.", "Earth + 1117 IN HB2 (89.2)"],
+        ["415/110", "HB1 Earth + 1218 (89.5)"]
+    ];
+    const makeList = (className, values) => {
+        const list = document.createElement("div");
+        list.className = className;
+        values.forEach(value => {
+            const line = document.createElement("div");
+            line.textContent = value;
+            list.appendChild(line);
+        });
+        return list;
+    };
+    workCell.replaceChildren(
+        makeList("point-a-function-list", items.map(item => item[0]))
+    );
+    standardCell.replaceChildren(
+        makeList("point-a-function-list", items.map(item => item[1]))
+    );
+    const valueList = document.createElement("div");
+    valueList.className = "point-a-function-list point-a-function-values";
+    items.forEach((item, index) => {
+        const key = `point_a_30_function_${index + 1}`;
+        const field = buildAnswerField(
+            { type: "value", kind: "text" },
+            key,
+            savedAnswers[key],
+            `${item[0]} actual value`
+        );
+        field.classList.remove("ic-value-input");
+        field.dataset.requiredAnswer = "true";
+        valueList.appendChild(field);
+    });
+    firstCabCell.replaceChildren(valueList);
+    firstCabCell.colSpan = (Number(firstCabCell.colSpan) || 1) +
+        (Number(secondCabCell.colSpan) || 1);
+    secondCabCell.remove();
+}
+
+function preparePointThirtyOneBurTest(table, savedAnswers = {}) {
+    const row = table.querySelector('tr[data-incoming-point-a="31"]');
+    if (!row || row.dataset.burTestReady === "true") return;
+    const cells = [...row.cells];
+    const workCell = cells[1];
+    const standardCell = cells[2];
+    const [firstCabCell, secondCabCell] = pointACabCells(row);
+    if (!workCell || !standardCell || !firstCabCell || !secondCabCell) return;
+    row.dataset.burTestReady = "true";
+    workCell.colSpan = (Number(workCell.colSpan) || 1) +
+        (Number(standardCell.colSpan) || 1);
+    standardCell.remove();
+    const burTable = document.createElement("table");
+    burTable.className = "bur-result-grid";
+    const headerRow = burTable.insertRow();
+    const valueRow = burTable.insertRow();
+    ["BUR-1", "BUR-2", "BUR-3"].forEach((label, index) => {
+        const header = document.createElement("th");
+        header.textContent = label;
+        headerRow.appendChild(header);
+        const valueCell = valueRow.insertCell();
+        const key = `point_a_31_bur_${index + 1}`;
+        const field = buildAnswerField(
+            { type: "select", kind: "inspection", options: ["OK", "Not OK", "N.A."] },
+            key,
+            savedAnswers[key],
+            `${label} result`
+        );
+        field.dataset.requiredAnswer = "true";
+        valueCell.appendChild(field);
+    });
+    firstCabCell.replaceChildren(burTable);
+    firstCabCell.colSpan = (Number(firstCabCell.colSpan) || 1) +
+        (Number(secondCabCell.colSpan) || 1);
+    secondCabCell.remove();
+}
+
+function preparePointThirtyTwoToThirtyFour(table, savedAnswers = {}) {
+    const point32 = table.querySelector('tr[data-incoming-point-a="32"]');
+    if (point32 && point32.dataset.tmTableReady !== "true") {
+        const cells = [...point32.cells];
+        const workCell = cells[1];
+        const standardCell = cells[2];
+        const [firstCabCell, secondCabCell] = pointACabCells(point32);
+        if (workCell && standardCell && firstCabCell && secondCabCell) {
+            point32.dataset.tmTableReady = "true";
+            const tmTable = document.createElement("table");
+            tmTable.className = "tm-temperature-grid";
+            const titleRow = tmTable.insertRow();
+            const title = document.createElement("th");
+            title.colSpan = 6;
+            title.textContent = "Temp. Value of TM as seen in Driver Display.";
+            titleRow.appendChild(title);
+            const headerRow = tmTable.insertRow();
+            const valueRow = tmTable.insertRow();
+            for (let index = 1; index <= 6; index += 1) {
+                const header = document.createElement("th");
+                header.textContent = `TM${index}`;
+                headerRow.appendChild(header);
+                const valueCell = valueRow.insertCell();
+                const key = `point_a_32_tm_${index}`;
+                const field = buildAnswerField(
+                    { type: "value", kind: "value" },
+                    key,
+                    savedAnswers[key],
+                    `TM${index} temperature`
+                );
+                field.dataset.requiredAnswer = "true";
+                valueCell.appendChild(field);
+            }
+            workCell.replaceChildren(tmTable);
+            workCell.colSpan = (Number(workCell.colSpan) || 1) +
+                (Number(standardCell.colSpan) || 1) +
+                (Number(firstCabCell.colSpan) || 1) +
+                (Number(secondCabCell.colSpan) || 1);
+            standardCell.remove();
+            firstCabCell.remove();
+            secondCabCell.remove();
+        }
+    }
+
+    [33, 34].forEach(point => {
+        const row = table.querySelector(`tr[data-incoming-point-a="${point}"]`);
+        if (!row || row.dataset.yesNoReady === "true") return;
+        const cells = [...row.cells];
+        const standardCell = cells[2];
+        const cabCells = pointACabCells(row);
+        if (!standardCell || cabCells.length < 2) return;
+        row.dataset.yesNoReady = "true";
+        standardCell.textContent = "Yes / No";
+        cabCells.forEach((cell, index) => {
+            const key = `point_a_${point}_cab_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "select", kind: "inspection", options: ["Yes", "No", "N.A."] },
+                key,
+                savedAnswers[key],
+                `Point ${point}, Cab-${index + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            field.dataset.bulkOkEligible = "true";
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function prepareGaugePressureSection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const point13 = rows.find(row =>
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() === "13"
+    );
+    const heading = rows.find(row =>
+        /^B\s*(?:(?:[.):-]|—)\s*)?GAUGES AND PRESSURE SWITCHES/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!point13 || !heading || table.dataset.gaugeSectionReady === "true") return;
+    table.dataset.gaugeSectionReady = "true";
+    table.classList.add("gauge-pressure-table");
+    const headingIndex = rows.indexOf(heading);
+    const point13Index = rows.indexOf(point13);
+    rows.slice(headingIndex + 1, point13Index).forEach(row => row.remove());
+
+    heading.dataset.sectionTitle = "B — GAUGES AND PRESSURE SWITCHES";
+    heading.replaceChildren();
+    ["B", "GAUGES AND PRESSURE SWITCHES", "Cab-1", "Cab-2", "Remarks/Name of TCN"]
+        .forEach((text, index) => {
+            const cell = document.createElement(index < 2 ? "th" : "td");
+            cell.textContent = text;
+            heading.appendChild(cell);
+        });
+    [...heading.cells].forEach(cell => {
+        cell.colSpan = 1;
+        cell.rowSpan = 1;
+    });
+
+    [...table.rows].filter(row => {
+        const number = Number(row.cells[0]?.textContent.replace(/\s+/g, " ").trim());
+        return number >= 13 && number <= 17;
+    }).forEach((row, index) => {
+        [...row.cells].forEach(cell => {
+            cell.colSpan = 1;
+            cell.rowSpan = 1;
+        });
+        const sourcePoint = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        row.dataset.gaugeSourcePoint = sourcePoint;
+        row.cells[0].textContent = String(index + 1);
+        [row.cells[2], row.cells[3]].forEach((cell, cabIndex) => {
+            if (!cell) return;
+            const key = `point_b_${sourcePoint}_cab_${cabIndex + 1}`;
+            const field = buildAnswerField(
+                { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+                key,
+                savedAnswers[key],
+                `Part B point ${index + 1}, Cab-${cabIndex + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            field.dataset.bulkOkEligible = "true";
+            cell.replaceChildren(field);
+        });
+        if (row.querySelector('[data-gauge-remarks="true"]')) return;
+        const remarkCell = document.createElement("td");
+        remarkCell.dataset.gaugeRemarks = "true";
+        const key = `point_b_${sourcePoint}_remarks_tcn`;
+        const field = buildAnswerField(
+            { type: "text", kind: "remarks" },
+            key,
+            savedAnswers[key],
+            `Part B point ${index + 1} Remarks / Name of TCN`
+        );
+        field.dataset.requiredAnswer = "false";
+        remarkCell.appendChild(field);
+        row.appendChild(remarkCell);
+    });
+}
+
+function prepareRotatingMachinesSection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const heading = rows.find(row =>
+        /^C\s*(?:(?:[.):-]|—)\s*)?Rotating Machines/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!heading || table.dataset.rotatingMachinesReady === "true") return;
+
+    const headingIndex = rows.indexOf(heading);
+    const pointRows = rows.slice(headingIndex + 1).filter(row =>
+        /^[1-4]$/.test(row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || "")
+    );
+    if (pointRows.length < 4) return;
+    table.dataset.rotatingMachinesReady = "true";
+
+    pointRows.slice(0, 3).forEach((row, pointIndex) => {
+        [row.cells[2], row.cells[3]].forEach((cell, cabIndex) => {
+            if (!cell) return;
+            const key = `point_c_${pointIndex + 1}_cab_${cabIndex + 1}`;
+            const field = buildAnswerField(
+                { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+                key,
+                savedAnswers[key],
+                `Part C point ${pointIndex + 1}, Cab-${cabIndex + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            field.dataset.bulkOkEligible = "true";
+            cell.replaceChildren(field);
+        });
+    });
+
+    const pointFour = pointRows[3];
+    const workCell = pointFour.cells[1];
+    const firstCabCell = pointFour.cells[2];
+    const secondCabCell = pointFour.cells[3];
+    const scheduleChecksNine = workCell?.querySelector("table");
+    if (scheduleChecksNine && firstCabCell && secondCabCell) {
+        firstCabCell.replaceChildren(scheduleChecksNine);
+        firstCabCell.colSpan =
+            (Number(firstCabCell.colSpan) || 1) +
+            (Number(secondCabCell.colSpan) || 1);
+        secondCabCell.remove();
+    }
+}
+
+function prepareWhileEnergisedSection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const heading = rows.find(row =>
+        /^D\s*(?:(?:[.):-]|—)\s*)?While Loco is energised/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!heading || table.dataset.whileEnergisedReady === "true") return;
+
+    const headingIndex = rows.indexOf(heading);
+    const sourceRows = rows.slice(headingIndex + 1).filter(row =>
+        /^(?:5|6|7|8)$/.test(
+            row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+        )
+    );
+    if (sourceRows.length < 4) return;
+    table.dataset.whileEnergisedReady = "true";
+
+    const header = rows[0];
+    if (header?.cells.length >= 5) {
+        const standardHeader = header.cells[2];
+        const actualHeader = header.cells[3];
+        actualHeader.colSpan =
+            (Number(standardHeader.colSpan) || 1) +
+            (Number(actualHeader.colSpan) || 1);
+        standardHeader.remove();
+    }
+
+    const pointRow = sourceRows[0];
+    const originalWork = pointRow.cells[1];
+    const workCell = document.createElement("td");
+    workCell.colSpan = 14;
+    workCell.append(...[...originalWork.childNodes].map(node => node.cloneNode(true)));
+
+    const switchTable = document.createElement("table");
+    switchTable.className = "switch-position-grid";
+    [
+        ["Switch no.", "Position", "Switch no.", "Position"],
+        ["154", "Normal", "160", "‘1’"],
+        ["152", "‘0’", "237.1", "‘1’"]
+    ].forEach((values, rowIndex) => {
+        const switchRow = switchTable.insertRow();
+        values.forEach(value => {
+            const cell = document.createElement(rowIndex === 0 ? "th" : "td");
+            cell.textContent = value;
+            switchRow.appendChild(cell);
+        });
+    });
+    workCell.appendChild(switchTable);
+
+    const resultCell = document.createElement("td");
+    resultCell.colSpan = 10;
+    const resultKey = "point_d_1_result";
+    const result = buildAnswerField(
+        { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+        resultKey,
+        savedAnswers[resultKey],
+        "Part D point 1 actual value"
+    );
+    result.dataset.requiredAnswer = "true";
+    result.dataset.bulkOkEligible = "true";
+    resultCell.appendChild(result);
+
+    const remarksCell = document.createElement("td");
+    remarksCell.colSpan = 1;
+    const remarksKey = "point_d_1_remarks_tcn";
+    const remarks = buildAnswerField(
+        { type: "text", kind: "remarks" },
+        remarksKey,
+        savedAnswers[remarksKey],
+        "Part D point 1 Remarks / Name of TCN"
+    );
+    remarks.dataset.requiredAnswer = "false";
+    remarksCell.appendChild(remarks);
+
+    const serialCell = document.createElement("td");
+    serialCell.colSpan = 2;
+    serialCell.textContent = "1";
+    serialCell.className = "schedule-row-number";
+    pointRow.replaceChildren(serialCell, workCell, resultCell, remarksCell);
+    sourceRows.slice(1).forEach(row => row.remove());
+}
+
+function prepareAirDeliverySection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const heading = rows.find(row =>
+        /^E\s*(?:(?:[.):-]|—)\s*)?Air delivery measurement/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!heading || table.dataset.airDeliveryReady === "true") return;
+    table.dataset.airDeliveryReady = "true";
+
+    const start = rows.indexOf(heading) + 1;
+    const end = rows.findIndex((row, index) =>
+        index >= start && /^F\s*(?:(?:[.):-]|—)\s*)?CVVRS/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    const sectionRows = rows.slice(start, end < 0 ? rows.length : end);
+
+    sectionRows.forEach((row, rowIndex) => {
+        const text = row.textContent.replace(/\s+/g, " ").trim();
+        const firstCell = row.cells[0];
+        if (
+            firstCell &&
+            (
+                /SCTMB\s*&\s*OCB#1,2/i.test(text) ||
+                /^\d+\s*Check Earthing shunt/i.test(text) ||
+                /^\d+\s*Axle box/i.test(text)
+            )
+        ) {
+            firstCell.replaceChildren();
+            firstCell.classList.remove("schedule-row-number");
+        }
+
+        row.querySelectorAll(".staff-name-cell").forEach((cell, cellIndex) => {
+            const key = cell.dataset.legacyAnswerKey ||
+                `point_e_row_${rowIndex + 1}_value_${cellIndex + 1}`;
+            cell.classList.remove("staff-name-cell");
+            const field = buildAnswerField(
+                { type: "value", kind: "value" },
+                key,
+                savedAnswers[key],
+                `Part E value row ${rowIndex + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            cell.replaceChildren(field);
+        });
+
+        if (/Axle box/i.test(text)) {
+            [...row.cells].forEach((cell, cellIndex, cells) => {
+                if (!/Axle box/i.test(cell.textContent)) return;
+                const resultCell = cells[cellIndex + 1];
+                if (!resultCell) return;
+                const key = `point_e_earthing_row_${rowIndex + 1}_item_${cellIndex + 1}`;
+                const field = buildAnswerField(
+                    { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+                    key,
+                    savedAnswers[key],
+                    `${cell.textContent.replace(/\s+/g, " ").trim()} result`
+                );
+                field.dataset.requiredAnswer = "true";
+                field.dataset.bulkOkEligible = "true";
+                resultCell.replaceChildren(field);
+            });
+        }
+    });
+}
+
+function prepareCvvrsSection(table, savedAnswers = {}) {
+    const row = [...table.rows].find(item =>
+        /^F\s*(?:(?:[.):-]|—)\s*)?CVVRS/i.test(
+            item.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!row || row.dataset.cvvrsReady === "true" || row.cells.length < 4) return;
+    row.dataset.cvvrsReady = "true";
+
+    const [serialCell, workCell, actualCell, tcnCell] = [...row.cells];
+    serialCell.colSpan = 2;
+    workCell.colSpan = 14;
+    actualCell.colSpan = 10;
+    tcnCell.colSpan = 1;
+
+    const actualKey = "point_f_cvvrs_actual_value";
+    const actual = buildAnswerField(
+        { type: "value", kind: "value" },
+        actualKey,
+        savedAnswers[actualKey],
+        "Part F CVVRS actual value"
+    );
+    actual.dataset.requiredAnswer = "true";
+    actualCell.replaceChildren(actual);
+
+    const tcnKey = "point_f_cvvrs_tcn_remarks";
+    const tcn = buildAnswerField(
+        { type: "text", kind: "remarks" },
+        tcnKey,
+        savedAnswers[tcnKey],
+        "Part F TCN / Remarks"
+    );
+    tcn.dataset.requiredAnswer = "false";
+    tcnCell.replaceChildren(tcn);
+}
+
+function prepareSimulationModeSection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const heading = rows.find(row =>
+        /^H\s*(?:(?:[.):-]|—)\s*)?Simulation mode/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!heading || table.dataset.simulationModeReady === "true") return;
+    table.dataset.simulationModeReady = "true";
+
+    const start = rows.indexOf(heading) + 1;
+    const end = rows.findIndex((row, index) =>
+        index >= start && Boolean(scheduleSectionHeading(row))
+    );
+    rows.slice(start, end < 0 ? rows.length : end).forEach((row, rowIndex) => {
+        const actualCell = row.cells[2];
+        const existing = actualCell?.querySelector("[data-answer-key]");
+        if (!actualCell || !existing) return;
+        const key = existing.dataset.answerKey || `point_h_${rowIndex + 1}_actual`;
+        const field = buildAnswerField(
+            { type: "select", kind: "inspection", options: ["Checked OK", "Not OK", "N.A."] },
+            key,
+            savedAnswers[key],
+            `Part H point ${rowIndex + 1} actual value`
+        );
+        field.dataset.requiredAnswer = "true";
+        field.dataset.bulkOkEligible = "true";
+        actualCell.replaceChildren(field);
+    });
+}
+
+function prepareVcdSection(table, savedAnswers = {}) {
+    const rows = [...table.rows];
+    const heading = rows.find(row =>
+        /^I\s*(?:(?:[.):-]|—)\s*)?Check operation of Vigilance Control Device/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    if (!heading || table.dataset.vcdSectionReady === "true") return;
+    table.dataset.vcdSectionReady = "true";
+
+    const start = rows.indexOf(heading);
+    const end = rows.findIndex((row, index) =>
+        index > start && /^J\s*(?:(?:[.):-]|—)\s*)?ERROR LOG/i.test(
+            row.textContent.replace(/\s+/g, " ").trim()
+        )
+    );
+    rows.slice(start + 1, end < 0 ? rows.length : end).forEach(row => row.remove());
+
+    const body = heading.parentElement;
+    const insertRow = () => {
+        const row = document.createElement("tr");
+        body.insertBefore(row, heading.nextSibling);
+        return row;
+    };
+    const insertAfter = (reference, row) => {
+        body.insertBefore(row, reference.nextSibling);
+        return row;
+    };
+
+    heading.replaceChildren();
+    const sectionCell = document.createElement("td");
+    sectionCell.rowSpan = 5;
+    sectionCell.textContent = "I";
+    const titleCell = document.createElement("th");
+    titleCell.colSpan = 11;
+    titleCell.textContent = "Check operation of Vigilance Control Device (VCD)";
+    const actionHeader = document.createElement("th");
+    actionHeader.colSpan = 5;
+    actionHeader.textContent = "Action taken";
+    const remarksHeader = document.createElement("th");
+    remarksHeader.colSpan = 1;
+    remarksHeader.textContent = "Remarks/Name of TCN";
+    heading.append(sectionCell, titleCell, actionHeader, remarksHeader);
+
+    const detailRow = insertRow();
+    const detailCell = document.createElement("td");
+    detailCell.colSpan = 11;
+    detailCell.textContent = "VCD becomes active when any one or more operation listed below is not performed for continuous 60 seconds (1 minute)";
+    const actionCell = document.createElement("td");
+    actionCell.colSpan = 5;
+    actionCell.rowSpan = 4;
+    const actionKey = "point_i_vcd_action_taken";
+    const action = buildAnswerField(
+        { type: "text", kind: "action-taken" }, actionKey,
+        savedAnswers[actionKey], "Part I VCD action taken"
+    );
+    action.dataset.requiredAnswer = "false";
+    actionCell.appendChild(action);
+    const remarksCell = document.createElement("td");
+    remarksCell.colSpan = 1;
+    remarksCell.rowSpan = 4;
+    const remarksKey = "point_i_vcd_remarks_tcn";
+    const remarks = buildAnswerField(
+        { type: "text", kind: "remarks" }, remarksKey,
+        savedAnswers[remarksKey], "Part I VCD Remarks / Name of TCN"
+    );
+    remarks.dataset.requiredAnswer = "false";
+    remarksCell.appendChild(remarks);
+    detailRow.append(detailCell, actionCell, remarksCell);
+
+    let previous = detailRow;
+    [
+        ["i) Change of TE", "ii) Application of PVCD"],
+        ["iii) Sander operation", "iv) Application of brake A-9"],
+        ["v) Application of brake SA-9"]
+    ].forEach(items => {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 11;
+        const grid = document.createElement("div");
+        grid.className = "vcd-operation-grid";
+        items.forEach(item => {
+            const entry = document.createElement("span");
+            entry.textContent = item;
+            grid.appendChild(entry);
+        });
+        cell.appendChild(grid);
+        row.appendChild(cell);
+        previous = insertAfter(previous, row);
+    });
+
+    const ledHeadingRow = document.createElement("tr");
+    const ledHeading = document.createElement("th");
+    ledHeading.colSpan = 18;
+    ledHeading.textContent = "Check following LED Indication/Status of following items after elapse of 60 sec";
+    ledHeadingRow.appendChild(ledHeading);
+    previous = insertAfter(previous, ledHeadingRow);
+
+    const ledRow = document.createElement("tr");
+    const ledCell = document.createElement("td");
+    ledCell.colSpan = 18;
+    const ledTable = document.createElement("table");
+    ledTable.className = "vcd-indication-grid";
+    const headerOne = ledTable.insertRow();
+    const snHeader = document.createElement("th");
+    snHeader.rowSpan = 3;
+    snHeader.textContent = "SN";
+    const indicationHeader = document.createElement("th");
+    indicationHeader.rowSpan = 3;
+    indicationHeader.textContent = "Indication";
+    const statusHeader = document.createElement("th");
+    statusHeader.colSpan = 8;
+    statusHeader.textContent = "Status of Indication";
+    headerOne.append(snHeader, indicationHeader, statusHeader);
+    const headerTwo = ledTable.insertRow();
+    ["From 60 to 68±2 sec", "From 68±2 to 76 sec", "After 76 sec", "After 76 + 34 sec"]
+        .forEach(label => {
+            const cell = document.createElement("th");
+            cell.colSpan = 2;
+            cell.textContent = label;
+            headerTwo.appendChild(cell);
+        });
+    const headerThree = ledTable.insertRow();
+    for (let index = 0; index < 4; index += 1) {
+        ["Std", "Observed"].forEach(label => {
+            const cell = document.createElement("th");
+            cell.textContent = label;
+            headerThree.appendChild(cell);
+        });
+    }
+    const indications = [
+        ["LED Indication", "ON", "ON", "ON", "OFF"],
+        ["Buzzer sound", "OFF", "ON", "OFF", "OFF"],
+        ["VCD Pneumatic Valve", "OFF", "OFF", "ON", "ON"],
+        ["Penalty brake", "OFF", "OFF", "ON", "ON"],
+        ["Re-setting of VCD by any one or more of the above operations", "YES", "YES", "NO", "Only by re-set switch"]
+    ];
+    indications.forEach((item, rowIndex) => {
+        const row = ledTable.insertRow();
+        row.insertCell().textContent = String(rowIndex + 1);
+        row.insertCell().textContent = item[0];
+        for (let period = 0; period < 4; period += 1) {
+            row.insertCell().textContent = item[period + 1];
+            const observedCell = row.insertCell();
+            const key = `point_i_led_${rowIndex + 1}_observed_${period + 1}`;
+            const expectedValue = item[period + 1];
+            const isOnOffRow = rowIndex < 4;
+            const field = buildAnswerField(
+                isOnOffRow
+                    ? { type: "select", kind: "inspection", options: ["ON", "OFF"] }
+                    : { type: "value", kind: "value" },
+                key,
+                savedAnswers[key] || (isOnOffRow ? expectedValue : ""),
+                `${item[0]} observed value ${period + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            if (isOnOffRow) {
+                field.dataset.expectedValue = expectedValue;
+                field.dataset.bulkOkEligible = "true";
+            }
+            observedCell.appendChild(field);
+            updateAnswerAssessment(field, savedAnswers);
+        }
+    });
+    ledCell.appendChild(ledTable);
+    ledRow.appendChild(ledCell);
+    insertAfter(previous, ledRow);
+}
+
+function addScheduleLogRow(table, savedAnswers = {}, rowNumber = 1) {
+    const body = table.tBodies[0] || table.createTBody();
+    const row = body.insertRow();
+    row.dataset.scheduleLogRow = String(rowNumber);
+    row.insertCell().textContent = String(rowNumber);
+    const labels = [
+        "Date", "Shift", "QC", "Work Details",
+        "Name of JE/SSE", "Sign of JE/SSE", "Remarks / TCN Name"
+    ];
+    labels.forEach((label, columnIndex) => {
+        const cell = row.insertCell();
+        const key = `schedule_check_13_row_${rowNumber}_col_${columnIndex + 1}`;
+        const field = buildAnswerField(
+            columnIndex === labels.length - 1
+                ? { type: "text", kind: "remarks" }
+                : { type: "value", kind: "value" },
+            key,
+            savedAnswers[key],
+            `Schedule log row ${rowNumber}, ${label}`
+        );
+        field.dataset.requiredAnswer = columnIndex < 4 ? "true" : "false";
+        cell.appendChild(field);
+    });
+    return row;
+}
+
+function prepareScheduleLogTable(table, savedAnswers = {}) {
+    const headerText = table.rows[0]?.textContent.replace(/\s+/g, " ").trim() || "";
+    if (
+        !/^SN\s*Date\s*Shift\s*QC\s*Work Details\s*Name of JE\/SSE/i.test(headerText) ||
+        table.dataset.scheduleLogReady === "true"
+    ) return;
+    table.dataset.scheduleLogReady = "true";
+    [...table.rows].slice(1).forEach(row => row.remove());
+
+    const savedRows = Object.keys(savedAnswers).reduce((maximum, key) => {
+        const match = key.match(/^schedule_check_13_row_(\d+)_col_/);
+        return Math.max(maximum, Number(match?.[1] || 0));
+    }, 0);
+    const rowCount = Math.max(1, savedRows);
+    for (let rowNumber = 1; rowNumber <= rowCount; rowNumber += 1) {
+        addScheduleLogRow(table, savedAnswers, rowNumber);
+    }
+
+    const caption = table.caption || table.createCaption();
+    caption.className = "schedule-log-controls";
+    caption.innerHTML = '<button type="button" class="add-schedule-log-row" aria-label="Add row" title="Add row">+</button>';
+}
+
 function updateAnswerAssessment(field, savedAnswers = {}) {
     if (!field?.dataset.answerKey || field.dataset.fieldKind === "remarks") return;
     const value = field.value.trim();
     let acceptable = null;
     if (field.tagName === "SELECT") {
-        acceptable = value ? !window.IcFormControls?.isAdverse(value) : null;
+        acceptable = value
+            ? field.dataset.expectedValue
+                ? value === field.dataset.expectedValue
+                : !window.IcFormControls?.isAdverse(value)
+            : null;
     } else if (field.classList.contains("ic-value-input")) {
         const standard = standardValueForField(field);
         field.dataset.standardValue = standard;
@@ -306,7 +1228,7 @@ function updateAnswerAssessment(field, savedAnswers = {}) {
     const actionKey = `${field.dataset.answerKey}__action_taken`;
     let block = field.closest("td,th")?.querySelector(`[data-action-for="${CSS.escape(field.dataset.answerKey)}"]`);
     const existingActionField = [...(field.closest("tr")?.querySelectorAll(
-        '[data-answer-key][data-field-kind="remarks"], [data-answer-key][data-field-kind="action-taken"]'
+        '[data-answer-key][data-field-kind="action-taken"]'
     ) || [])].find(item => item !== field && !item.closest(".item-action-taken") && !item.closest(".staff-name-cell"));
     if (existingActionField) {
         const required = acceptable === false;
@@ -491,6 +1413,8 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
 
     const incomingInspection = isIncomingOutgoingInspection();
     tables.forEach((table, tableIndex) => {
+        table.dataset.mobileLayout = "single";
+        table.classList.remove("mobile-compact-table", "mobile-two-row-table");
         const tableText = table.textContent.replace(/\s+/g, " ").trim();
         const customerFeedbackTable = /customer feed\s*back\s*\/\s*bookings/i.test(tableText);
         const incomingPointATable = /incoming \(when loco is energised\)/i.test(tableText) &&
@@ -603,7 +1527,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 const explicitType = cell.dataset.adminFieldType;
                 const pointANumber = Number(row.dataset.incomingPointA || 0);
                 const pointAConfig = incomingPointATable && pointANumber
-                    ? [5,6,7,8,9,11,12,13,14,15,16,17,19,20,23].includes(pointANumber)
+                    ? [5,6,7,8,11,12,13,14,15,16,19,20,23].includes(pointANumber)
                         ? { type: "select", kind: "inspection", options: ["Working", "Not Working", "N.A."] }
                         : [21,22].includes(pointANumber)
                             ? { type: "select", kind: "inspection", options: ["Same", "Different", "N.A."] }
@@ -613,7 +1537,12 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                     type: customerFeedbackTable ? "text" : "value",
                     kind: customerFeedbackTable ? "text" : "value"
                 } : null;
-                const explicitConfig = shiftGrid
+                const remarksOnlyCell =
+                    (columns.remark !== null && logicalCellIndex === columns.remark) ||
+                    (columns.nameRemark !== null && logicalCellIndex === columns.nameRemark);
+                const explicitConfig = remarksOnlyCell
+                    ? { type: "text", kind: "remarks" }
+                    : shiftGrid
                     ? { type: "value", kind: "header-detail" }
                     : columns.work !== null && logicalCellIndex === columns.work
                         ? { type: "text", kind: "work-detail" }
@@ -667,6 +1596,10 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
                 updateAnswerAssessment(field, savedAnswers);
             });
         });
+        if (incomingPointATable) {
+            preparePointNineDualValues(table, savedAnswers);
+            prepareSingleCabValueRows(table);
+        }
     });
 
     document.querySelectorAll("[data-answer-key]")
@@ -676,6 +1609,7 @@ function createAnswerFields(savedAnswers = {}, attributions = {}, scheduleName =
 }
 
 function scheduleSectionHeading(row) {
+    if (row.dataset.sectionTitle) return row.dataset.sectionTitle;
     const text = [...row.cells]
         .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
         .filter(Boolean)
@@ -712,13 +1646,20 @@ function normalizePointANumbering(sectionRows, sectionTitle) {
         if (scheduleSectionHeading(row)) return;
         const cells = [...row.cells];
         if (cells.length < 2) return;
+        const fixedPoint = Number(row.dataset.incomingPointA || 0);
+        if (fixedPoint) {
+            cells[0].replaceChildren(String(fixedPoint));
+            cells[0].classList.add("schedule-row-number");
+            number = Math.max(number, fixedPoint + 1);
+            return;
+        }
         const detail = cells.slice(1)
             .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
             .filter(Boolean)
             .join(" ");
         if (
             detail.length < 5 ||
-            /^(?:check list|description|standard value|actual value|cab[- ]?1|cab[- ]?2|function test|axle no|sn\b|क्र\.?\s*सं)/i.test(detail)
+            /(?:check list|जाँच की सूची)|^(?:description|standard value|actual value|cab[- ]?1|cab[- ]?2|function test|axle no|sn\b|क्र\.?\s*सं)/i.test(detail)
         ) return;
         const firstCell = cells[0];
         const firstText = firstCell.textContent.replace(/\s+/g, " ").trim();
@@ -730,6 +1671,8 @@ function normalizePointANumbering(sectionRows, sectionTitle) {
 
 function initializeScheduleSections(container) {
     container.querySelectorAll("table").forEach((table, tableIndex) => {
+        if (table.classList.contains("vcd-indication-grid")) return;
+        const bulkOkAllowed = table.dataset.bulkOkDisabled !== "true";
         const rows = [...table.rows];
         const headingIndexes = rows
             .map((row, index) => ({ index, title: scheduleSectionHeading(row) }))
@@ -764,7 +1707,7 @@ function initializeScheduleSections(container) {
             toggle.type = "button";
             toggle.className = "schedule-section-toggle";
             toggle.setAttribute("aria-expanded", "false");
-            toggle.innerHTML = `<span>${section.title.replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character])}</span><b>＋</b>`;
+            toggle.innerHTML = `<span>${section.title.replace(/[&<>"']/g, character => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[character])}</span><b>▼</b>`;
             const markAll = document.createElement("button");
             markAll.type = "button";
             markAll.className = "mark-section-ok";
@@ -777,7 +1720,12 @@ function initializeScheduleSections(container) {
                 .filter(child => ["CAPTION", "COLGROUP"].includes(child.tagName))
                 .forEach(child => sectionTable.appendChild(child.cloneNode(true)));
             const sectionBody = document.createElement("tbody");
-            commonRows.forEach(row => sectionBody.appendChild(row.cloneNode(true)));
+            const sectionCommonRows = /^(?:B\s+—\s+GAUGES AND PRESSURE SWITCHES|E\s+—\s+Air delivery measurement|I\s+—\s+Check operation of Vigilance Control Device)/i.test(
+                section.title
+            ) ? [] : commonRows;
+            sectionCommonRows.forEach(row =>
+                sectionBody.appendChild(row.cloneNode(true))
+            );
             sectionRows.forEach(row => {
                 if (row.dataset.feedbackExtraHidden !== "true") row.hidden = false;
                 sectionBody.appendChild(row);
@@ -785,7 +1733,9 @@ function initializeScheduleSections(container) {
             sectionTable.appendChild(sectionBody);
             content.appendChild(sectionTable);
             const eligibleFields = () => sectionRows
-                .flatMap(row => [...row.querySelectorAll('[data-bulk-ok-eligible="true"]')])
+                .flatMap(row => [...row.querySelectorAll(
+                    'select[data-answer-key][data-field-kind="inspection"]'
+                )])
                 .filter(field => !field.disabled && !field.readOnly);
             markAll.disabled = eligibleFields().length === 0;
             toggle.addEventListener("click", () => {
@@ -793,24 +1743,32 @@ function initializeScheduleSections(container) {
                 card.classList.toggle("open", opening);
                 content.hidden = !opening;
                 toggle.setAttribute("aria-expanded", String(opening));
-                toggle.querySelector("b").textContent = opening ? "−" : "＋";
-                markAll.hidden = !opening;
+                toggle.querySelector("b").textContent = opening ? "▲" : "▼";
+                markAll.hidden = !opening || !bulkOkAllowed;
             });
             markAll.addEventListener("click", () => {
                 eligibleFields().forEach(field => {
-                    if (field.value.trim()) return;
-                    if (
-                        field.tagName === "SELECT" &&
-                        ![...field.options].some(option => option.value === "Checked / Found OK")
-                    ) {
-                        field.add(new Option("Checked / Found OK", "Checked / Found OK"));
+                    if (field.dataset.expectedValue) {
+                        field.value = field.dataset.expectedValue;
+                        field.dispatchEvent(new Event("change", { bubbles: true }));
+                        return;
                     }
-                    field.value = "Checked / Found OK";
-                    field.dispatchEvent(new Event("input", { bubbles: true }));
+                    if (field.value.trim()) return;
+                    const positiveValues = [
+                        "Checked / Found OK", "Checked OK", "Working",
+                        "Same", "Level OK", "OK", "Yes"
+                    ];
+                    const value = positiveValues.find(candidate =>
+                        [...field.options].some(option => option.value === candidate)
+                    );
+                    if (!value) return;
+                    field.value = value;
+                    field.dispatchEvent(new Event("change", { bubbles: true }));
                 });
                 updateCompletion();
             });
-            card.append(toggle, markAll);
+            card.append(toggle);
+            if (bulkOkAllowed) card.append(markAll);
             list.append(card, content);
         });
 
@@ -887,7 +1845,7 @@ function setReadOnly(readOnly) {
     document.querySelectorAll(
         "[data-answer-key], #staffRemarks, #supervisorSelect, " +
         ".staff-remark-input, #addStaffRemarkBtn, .remove-remark-btn, " +
-        ".mark-section-ok, .add-customer-feedback-row"
+        ".mark-section-ok, .add-customer-feedback-row, .add-schedule-log-row"
     ).forEach(field => {
         field.disabled = readOnly;
     });
@@ -1038,8 +1996,87 @@ async function loadScheduleForm() {
                 submission?.answer_attributions || {},
                 loadedScheduleName
             );
+            moveGaugePressureRowsIntoPointA(
+                container,
+                submission?.form_answers || {}
+            );
+            container.querySelectorAll("table").forEach(
+                prepareSingleCabValueRows
+            );
+            container.querySelectorAll("table").forEach(table =>
+                preparePointTwentySevenToTwentyNine(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
             window.BilingualScheduleActivities?.enhance(
                 container
+            );
+            container.querySelectorAll("table").forEach(table =>
+                preparePointThirtyFunctionTest(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                preparePointThirtyOneBurTest(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                preparePointThirtyTwoToThirtyFour(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareGaugePressureSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareRotatingMachinesSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareWhileEnergisedSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareAirDeliverySection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareCvvrsSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareSimulationModeSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareVcdSection(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareScheduleLogTable(
+                    table,
+                    submission?.form_answers || {}
+                )
             );
             initializeScheduleSections(container);
         } else {
@@ -1201,6 +2238,18 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     document.getElementById("templateContainer").addEventListener("click", event => {
+        const addLogButton = event.target.closest(".add-schedule-log-row");
+        if (addLogButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const table = addLogButton.closest("table");
+            const nextNumber = table?.querySelectorAll("tr[data-schedule-log-row]").length + 1;
+            if (table && nextNumber) {
+                addScheduleLogRow(table, {}, nextNumber);
+                updateCompletion();
+            }
+            return;
+        }
         const button = event.target.closest(".add-customer-feedback-row");
         if (!button) return;
         event.preventDefault();
