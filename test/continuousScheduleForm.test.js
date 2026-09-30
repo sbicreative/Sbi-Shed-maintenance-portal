@@ -91,7 +91,10 @@ test("schedule forms open as sections and Select All applies each field's valid 
     assert.match(client, /const positiveValues = \[/);
     assert.match(client, /field\.dataset\.expectedValue/);
     assert.match(client, /if \(field\.value\.trim\(\)\) return/);
-    assert.match(client, /select\[data-answer-key\]\[data-field-kind="inspection"\]/);
+    assert.match(client, /select\[data-answer-key\]/);
+    assert.match(client, /No Leakage/);
+    assert.match(client, /Available/);
+    assert.match(client, /options\.find\(option => !window\.IcFormControls\?\.isAdverse\(option\)\)/);
     assert.match(client, /field\.dispatchEvent\(new Event\("change"/);
     assert.match(client, /\[A-J\]/);
     assert.match(client, /removeRepetitiveJeSignatureRows/);

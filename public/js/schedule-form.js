@@ -1207,6 +1207,350 @@ function prepareScheduleLogTable(table, savedAnswers = {}) {
     caption.innerHTML = '<button type="button" class="add-schedule-log-row" aria-label="Add row" title="Add row">+</button>';
 }
 
+function prepareMechanicalPressureMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/CPA\s+Loading Time/i.test(tableText) ||
+        !/Pantograph-1/i.test(tableText) ||
+        table.dataset.mechanicalPressureReady === "true"
+    ) return;
+    table.dataset.mechanicalPressureReady = "true";
+
+    const rows = [...table.rows];
+    rows[0]?.cells[0]?.replaceChildren();
+
+    const standardRow = rows.find(row =>
+        /8\.5\s*\+\s*0\.25/i.test(row.textContent) &&
+        /6\s+to\s+10\s+Second/i.test(row.textContent)
+    );
+    const leadingExtraCell = standardRow?.cells[0];
+    if (leadingExtraCell?.querySelector("select")) leadingExtraCell.replaceChildren();
+
+    const standardCells = [...(standardRow?.cells || [])].slice(1);
+    const standardValues = standardCells.map(cell => {
+        const visible = cell.textContent.replace(/\s+/g, " ").trim();
+        return visible.replace(/(-?\d+(?:\.\d+)?)\s*\+\s*(\d+(?:\.\d+)?)/, "$1 ± $2");
+    });
+
+    rows.filter(row => /^(?:GI|Final)$/i.test(
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+    )).forEach(row => {
+        const rowLabel = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        [...row.cells].slice(1).forEach((cell, index) => {
+            const existing = cell.querySelector("[data-answer-key]");
+            const key = existing?.dataset.answerKey ||
+                `mechanical_pressure_${rowLabel.toLowerCase()}_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "value", kind: "measurement" },
+                key,
+                savedAnswers[key],
+                `${rowLabel} measurement ${index + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            field.dataset.standardValueOverride = standardValues[index] || "";
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function prepareMechanicalBrakeMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/MR safety Valve pressure/i.test(tableText) ||
+        !/Brake Cylinder Pressure by Direct Brake/i.test(tableText) ||
+        !/Horn Sound/i.test(tableText) ||
+        table.dataset.mechanicalBrakeReady === "true"
+    ) return;
+    table.dataset.mechanicalBrakeReady = "true";
+    table.dataset.bulkOkDisabled = "true";
+
+    const rows = [...table.rows];
+    rows[0]?.cells[0]?.replaceChildren();
+    const standards = [
+        "10.5 ± 0.2 kg/cm2",
+        "9.5 to 9.8 kg/cm2",
+        "5.0 ± 0.1 kg/cm2",
+        "5.0 ± 0.1 kg/cm2",
+        "6.0 ± 0.2 kg/cm2",
+        "6.0 ± 0.2 kg/cm2",
+        "3.5 ± 0.1 kg/cm2",
+        "3.5 ± 0.1 kg/cm2",
+        "Good", "Good", "Good", "Good"
+    ];
+
+    rows.filter(row => /^(?:GI|Final)$/i.test(
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+    )).forEach(row => {
+        const rowLabel = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        [...row.cells].slice(1).forEach((cell, index) => {
+            const existing = cell.querySelector("[data-answer-key]");
+            const key = existing?.dataset.answerKey ||
+                `mechanical_brake_${rowLabel.toLowerCase()}_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "value", kind: "measurement" },
+                key,
+                savedAnswers[key],
+                `${rowLabel} brake measurement ${index + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            if (standards[index] === "Good") {
+                field.dataset.expectedText = "Good";
+                field.placeholder = "Good";
+            } else {
+                field.dataset.standardValueOverride = standards[index] || "";
+            }
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function prepareMechanicalCcbMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/Computerized Control Brake \(CCB\)/i.test(tableText) ||
+        !/Humidity Indicator Colou\s*r/i.test(tableText) ||
+        !/MRC Time/i.test(tableText) ||
+        !/By both CP/i.test(tableText) ||
+        table.dataset.mechanicalCcbReady === "true"
+    ) return;
+    table.dataset.mechanicalCcbReady = "true";
+
+    const rows = [...table.rows];
+    rows[0]?.cells[0]?.replaceChildren();
+
+    const standardRow = rows.find(row => /Std\.?\s*Val\.?/i.test(row.textContent));
+    const ccbExtraCell = standardRow?.cells[1];
+    if (ccbExtraCell?.querySelector("select")) ccbExtraCell.replaceChildren();
+
+    const standards = [
+        { expectedText: "Passed successfully" },
+        { expectedText: "Working" },
+        { expectedText: "Working" },
+        { expectedText: "Working" },
+        { expectedText: "Blue" },
+        { expectedText: "Working" },
+        { standardValue: "0 to 8.5 Minutes" }
+    ];
+
+    rows.filter(row => /^(?:GI|Final)$/i.test(
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+    )).forEach(row => {
+        const rowLabel = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        [...row.cells].slice(1).forEach((cell, index) => {
+            const existing = cell.querySelector("[data-answer-key]");
+            const key = existing?.dataset.answerKey ||
+                `mechanical_ccb_${rowLabel.toLowerCase()}_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "value", kind: "measurement" },
+                key,
+                savedAnswers[key],
+                `${rowLabel} CCB measurement ${index + 1}`
+            );
+            const standard = standards[index] || {};
+            field.dataset.requiredAnswer = "true";
+            if (standard.expectedText) {
+                field.dataset.expectedText = standard.expectedText;
+                field.placeholder = standard.expectedText;
+            } else {
+                field.dataset.standardValueOverride = standard.standardValue || "";
+            }
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function replaceMechanicalMeasurementRows(
+    table,
+    savedAnswers,
+    rowPattern,
+    standards,
+    keyPrefix,
+    label
+) {
+    [...table.rows].filter(row => rowPattern.test(
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+    )).forEach(row => {
+        const rowLabel = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        [...row.cells].slice(1).forEach((cell, index) => {
+            const existing = cell.querySelector("[data-answer-key]");
+            if (!existing) return;
+            const key = existing.dataset.answerKey ||
+                `${keyPrefix}_${rowLabel.toLowerCase().replace(/\W+/g, "_")}_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "value", kind: "measurement" },
+                key,
+                savedAnswers[key],
+                `${rowLabel} ${label} ${index + 1}`
+            );
+            const standard = standards[index] || {};
+            field.dataset.requiredAnswer = "true";
+            if (standard.expectedText) {
+                field.dataset.expectedText = standard.expectedText;
+                field.placeholder = standard.expectedText;
+            } else {
+                field.dataset.standardValueOverride = standard.standardValue || "";
+            }
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function prepareMechanicalPressureDropMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/CPA Pressure build up time/i.test(tableText) ||
+        !/BP drop in 5 Minute/i.test(tableText) ||
+        !/VCB Pressure switch setting/i.test(tableText) ||
+        table.dataset.mechanicalPressureDropReady === "true"
+    ) return;
+    table.dataset.mechanicalPressureDropReady = "true";
+    table.dataset.bulkOkDisabled = "true";
+    table.rows[0]?.cells[0]?.replaceChildren();
+
+    replaceMechanicalMeasurementRows(
+        table,
+        savedAnswers,
+        /^(?:GI|Final)$/i,
+        [
+            { standardValue: "Maximum 60 Seconds" },
+            { standardValue: "Maximum 0.15 kg/cm2" },
+            { standardValue: "Maximum 0.70 kg/cm2" },
+            { standardValue: "Maximum 1.0 kg/cm2" },
+            { standardValue: "6.0 ± 0.15 kg/cm2" },
+            { standardValue: "6.0 ± 0.15 kg/cm2" },
+            { standardValue: "4.5 ± 0.15 to 5.5 ± 0.15 kg/cm2" }
+        ],
+        "mechanical_pressure_drop",
+        "pressure measurement"
+    );
+}
+
+function prepareMechanicalAcpBrakeMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/ACP on 4mm test plate/i.test(tableText) ||
+        !/Auto brake controller Position/i.test(tableText) ||
+        !/Initial Application/i.test(tableText) ||
+        table.dataset.mechanicalAcpBrakeReady === "true"
+    ) return;
+    table.dataset.mechanicalAcpBrakeReady = "true";
+    table.dataset.bulkOkDisabled = "true";
+    table.rows[0]?.cells[0]?.replaceChildren();
+
+    const standardsByLogicalColumn = {
+        1: { expectedText: "Working" },
+        2: { expectedText: "Working" },
+        3: { expectedText: "Run" },
+        4: { standardValue: "5.0 ± 0.10 kg/cm2" },
+        5: { standardValue: "5.0 ± 0.10 kg/cm2" },
+        6: { standardValue: "5.0 ± 0.10 kg/cm2" },
+        7: { standardValue: "0.0 kg/cm2" },
+        8: { standardValue: "0.0 kg/cm2" },
+        9: { standardValue: "0.0 kg/cm2" }
+    };
+
+    [...table.rows].filter(row => /^(?:Gen\.\s*Insp\.|Final)$/i.test(
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() || ""
+    )).forEach(row => {
+        const rowLabel = row.cells[0].textContent.replace(/\s+/g, " ").trim();
+        [...row.cells].slice(1).forEach((cell, index) => {
+            const existing = cell.querySelector("[data-answer-key]");
+            if (!existing) return;
+            const logicalColumn = Number(cell.dataset.logicalColumn);
+            const standard = standardsByLogicalColumn[logicalColumn] || {};
+            const key = existing.dataset.answerKey ||
+                `mechanical_acp_${rowLabel.toLowerCase().replace(/\W+/g, "_")}_${index + 1}`;
+            const field = buildAnswerField(
+                { type: "value", kind: "measurement" },
+                key,
+                savedAnswers[key],
+                `${rowLabel} ACP/brake measurement ${index + 1}`
+            );
+            field.dataset.requiredAnswer = "true";
+            if (standard.expectedText) {
+                field.dataset.expectedText = standard.expectedText;
+                field.placeholder = standard.expectedText;
+            } else {
+                field.dataset.standardValueOverride = standard.standardValue || "";
+            }
+            cell.replaceChildren(field);
+        });
+    });
+}
+
+function prepareMechanicalCabEquipmentMeasurements(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/Loco pilot cabin condition/i.test(tableText) ||
+        !/Wiper Operation/i.test(tableText) ||
+        !/Sander Operation/i.test(tableText) ||
+        !/Cleaning of Loco/i.test(tableText) ||
+        table.dataset.mechanicalCabEquipmentReady === "true"
+    ) return;
+    table.dataset.mechanicalCabEquipmentReady = "true";
+    table.dataset.bulkOkDisabled = "true";
+    table.rows[0]?.cells[0]?.replaceChildren();
+    table.rows[1]?.cells[0]?.replaceChildren();
+
+    replaceMechanicalMeasurementRows(
+        table,
+        savedAnswers,
+        /^(?:Gen\.\s*Insp\.|Final)$/i,
+        [
+            { expectedText: "Good" },
+            { expectedText: "Good" },
+            { expectedText: "Working" },
+            { expectedText: "Working" },
+            { expectedText: "Clear" },
+            { expectedText: "Clear" },
+            { expectedText: "Sealed" },
+            { expectedText: "Full" },
+            { expectedText: "Working" },
+            { expectedText: "Working" },
+            { expectedText: "Cleaned" }
+        ],
+        "mechanical_cab_equipment",
+        "cab equipment result"
+    );
+}
+
+function prepareMechanicalPneumaticPointFour(table, savedAnswers = {}) {
+    const tableText = table.textContent.replace(/\s+/g, " ").trim();
+    if (
+        !/Pneumatic System \(When Loco is energised/i.test(tableText) ||
+        !/Check correctness of reading of BP, FP, MR, BC/i.test(tableText) ||
+        table.dataset.mechanicalPneumaticPointFourReady === "true"
+    ) return;
+
+    const pointRow = [...table.rows].find(row =>
+        row.cells[0]?.textContent.replace(/\s+/g, " ").trim() === "4"
+    );
+    if (!pointRow || pointRow.cells.length < 4) return;
+
+    table.dataset.mechanicalPneumaticPointFourReady = "true";
+    const actionCell = pointRow.cells[2];
+    const staffCell = pointRow.cells[3];
+    const existing = actionCell.querySelector("[data-answer-key]");
+    const key = existing?.dataset.answerKey || "mechanical_pneumatic_point_4_action";
+    const actionField = buildAnswerField(
+        { type: "text", kind: "action-taken" },
+        key,
+        savedAnswers[key],
+        "Point 4 Action Taken"
+    );
+    actionField.dataset.requiredAnswer = "false";
+    actionField.placeholder = "Action Taken / की गई कार्रवाई";
+    actionCell.replaceChildren(actionField);
+
+    staffCell.replaceChildren();
+    staffCell.classList.remove("staff-name-cell");
+    staffCell.dataset.autoStaffAttributionFor = key;
+    staffCell.setAttribute(
+        "aria-label",
+        "TCN name will be saved automatically on submission"
+    );
+}
+
 function updateAnswerAssessment(field, savedAnswers = {}) {
     if (!field?.dataset.answerKey || field.dataset.fieldKind === "remarks") return;
     const value = field.value.trim();
@@ -1216,6 +1560,10 @@ function updateAnswerAssessment(field, savedAnswers = {}) {
             ? field.dataset.expectedValue
                 ? value === field.dataset.expectedValue
                 : !window.IcFormControls?.isAdverse(value)
+            : null;
+    } else if (field.dataset.expectedText) {
+        acceptable = value
+            ? value.toLowerCase() === field.dataset.expectedText.toLowerCase()
             : null;
     } else if (field.classList.contains("ic-value-input")) {
         const standard = standardValueForField(field);
@@ -1734,9 +2082,13 @@ function initializeScheduleSections(container) {
             content.appendChild(sectionTable);
             const eligibleFields = () => sectionRows
                 .flatMap(row => [...row.querySelectorAll(
-                    'select[data-answer-key][data-field-kind="inspection"]'
+                    'select[data-answer-key]'
                 )])
-                .filter(field => !field.disabled && !field.readOnly);
+                .filter(field =>
+                    !field.disabled &&
+                    !field.readOnly &&
+                    field.dataset.fieldKind !== "remarks"
+                );
             markAll.disabled = eligibleFields().length === 0;
             toggle.addEventListener("click", () => {
                 const opening = !card.classList.contains("open");
@@ -1756,11 +2108,15 @@ function initializeScheduleSections(container) {
                     if (field.value.trim()) return;
                     const positiveValues = [
                         "Checked / Found OK", "Checked OK", "Working",
-                        "Same", "Level OK", "OK", "Yes"
+                        "No Leakage", "Done", "Available", "Present",
+                        "Same", "Level OK", "Normal", "Good", "OK", "Yes"
                     ];
+                    const options = [...field.options]
+                        .map(option => option.value.trim())
+                        .filter(value => value && !/^select$/i.test(value) && !/^N\.?A\.?$/i.test(value));
                     const value = positiveValues.find(candidate =>
-                        [...field.options].some(option => option.value === candidate)
-                    );
+                        options.includes(candidate)
+                    ) || options.find(option => !window.IcFormControls?.isAdverse(option));
                     if (!value) return;
                     field.value = value;
                     field.dispatchEvent(new Event("change", { bubbles: true }));
@@ -2074,6 +2430,48 @@ async function loadScheduleForm() {
             );
             container.querySelectorAll("table").forEach(table =>
                 prepareScheduleLogTable(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalPressureMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalBrakeMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalCcbMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalPressureDropMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalAcpBrakeMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalCabEquipmentMeasurements(
+                    table,
+                    submission?.form_answers || {}
+                )
+            );
+            container.querySelectorAll("table").forEach(table =>
+                prepareMechanicalPneumaticPointFour(
                     table,
                     submission?.form_answers || {}
                 )

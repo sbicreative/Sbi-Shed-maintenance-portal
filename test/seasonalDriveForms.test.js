@@ -35,8 +35,8 @@ test("FRC customer feedback and Point A use the confirmed controls", () => {
     assert.match(client, /options: \["Working", "Not Working", "N\.A\."\]/);
     assert.match(client, /\[21,22\]/);
     assert.match(client, /options: \["Same", "Different", "N\.A\."\]/);
-    assert.doesNotMatch(client, /dataset\.bulkOkDisabled = "true"/);
     assert.match(client, /bulkOkAllowed/);
+    assert.match(client, /table\.dataset\.bulkOkDisabled !== "true"/);
 });
 
 test("seasonal drive source PDFs are packaged for Render", () => {
