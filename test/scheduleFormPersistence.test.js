@@ -55,3 +55,11 @@ test("staff submission sends persistence metadata without changing rendered form
     assert.match(client, /function collectFieldMetadata\(\)/);
     assert.match(client, /field_metadata: collectFieldMetadata\(\)/);
 });
+test('pre-migration deployments keep the existing database save path; unrelated errors are not hidden', async () => {
+    const { supportsSplitStorage } = require('../lib/scheduleFormPersistence');
+    const db = error => ({ from: () => ({ select: () => ({ limit: async () => ({ error }) }) }) });
+    assert.equal(await supportsSplitStorage(db(null)), true);
+    assert.equal(await supportsSplitStorage(db({ code: '42703' })), false);
+    assert.equal(await supportsSplitStorage(db({ code: 'PGRST204' })), false);
+    await assert.rejects(supportsSplitStorage(db(new Error('connection failed'))), /connection failed/);
+});

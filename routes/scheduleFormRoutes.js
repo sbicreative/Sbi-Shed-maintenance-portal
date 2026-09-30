@@ -6,6 +6,7 @@ const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 const { mergeLockedAnswers, completionState } = require("../lib/continuousScheduleForm");
 const {
     ARCHIVE_BUCKET,
+    supportsSplitStorage,
     archivePath,
     splitScheduleAnswers
 } = require("../lib/scheduleFormPersistence");
@@ -749,24 +750,31 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
                         });
                     }
                 }
-                const archived = await archiveApprovedForm({
-                    record,
-                    formAnswers: finalAnswers,
-                    fieldMetadata: finalMetadata,
-                    reviewerId,
-                    reviewerName: authorName,
-                    remarks
-                });
                 update.status = "Approved";
-                update.approved_at = archived.approvedAt;
-                update.archived_at = archived.approvedAt;
-                update.archive_storage_path = archived.storagePath;
-                update.archive_format = "approved_schedule_form_snapshot_v1";
-                update.form_answers = archived.structuredAnswers;
-                update.answer_attributions = archived.structuredAttributions;
-                update.field_metadata = Object.fromEntries(
-                    Object.keys(archived.structuredAnswers).map(key => [key, finalMetadata[key] || {}])
-                );
+                update.approved_at = new Date().toISOString();
+                // Migration 21 is optional at rollout: preserve complete answers until it exists.
+                if (await supportsSplitStorage(supabase)) {
+                    const archived = await archiveApprovedForm({
+                        record,
+                        formAnswers: finalAnswers,
+                        fieldMetadata: finalMetadata,
+                        reviewerId,
+                        reviewerName: authorName,
+                        remarks
+                    });
+                    update.status = "Approved";
+                    update.approved_at = archived.approvedAt;
+                    update.archived_at = archived.approvedAt;
+                    update.archive_storage_path = archived.storagePath;
+                    update.archive_format = "approved_schedule_form_snapshot_v1";
+                    update.form_answers = archived.structuredAnswers;
+                    update.answer_attributions = archived.structuredAttributions;
+                    update.field_metadata = Object.fromEntries(
+                        Object.keys(archived.structuredAnswers).map(key => [key, finalMetadata[key] || {}])
+                    );
+                } else {
+                    update.form_answers = finalAnswers;
+                }
             }
         } else {
             return res.status(400).json({
@@ -1152,7 +1160,7 @@ router.post(
                 staff_id: staffId,
                 template_version: template.version,
                 form_answers: merged.answers,
-                field_metadata: fieldMetadata,
+                ...(await supportsSplitStorage(supabase) ? { field_metadata: fieldMetadata } : {}),
                 answer_attributions: merged.attributions,
                 completion_state: progress.complete ? "Complete" : "Incomplete",
                 staff_remarks: staffRemarks || null,
