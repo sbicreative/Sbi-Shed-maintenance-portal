@@ -143,6 +143,7 @@ app.use(
     "/api/loco-history",
     locoHistoryRoutes
 );
+app.use('/api/viewer-parameters', require('./routes/viewerParameterRoutes'));
 app.use(
     "/api/tracking",
     trackingRoutes

@@ -24,7 +24,6 @@
 ===================================================== */
 
 .viewer-search-card{
-
     background:#ffffff;
 
     border-radius:12px;
@@ -590,16 +589,35 @@
 ===================================================== */
 
 .search-box[hidden]{ display:none; }
+.loco-picker{ position:relative; }
+.loco-picker-control{ display:flex; }
+.loco-picker-control input{ min-width:0; border-radius:7px 0 0 7px; }
+#locoDropdownBtn{ flex:0 0 44px; border:1px solid #cbd5e1; border-left:0; border-radius:0 7px 7px 0; background:#edf3fa; color:#1e293b; cursor:pointer; }
+.loco-picker-options{ position:absolute; top:100%; left:0; right:0; z-index:20; max-height:240px; overflow-y:auto; padding:4px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,.16); }
+.loco-picker-options[hidden]{ display:none; }
+.loco-picker-options button{ display:block; width:100%; padding:10px 12px; border:0; border-radius:4px; background:#fff; color:#1e293b; text-align:left; font-size:14px; cursor:pointer; }
+.loco-picker-options button:hover,
+.loco-picker-options button.active,
+.loco-picker-options button[aria-selected="true"]{ background:#e3f2fd; color:#0d47a1; }
+.component-filter[hidden], #parameterHistoryMessage[hidden]{ display:none; }
+.viewer-dashboard .search-row.has-component-filter{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+#parameterHistoryNote, #parameterHistoryMessage{ margin-top:16px; line-height:1.5; color:#475569; }
+#parameterHistoryMessage.error{ color:#b91c1c; }
 .search-row.has-loco-filter{ grid-template-columns:1fr 1fr 1fr auto; }
 .search-box{ min-width:0; }
 .search-box input{ box-sizing:border-box; }
 .viewer-search-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
 .result-heading{ flex-wrap:wrap; }
 
+@media(max-width:992px){
+    .main-header{ height:auto; }
+}
+
 @media(max-width:900px){
 
     .search-row,
-    .search-row.has-loco-filter{
+    .search-row.has-loco-filter,
+    .viewer-dashboard .search-row.has-component-filter{
 
         grid-template-columns:1fr 1fr;
 
@@ -640,7 +658,8 @@
 
 
     .search-row,
-    .search-row.has-loco-filter{
+    .search-row.has-loco-filter,
+    .viewer-dashboard .search-row.has-component-filter{
 
         grid-template-columns:1fr;
 

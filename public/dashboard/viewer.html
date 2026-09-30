@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="../css/common.css">
 
     <!-- VIEWER CSS -->
-    <link rel="stylesheet" href="../css/viewer.css">
+    <link rel="stylesheet" href="../css/viewer.css?v=20260930-2">
     <link rel="stylesheet" href="../css/maintenance-theme.css?v=20260804-8">
 
 </head>
@@ -226,9 +226,30 @@
 
         <div class="search-box" id="locoFilterBox" hidden>
             <label for="locoFilter">Select Loco No.</label>
-            <input id="locoFilter" list="locoFilterOptions" value="Select All Locos"
-                   placeholder="Type or select loco number" autocomplete="off">
-            <datalist id="locoFilterOptions"></datalist>
+            <div class="loco-picker" id="locoPicker">
+                <div class="loco-picker-control">
+                    <input id="locoFilter" value="Select All Locos" role="combobox"
+                           aria-expanded="false" aria-controls="locoFilterOptions" aria-autocomplete="list"
+                           placeholder="Type or select loco number" autocomplete="off">
+                    <button type="button" id="locoDropdownBtn" aria-label="Show loco list"
+                            aria-controls="locoFilterOptions">&#9662;</button>
+                </div>
+                <div id="locoFilterOptions" class="loco-picker-options" role="listbox"
+                     aria-label="Loco numbers" hidden></div>
+            </div>
+        </div>
+
+        <div class="search-box component-filter" hidden>
+            <label for="componentSchedule">Schedule</label>
+            <select id="componentSchedule"><option value="">Select Schedule</option></select>
+        </div>
+        <div class="search-box component-filter" hidden>
+            <label for="componentDateFrom">Schedule Date / From</label>
+            <input id="componentDateFrom" type="date" aria-describedby="parameterHistoryNote">
+        </div>
+        <div class="search-box component-filter" hidden>
+            <label for="componentDateTo">To Date (for range)</label>
+            <input id="componentDateTo" type="date" aria-describedby="parameterHistoryNote">
         </div>
 
         <!-- SEARCH BUTTON -->
@@ -252,6 +273,11 @@
     </div>
 
 
+    <p id="parameterHistoryNote" class="component-filter" hidden>
+        Leave both dates blank for all history. Use From only for one schedule date, or both dates for a range.
+        Only approved digital form entries are searchable; scanned old forms remain under Old Schedule Forms.
+    </p>
+    <p id="parameterHistoryMessage" role="status" hidden></p>
 </section>
 
 
@@ -454,7 +480,9 @@
 
 <!-- VIEWER JS -->
 
-<script src="../js/viewer.js?v=20260923-1"></script>
+<script src="../js/ic-form-controls.js"></script>
+<script src="../js/viewer-parameters.js?v=20260930-1"></script>
+<script src="../js/viewer.js?v=20260930-2"></script>
 <script src="/js/pwa.js"></script>
 
 

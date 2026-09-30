@@ -32,7 +32,7 @@ function setup() {
     return { context, element, run: code => vm.runInContext(code, context) };
 }
 
-test('Schedule and component searches combine with typed loco or all locos', () => {
+test('Schedule searches combine with typed loco or all locos and preserve existing searches', () => {
     const { run, element } = setup();
     element('locoFilter').value = 'Select All Locos';
     run("searchViewerData('schedule', 'IC')");
@@ -41,10 +41,8 @@ test('Schedule and component searches combine with typed loco or all locos', () 
     run("searchViewerData('schedule', 'IC')");
     assert.equal(run('displayedData[0].id'), 1);
     assert.equal(run('displayedData.length'), 1);
-    run("searchViewerData('component', 'TM')");
-    assert.equal(run('displayedData.length'), 1);
     element('locoFilter').value = '999';
-    run("searchViewerData('component', 'TM')");
+    run("searchViewerData('schedule', 'IC')");
     assert.equal(run('displayedData.length'), 0);
     assert.equal(element('downloadResultsBtn').disabled, true);
     run("searchViewerData('loco', '123')");
@@ -61,11 +59,4 @@ test('CSV quotes commas, quotes and newlines and neutralizes formulas', () => {
     assert.equal(context.csvCell('a,"b"\nc'), '"a,""b""\nc"');
     assert.equal(context.csvCell('=1+1'), '"\'=1+1"');
     assert.equal(context.csvCell(null), '""');
-});
-
-test('Component list is loaded from searchable approved schedule parameters', () => {
-    assert.match(source, /search-values\/parameters/);
-    assert.match(source, /componentList = \(parameterResult\.parameters \|\| \[\]\)/);
-    assert.doesNotMatch(source, /name: "Battery"/);
-    assert.match(source, /recordSource: "schedule-value"/);
 });

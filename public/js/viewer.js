@@ -132,48 +132,159 @@ let locoList = [];
 let scheduleList = [];
 
 
-// =====================================================
-// DEMO COMPONENT MASTER
-// Later original Component Master se replace hoga
-// =====================================================
-
-let componentList = [];
 
 
 let viewerData = [];
 let historicalData = [];
-let scheduleValueData = [];
 let displayedData = [];
 const locoFilterBox = document.getElementById("locoFilterBox");
 const locoFilter = document.getElementById("locoFilter");
 const locoFilterOptions = document.getElementById("locoFilterOptions");
 const downloadResultsBtn = document.getElementById("downloadResultsBtn");
+const componentSchedule = document.getElementById('componentSchedule');
+const componentDateFrom = document.getElementById('componentDateFrom');
+const componentDateTo = document.getElementById('componentDateTo');
+let parameterRows = [];
+let parameterNames = [];
+let parameterLoad = null;
+let parameterReady = false;
+let displayedColumns = null;
+const defaultTableHead = document.getElementById('viewerTableHead').innerHTML;
+const parameterColumns = [
+    ['Loco No.', 'locoNo'], ['Schedule Date', 'date'], ['Schedule', 'schedule'],
+    ['Component / Parameter', 'parameter'], ['Section', 'section'], ['GI Value', 'gi'],
+    ['Final Value', 'final'], ['Other / Observed Value', 'value'], ['Standard Range', 'standard'],
+    ['Status', 'status'], ['Action Taken', 'action'], ['Staff Name', 'staff']
+];
+[componentSchedule, componentDateFrom, componentDateTo].forEach(input => input.addEventListener('change', clearResult));
 
-function loadLocoFilterOptions() {
+function parameterMessage(message, error = false) {
+    const element = document.getElementById('parameterHistoryMessage');
+    element.textContent = message;
+    element.hidden = !message || searchType.value !== 'component';
+    element.classList.toggle('error', error);
+}
+
+async function loadParameterHistory() {
+    if (parameterReady) {
+        const selected = componentSchedule.value;
+        const names = [...new Set([...scheduleList.map(item => item.schedule_name || item.scheduleName),
+            ...parameterRows.map(row => row.schedule)].filter(Boolean))].sort();
+        componentSchedule.replaceChildren(new Option('Select Schedule', ''));
+        names.forEach(name => componentSchedule.appendChild(new Option(name, name)));
+        componentSchedule.value = selected;
+        return;
+    }
+    if (parameterLoad) return parameterLoad;
+    parameterMessage('Loading parameter history…');
+    parameterLoad = (async () => {
+        try {
+            const response = await fetch('/api/viewer-parameters');
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load parameter history.');
+            const templates = new Map(result.templates.map(template => [template.key, ViewerParameters.parseTemplate(template.html)]));
+            parameterRows = result.records.flatMap(record => ViewerParameters.buildRows(record, templates.get(record.templateKey) || [], IcFormControls));
+            parameterNames = [...new Set([...templates.values()].flat().map(item => item.parameter))].sort((a, b) => a.localeCompare(b));
+            result.records.forEach(record => {
+                if (record.locoNo && !locoList.some(item => String(item.loco_no || item.locoNo) === String(record.locoNo))) {
+                    locoList.push({ loco_no: record.locoNo });
+                }
+            });
+            loadLocoFilterOptions();
+            const schedules = [...new Set([
+                ...scheduleList.map(item => item.schedule_name || item.scheduleName),
+                ...result.records.map(record => record.schedule)
+            ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            componentSchedule.replaceChildren(new Option('Select Schedule', ''));
+            schedules.forEach(name => componentSchedule.appendChild(new Option(name, name)));
+            parameterReady = true;
+            parameterMessage(result.unavailable ? `${result.unavailable} approved form(s) have no readable historical template or assignment. Their parameter values cannot be shown.` : '');
+            if (searchType.value === 'component') loadComponentDropdown();
+        } catch (error) {
+            parameterMessage(error.message + ' Click Search to retry.', true);
+        } finally {
+            parameterLoad = null;
+        }
+    })();
+    return parameterLoad;
+}
+
+let locoOptionIndex = -1;
+
+function loadLocoFilterOptions(query = '') {
     const locos = [...new Set(locoList.map(item => String(item.loco_no || item.locoNo || "")))]
         .filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     locoFilterOptions.replaceChildren();
-    ["Select All Locos", ...locos].forEach(value => {
-        const option = document.createElement("option");
-        option.value = value;
+    locoOptionIndex = -1;
+    locoFilter.removeAttribute('aria-activedescendant');
+    ["Select All Locos", ...locos.filter(value => value.includes(query.trim()))].forEach((value, index) => {
+        const option = document.createElement("button");
+        option.type = 'button';
+        option.tabIndex = -1;
+        option.id = `loco-option-${index}`;
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', String(locoFilter.value === value));
+        option.textContent = value;
+        option.addEventListener('mousedown', event => event.preventDefault());
+        option.addEventListener('click', () => selectLocoOption(value));
         locoFilterOptions.appendChild(option);
     });
 }
 
-locoFilter.addEventListener("focus", () => locoFilter.select());
-locoFilter.addEventListener("input", clearResult);
+function showLocoOptions(show, query = '') {
+    locoFilterOptions.hidden = !show;
+    locoFilter.setAttribute('aria-expanded', String(show));
+    if (show) loadLocoFilterOptions(query);
+    else locoFilter.removeAttribute('aria-activedescendant');
+}
+
+function selectLocoOption(value) {
+    locoFilter.value = value;
+    clearResult();
+    locoFilter.focus();
+    showLocoOptions(false);
+}
+
+locoFilter.addEventListener('focus', () => { locoFilter.select(); showLocoOptions(true); });
+locoFilter.addEventListener('click', () => showLocoOptions(true));
+locoFilter.addEventListener('input', () => { clearResult(); showLocoOptions(true, locoFilter.value); });
+document.getElementById('locoDropdownBtn').addEventListener('click', () => {
+    const open = locoFilterOptions.hidden;
+    locoFilter.focus();
+    showLocoOptions(open);
+});
+document.getElementById('locoPicker').addEventListener('focusout', event => {
+    if (!event.currentTarget.contains(event.relatedTarget)) showLocoOptions(false);
+});
+locoFilter.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { showLocoOptions(false); return; }
+    if (event.key === 'Enter' && !locoFilterOptions.hidden && locoOptionIndex >= 0) {
+        event.preventDefault();
+        selectLocoOption(locoFilterOptions.children[locoOptionIndex].textContent);
+        return;
+    }
+    if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    event.preventDefault();
+    if (locoFilterOptions.hidden) showLocoOptions(true);
+    const options = [...locoFilterOptions.children];
+    locoOptionIndex = (locoOptionIndex + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+    options.forEach((option, index) => option.classList.toggle('active', index === locoOptionIndex));
+    locoFilter.setAttribute('aria-activedescendant', options[locoOptionIndex].id);
+    options[locoOptionIndex].scrollIntoView({ block: 'nearest' });
+});
 searchItem.addEventListener("change", clearResult);
 
 function csvCell(value) {
     let text = String(value ?? "");
+    // Prevent spreadsheet applications from interpreting data as formulas.
     if (/^[\s]*[=+@-]/.test(text) || /^[\t\r\n]/.test(text)) text = "'" + text;
     return '"' + text.replace(/"/g, '""') + '"';
 }
 
 downloadResultsBtn.addEventListener("click", () => {
     if (!displayedData.length) return;
-    const rows = [["Sr.", "Loco No.", "Date", "Schedule", "Component / Work", "Schedule Form"]];
-    displayedData.forEach((item, index) => rows.push([
+    const rows = displayedColumns ? [['Sr.', ...displayedColumns.map(column => column[0])]] : [["Sr.", "Loco No.", "Date", "Schedule", "Component / Work", "Schedule Form"]];
+    displayedData.forEach((item, index) => rows.push(displayedColumns ? [index + 1, ...displayedColumns.map(([, key]) => key === 'date' ? formatDate(item[key]) : item[key] || '—')] : [
         index + 1, item.locoNo, formatDate(item.date), item.schedule,
         item.component, item.formName || ""
     ]));
@@ -208,15 +319,17 @@ window.addEventListener(
 
         await loadLocos();
 
+        loadLocoFilterOptions();
+
         await loadSchedules();
 
         await loadHistory();
 
         await loadHistoricalRecords();
 
-        await loadScheduleSearchValues();
-
         loadLocoFilterOptions();
+
+        if (searchType.value === 'component') await loadParameterHistory();
 
     }
 );
@@ -288,59 +401,6 @@ async function loadHistory() {
 
     }
 
-}
-
-async function loadScheduleSearchValues() {
-    try {
-        const [parameterResponse, valueResponse] = await Promise.all([
-            fetch("/api/schedule-forms/search-values/parameters"),
-            fetch("/api/schedule-forms/search-values")
-        ]);
-        const [parameterResult, valueResult] = await Promise.all([
-            parameterResponse.json(), valueResponse.json()
-        ]);
-        if (!parameterResponse.ok || !parameterResult.success) {
-            throw new Error(parameterResult.message || "Unable to load parameter list.");
-        }
-        if (!valueResponse.ok || !valueResult.success) {
-            throw new Error(valueResult.message || "Unable to load schedule values.");
-        }
-        componentList = (parameterResult.parameters || []).map(item => ({
-            group: item.department || item.section || "Other",
-            name: item.parameter_name
-        }));
-        scheduleValueData = (valueResult.records || []).map(item => ({
-            id: -Number(item.id),
-            sourceId: Number(item.id),
-            formId: Number(item.schedule_form_detail_id),
-            recordSource: "schedule-value",
-            locoNo: item.loco_no,
-            date: item.schedule_date || item.approved_at,
-            schedule: item.schedule_name,
-            component: item.parameter_name,
-            formName: `${item.parameter_name} — ${item.schedule_name}`,
-            value: item.text_value,
-            numericValue: item.numeric_value,
-            unit: item.unit,
-            standardValue: item.standard_value,
-            validationState: item.validation_state,
-            retentionReason: item.retention_reason,
-            sectionName: item.section_name,
-            department: item.department
-        }));
-        viewerData.push(...scheduleValueData);
-        const existingLocos = new Set(locoList.map(item => String(item.loco_no || item.locoNo)));
-        scheduleValueData.forEach(item => {
-            if (!existingLocos.has(String(item.locoNo))) {
-                locoList.push({ loco_no: item.locoNo });
-                existingLocos.add(String(item.locoNo));
-            }
-        });
-    } catch (error) {
-        console.error("Schedule searchable values error", error);
-        componentList = [];
-        scheduleValueData = [];
-    }
 }
 
 async function loadHistoricalRecords() {
@@ -533,7 +593,11 @@ searchType.addEventListener(
 
         locoFilterBox.hidden = type !== "schedule" && type !== "component";
         document.querySelector(".search-row").classList.toggle("has-loco-filter", !locoFilterBox.hidden);
+        document.querySelector('.search-row').classList.toggle('has-component-filter', type === 'component');
+        document.querySelectorAll('.component-filter').forEach(element => { element.hidden = type !== 'component'; });
+        document.getElementById('parameterHistoryMessage').hidden = type !== 'component';
         locoFilter.value = "Select All Locos";
+        showLocoOptions(false);
         loadLocoFilterOptions();
 
 
@@ -560,9 +624,10 @@ searchType.addEventListener(
         else if (type === "component") {
 
             searchItemLabel.textContent =
-                "Select Component";
+                "Component / Parameter";
 
             loadComponentDropdown();
+            loadParameterHistory();
 
         }
 
@@ -712,64 +777,10 @@ function loadScheduleDropdown() {
 // =====================================================
 
 function loadComponentDropdown() {
-
-    searchItem.disabled = false;
-
-    searchItem.innerHTML = `
-
-        <option value="">
-
-            Select Component
-
-        </option>
-
-    `;
-
-
-    const groups = {};
-
-
-    componentList.forEach(item => {
-
-        if (!groups[item.group]) {
-
-            groups[item.group] = [];
-
-        }
-
-        groups[item.group].push(item);
-
-    });
-
-
-    Object.keys(groups).forEach(group => {
-
-        const optgroup =
-            document.createElement("optgroup");
-
-        optgroup.label = group;
-
-
-        groups[group].forEach(item => {
-
-            const option =
-                document.createElement("option");
-
-            option.value = item.name;
-
-            option.textContent = item.name;
-
-            optgroup.appendChild(option);
-
-        });
-
-
-        searchItem.appendChild(optgroup);
-
-    });
-
+    searchItem.disabled = !parameterReady;
+    searchItem.replaceChildren(new Option(parameterReady ? 'Select Component / Parameter' : 'Loading Parameters…', ''));
+    parameterNames.forEach(name => searchItem.appendChild(new Option(name, name)));
 }
-
 
 // =====================================================
 // SEARCH BUTTON
@@ -777,7 +788,12 @@ function loadComponentDropdown() {
 
 searchBtn.addEventListener(
     "click",
-    function () {
+    async function () {
+
+        if (searchType.value === 'component' && !parameterReady) {
+            await loadParameterHistory();
+            return;
+        }
 
         const type =
             searchType.value;
@@ -826,6 +842,30 @@ function searchViewerData(
     selectedItem
 ) {
 
+    if (type === 'component') {
+        const loco = locoFilter.value.trim();
+        const schedule = componentSchedule.value;
+        const from = componentDateFrom.value;
+        const to = componentDateTo.value;
+        if (!loco || !schedule) {
+            clearResult();
+            alert('Please select Loco No. (or Select All Locos) and Schedule.');
+            return;
+        }
+        if ((!from && to) || (from && to && from > to) ||
+            !componentDateFrom.checkValidity() || !componentDateTo.checkValidity()) {
+            clearResult();
+            alert('Please enter a valid schedule date or date range, with From on or before To.');
+            return;
+        }
+        const data = ViewerParameters.filterRows(parameterRows, {
+            parameter: selectedItem, loco, schedule, from, to: to || from
+        });
+        resultTitle.textContent = `${selectedItem} — ${loco} — ${schedule} — ${from ? from + (to && to !== from ? ' to ' + to : '') : 'All dates (newest first)'}`;
+        renderParameterTable(data);
+        return;
+    }
+
     let filteredData = [];
 
 
@@ -865,23 +905,6 @@ function searchViewerData(
     }
 
 
-    else if (type === "component") {
-
-        filteredData =
-            viewerData.filter(item =>
-
-                item.component ===
-                selectedItem
-
-            );
-
-        resultTitle.textContent =
-
-            "Maintenance History for Component " +
-            selectedItem;
-
-    }
-
     else if (type === "archive") {
 
         filteredData = historicalData.filter(item =>
@@ -894,7 +917,7 @@ function searchViewerData(
     }
 
 
-    if (type === "schedule" || type === "component") {
+    if (type === "schedule") {
         const selectedLoco = locoFilter.value.trim();
         if (!selectedLoco) {
             clearResult();
@@ -920,6 +943,9 @@ function searchViewerData(
 // =====================================================
 
 function renderViewerTable(data) {
+
+    displayedColumns = null;
+    document.getElementById('viewerTableHead').innerHTML = defaultTableHead;
 
     displayedData = data.slice();
     downloadResultsBtn.disabled = displayedData.length === 0;
@@ -1077,22 +1103,6 @@ function viewScheduleForm(id, recordSource) {
 
     if (!item) return;
 
-    if (recordSource === "schedule-value") {
-        scheduleFormContent.innerHTML = `
-            <div class="common-card">
-                <h3>${item.component}</h3>
-                <p><strong>Loco No. :</strong> ${item.locoNo}</p>
-                <p><strong>Date :</strong> ${formatDate(item.date)}</p>
-                <p><strong>Schedule :</strong> ${item.schedule}</p>
-                <p><strong>Section :</strong> ${item.sectionName || "-"}</p>
-                <p><strong>Actual Value :</strong> ${item.value || "-"}${item.unit ? ` ${item.unit}` : ""}</p>
-                <p><strong>Standard Value :</strong> ${item.standardValue || "-"}</p>
-                <p><strong>Record Type :</strong> ${item.retentionReason || "-"}</p>
-            </div>`;
-        scheduleFormModal.classList.add("show");
-        return;
-    }
-
 
     const documents = (item.documents || []).map(document => `
 
@@ -1234,6 +1244,9 @@ scheduleFormModal.addEventListener(
 
 function clearResult() {
 
+    displayedColumns = null;
+    document.getElementById('viewerTableHead').innerHTML = defaultTableHead;
+
     displayedData = [];
     downloadResultsBtn.disabled = true;
 
@@ -1273,4 +1286,36 @@ function formatDateTime(dateValue) {
 
     return date.toLocaleString("en-IN");
 
+}
+
+function renderParameterTable(data) {
+    displayedData = data.slice();
+    displayedColumns = parameterColumns;
+    downloadResultsBtn.disabled = !data.length;
+    recordCount.textContent = `${data.length} Record${data.length === 1 ? '' : 's'}`;
+    const head = document.getElementById('viewerTableHead');
+    head.replaceChildren();
+    ['Sr.', ...parameterColumns.map(column => column[0])].forEach(label => {
+        const cell = document.createElement('th');
+        cell.textContent = label;
+        head.appendChild(cell);
+    });
+    viewerTableBody.replaceChildren();
+    if (!data.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = parameterColumns.length + 1;
+        cell.textContent = 'No approved parameter entries found for these filters.';
+        row.appendChild(cell);
+        viewerTableBody.appendChild(row);
+    }
+    data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        [index + 1, ...parameterColumns.map(([, key]) => key === 'date' ? formatDate(item[key]) : item[key] || '—')].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        viewerTableBody.appendChild(row);
+    });
 }
