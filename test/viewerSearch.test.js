@@ -62,3 +62,10 @@ test('CSV quotes commas, quotes and newlines and neutralizes formulas', () => {
     assert.equal(context.csvCell('=1+1'), '"\'=1+1"');
     assert.equal(context.csvCell(null), '""');
 });
+
+test('Component list is loaded from searchable approved schedule parameters', () => {
+    assert.match(source, /search-values\/parameters/);
+    assert.match(source, /componentList = \(parameterResult\.parameters \|\| \[\]\)/);
+    assert.doesNotMatch(source, /name: "Battery"/);
+    assert.match(source, /recordSource: "schedule-value"/);
+});

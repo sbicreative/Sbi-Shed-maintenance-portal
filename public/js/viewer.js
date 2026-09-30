@@ -137,63 +137,12 @@ let scheduleList = [];
 // Later original Component Master se replace hoga
 // =====================================================
 
-const componentList = [
-
-    {
-        group: "Electrical",
-        name: "TM"
-    },
-
-    {
-        group: "Electrical",
-        name: "Battery"
-    },
-
-    {
-        group: "Electrical",
-        name: "BUR"
-    },
-
-    {
-        group: "Electrical",
-        name: "VCD"
-    },
-
-    {
-        group: "Electrical",
-        name: "Hotel Load"
-    },
-
-    {
-        group: "Mechanical",
-        name: "Transformer"
-    },
-
-    {
-        group: "Mechanical",
-        name: "Axle"
-    },
-
-    {
-        group: "Mechanical",
-        name: "Wheels"
-    },
-
-    {
-        group: "Mechanical",
-        name: "Buffer"
-    },
-
-    {
-        group: "Mechanical",
-        name: "Panto"
-    }
-
-];
+let componentList = [];
 
 
 let viewerData = [];
 let historicalData = [];
+let scheduleValueData = [];
 let displayedData = [];
 const locoFilterBox = document.getElementById("locoFilterBox");
 const locoFilter = document.getElementById("locoFilter");
@@ -264,6 +213,8 @@ window.addEventListener(
         await loadHistory();
 
         await loadHistoricalRecords();
+
+        await loadScheduleSearchValues();
 
         loadLocoFilterOptions();
 
@@ -337,6 +288,59 @@ async function loadHistory() {
 
     }
 
+}
+
+async function loadScheduleSearchValues() {
+    try {
+        const [parameterResponse, valueResponse] = await Promise.all([
+            fetch("/api/schedule-forms/search-values/parameters"),
+            fetch("/api/schedule-forms/search-values")
+        ]);
+        const [parameterResult, valueResult] = await Promise.all([
+            parameterResponse.json(), valueResponse.json()
+        ]);
+        if (!parameterResponse.ok || !parameterResult.success) {
+            throw new Error(parameterResult.message || "Unable to load parameter list.");
+        }
+        if (!valueResponse.ok || !valueResult.success) {
+            throw new Error(valueResult.message || "Unable to load schedule values.");
+        }
+        componentList = (parameterResult.parameters || []).map(item => ({
+            group: item.department || item.section || "Other",
+            name: item.parameter_name
+        }));
+        scheduleValueData = (valueResult.records || []).map(item => ({
+            id: -Number(item.id),
+            sourceId: Number(item.id),
+            formId: Number(item.schedule_form_detail_id),
+            recordSource: "schedule-value",
+            locoNo: item.loco_no,
+            date: item.schedule_date || item.approved_at,
+            schedule: item.schedule_name,
+            component: item.parameter_name,
+            formName: `${item.parameter_name} — ${item.schedule_name}`,
+            value: item.text_value,
+            numericValue: item.numeric_value,
+            unit: item.unit,
+            standardValue: item.standard_value,
+            validationState: item.validation_state,
+            retentionReason: item.retention_reason,
+            sectionName: item.section_name,
+            department: item.department
+        }));
+        viewerData.push(...scheduleValueData);
+        const existingLocos = new Set(locoList.map(item => String(item.loco_no || item.locoNo)));
+        scheduleValueData.forEach(item => {
+            if (!existingLocos.has(String(item.locoNo))) {
+                locoList.push({ loco_no: item.locoNo });
+                existingLocos.add(String(item.locoNo));
+            }
+        });
+    } catch (error) {
+        console.error("Schedule searchable values error", error);
+        componentList = [];
+        scheduleValueData = [];
+    }
 }
 
 async function loadHistoricalRecords() {
@@ -1072,6 +1076,22 @@ function viewScheduleForm(id, recordSource) {
 
 
     if (!item) return;
+
+    if (recordSource === "schedule-value") {
+        scheduleFormContent.innerHTML = `
+            <div class="common-card">
+                <h3>${item.component}</h3>
+                <p><strong>Loco No. :</strong> ${item.locoNo}</p>
+                <p><strong>Date :</strong> ${formatDate(item.date)}</p>
+                <p><strong>Schedule :</strong> ${item.schedule}</p>
+                <p><strong>Section :</strong> ${item.sectionName || "-"}</p>
+                <p><strong>Actual Value :</strong> ${item.value || "-"}${item.unit ? ` ${item.unit}` : ""}</p>
+                <p><strong>Standard Value :</strong> ${item.standardValue || "-"}</p>
+                <p><strong>Record Type :</strong> ${item.retentionReason || "-"}</p>
+            </div>`;
+        scheduleFormModal.classList.add("show");
+        return;
+    }
 
 
     const documents = (item.documents || []).map(document => `

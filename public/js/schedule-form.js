@@ -2185,6 +2185,38 @@ function collectAnswers() {
     return answers;
 }
 
+function collectFieldMetadata() {
+    const metadata = {};
+    document.querySelectorAll("[data-answer-key]").forEach(field => {
+        const row = field.closest("tr");
+        const table = field.closest("table");
+        const rowLabel = row
+            ? [...row.cells]
+                .filter(cell => !cell.contains(field))
+                .map(cell => cell.textContent.replace(/\s+/g, " ").trim())
+                .filter(Boolean)
+                .join(" | ")
+            : "";
+        const section = table?.querySelector("th")?.textContent
+            ?.replace(/\s+/g, " ").trim() || "";
+        metadata[field.dataset.answerKey] = {
+            kind: field.dataset.fieldKind || (field.tagName === "SELECT" ? "inspection" : "text"),
+            label: field.getAttribute("aria-label") || field.placeholder || rowLabel || field.dataset.answerKey,
+            section,
+            standard_value: field.dataset.standardValue || field.dataset.expectedText || field.placeholder || "",
+            expected_value: field.dataset.expectedText || "",
+            min_value: field.dataset.minValue || null,
+            max_value: field.dataset.maxValue || null,
+            unit: field.dataset.unit || "",
+            is_measurement: field.dataset.fieldKind === "measurement" || field.classList.contains("ic-value-input"),
+            validation_state: field.classList.contains("answer-invalid")
+                ? "invalid"
+                : field.classList.contains("answer-valid") ? "valid" : ""
+        };
+    });
+    return metadata;
+}
+
 function updateCompletion() {
     const fields = [
         ...document.querySelectorAll('[data-answer-key][data-required-answer="true"]')
@@ -2557,6 +2589,7 @@ async function saveForm(action) {
                 body: JSON.stringify({
                     action,
                     form_answers: collectAnswers(),
+                    field_metadata: collectFieldMetadata(),
                     answer_keys: [...document.querySelectorAll("[data-answer-key]")]
                         .filter(field => field.dataset.requiredAnswer === "true")
                         .map(field => field.dataset.answerKey),

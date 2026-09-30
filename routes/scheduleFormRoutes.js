@@ -4,6 +4,95 @@ const router = express.Router();
 const supabase = require("../config/supabase");
 const { appendRepairRemark } = require("../lib/repairScheduleRemarks");
 const { mergeLockedAnswers, completionState } = require("../lib/continuousScheduleForm");
+const {
+    ARCHIVE_BUCKET,
+    archivePath,
+    splitScheduleAnswers
+} = require("../lib/scheduleFormPersistence");
+
+async function readApprovedArchive(form) {
+    if (!form?.archive_storage_path) return null;
+    const { data, error } = await supabase.storage
+        .from(ARCHIVE_BUCKET)
+        .download(form.archive_storage_path);
+    if (error) throw error;
+    return JSON.parse(await data.text());
+}
+
+async function archiveApprovedForm({ record, formAnswers, fieldMetadata, reviewerId, reviewerName, remarks }) {
+    const header = record.assignment.detail?.assign_work_header || {};
+    const approvedAt = new Date().toISOString();
+    const locoNo = header.loco_master?.loco_no || header.temporary_loco_master?.loco_no || "-";
+    const scheduleName = header.schedule_master?.schedule_name || "-";
+    const scheduleDate = header.assign_date || record.assignment.distribution?.assigned_date || null;
+    const { structuredAnswers, records } = splitScheduleAnswers(formAnswers, fieldMetadata);
+    const structuredAttributions = Object.fromEntries(
+        Object.keys(structuredAnswers).map(key => [key, record.form.answer_attributions?.[key] || {}])
+    );
+    const storagePath = archivePath(record.form.id);
+    const snapshot = {
+        archive_format: "approved_schedule_form_snapshot_v1",
+        archived_at: approvedAt,
+        form: {
+            id: record.form.id,
+            template_id: record.form.schedule_form_master_id,
+            template_version: record.form.template_version,
+            form_code: record.template.form_code,
+            form_name: record.template.form_name,
+            loco_no: locoNo,
+            loco_class: header.loco_master?.loco_type_master?.loco_type || header.temporary_loco_master?.loco_type || null,
+            schedule_name: scheduleName,
+            schedule_date: scheduleDate,
+            work_name: record.assignment.detail?.work_master?.work_name || null,
+            department: record.assignment.employee?.department || null,
+            section: record.assignment.employee?.section || null
+        },
+        template_schema: record.template.template_schema,
+        form_answers: formAnswers,
+        field_metadata: fieldMetadata,
+        answer_attributions: record.form.answer_attributions || {},
+        staff_remarks: record.form.staff_remarks || null,
+        supervisor_remarks: record.form.supervisor_remarks || null,
+        incharge_approval: { reviewer_id: reviewerId, reviewer_name: reviewerName, remarks: remarks || null, approved_at: approvedAt }
+    };
+    const { error: uploadError } = await supabase.storage
+        .from(ARCHIVE_BUCKET)
+        .upload(storagePath, Buffer.from(JSON.stringify(snapshot)), {
+            contentType: "application/json",
+            upsert: true
+        });
+    if (uploadError) throw uploadError;
+
+    if (records.length) {
+        const rows = records.map(item => ({
+            schedule_form_detail_id: record.form.id,
+            schedule_form_master_id: record.form.schedule_form_master_id,
+            loco_no: String(locoNo),
+            schedule_name: String(scheduleName),
+            schedule_date: scheduleDate,
+            department: record.assignment.employee?.department || null,
+            section: record.assignment.employee?.section || null,
+            answer_key: item.answer_key,
+            parameter_name: item.parameter_name,
+            section_name: item.section_name,
+            field_kind: item.field_kind,
+            retention_reason: item.retention_reason,
+            text_value: item.text_value,
+            numeric_value: item.numeric_value,
+            unit: item.unit,
+            standard_value: item.standard_value,
+            validation_state: item.validation_state,
+            answer_attribution: record.form.answer_attributions?.[item.answer_key] || {},
+            field_metadata: item.metadata,
+            approved_at: approvedAt
+        }));
+        const { error: valuesError } = await supabase
+            .from("schedule_form_search_values")
+            .upsert(rows, { onConflict: "schedule_form_detail_id,answer_key" });
+        if (valuesError) throw valuesError;
+    }
+    return { storagePath, approvedAt, structuredAnswers, structuredAttributions };
+}
 
 async function appendFormRemark({ assignment, formId, text, authorId, authorName, authorRole, action }) {
     const header = assignment.detail?.assign_work_header || {};
@@ -272,6 +361,13 @@ async function getReviewRecord(formId) {
     if (error) throw error;
     if (!form) return null;
 
+    if (form.status === "Approved" && form.archive_storage_path) {
+        const archive = await readApprovedArchive(form);
+        form.form_answers = archive?.form_answers || form.form_answers;
+        form.answer_attributions = archive?.answer_attributions || form.answer_attributions;
+        form.field_metadata = archive?.field_metadata || form.field_metadata;
+    }
+
     const assignment = await getAssignment(
         Number(form.staff_id),
         Number(form.active_manpower_distribution_id || form.manpower_distribution_id)
@@ -320,6 +416,52 @@ router.get("/incharges", async (req, res) => {
             success: false,
             message: err.message
         });
+    }
+});
+
+router.get("/search-values/parameters", async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("schedule_form_search_values")
+            .select("parameter_name,department,section")
+            .order("parameter_name", { ascending: true })
+            .limit(10000);
+        if (error) throw error;
+        const seen = new Set();
+        const parameters = (data || []).filter(item => {
+            const key = `${item.department || "Other"}\u0000${item.parameter_name}`;
+            if (!item.parameter_name || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+        res.json({ success: true, parameters });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get("/search-values", async (req, res) => {
+    try {
+        const locoNo = String(req.query.loco_no || "").trim();
+        const scheduleName = String(req.query.schedule_name || "").trim();
+        const parameterName = String(req.query.parameter_name || "").trim();
+        const dateFrom = String(req.query.date_from || "").trim();
+        const dateTo = String(req.query.date_to || "").trim();
+        let query = supabase
+            .from("schedule_form_search_values")
+            .select("id,schedule_form_detail_id,loco_no,schedule_name,schedule_date,department,section,parameter_name,section_name,field_kind,retention_reason,text_value,numeric_value,unit,standard_value,validation_state,approved_at")
+            .order("schedule_date", { ascending: false, nullsFirst: false })
+            .limit(10000);
+        if (locoNo) query = query.eq("loco_no", locoNo);
+        if (scheduleName) query = query.eq("schedule_name", scheduleName);
+        if (parameterName) query = query.eq("parameter_name", parameterName);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) query = query.gte("schedule_date", dateFrom);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) query = query.lte("schedule_date", dateTo);
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ success: true, records: data || [] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 
@@ -472,6 +614,7 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
             String(req.body.remarks || "").trim();
         const authorName = String(req.body.author_name || role).trim();
         const formAnswers = req.body.form_answers;
+        const requestMetadata = req.body.field_metadata;
         const record = await getReviewRecord(formId);
 
         if (!record) {
@@ -504,6 +647,15 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
         }
 
         const update = {};
+        const finalAnswers = formAnswers && typeof formAnswers === "object" && !Array.isArray(formAnswers)
+            ? { ...(record.form.form_answers || {}), ...formAnswers }
+            : (record.form.form_answers || {});
+        const finalMetadata = requestMetadata && typeof requestMetadata === "object" && !Array.isArray(requestMetadata)
+            ? { ...(record.form.field_metadata || {}), ...requestMetadata }
+            : (record.form.field_metadata || {});
+        if (formAnswers && typeof formAnswers === "object" && !Array.isArray(formAnswers)) {
+            update.form_answers = finalAnswers;
+        }
 
         if (role === "supervisor") {
             if (!["save", "forward", "return"].includes(action)) {
@@ -597,8 +749,24 @@ router.patch("/review/:formId/:role/:reviewerId", async (req, res) => {
                         });
                     }
                 }
+                const archived = await archiveApprovedForm({
+                    record,
+                    formAnswers: finalAnswers,
+                    fieldMetadata: finalMetadata,
+                    reviewerId,
+                    reviewerName: authorName,
+                    remarks
+                });
                 update.status = "Approved";
-                update.approved_at = new Date().toISOString();
+                update.approved_at = archived.approvedAt;
+                update.archived_at = archived.approvedAt;
+                update.archive_storage_path = archived.storagePath;
+                update.archive_format = "approved_schedule_form_snapshot_v1";
+                update.form_answers = archived.structuredAnswers;
+                update.answer_attributions = archived.structuredAttributions;
+                update.field_metadata = Object.fromEntries(
+                    Object.keys(archived.structuredAnswers).map(key => [key, finalMetadata[key] || {}])
+                );
             }
         } else {
             return res.status(400).json({
@@ -873,6 +1041,7 @@ router.post(
                     .trim()
                     .toLowerCase();
             const formAnswers = req.body.form_answers || {};
+            const fieldMetadata = req.body.field_metadata || {};
             const answerKeys = Array.isArray(req.body.answer_keys)
                 ? req.body.answer_keys.map(String)
                 : Object.keys(formAnswers);
@@ -983,6 +1152,7 @@ router.post(
                 staff_id: staffId,
                 template_version: template.version,
                 form_answers: merged.answers,
+                field_metadata: fieldMetadata,
                 answer_attributions: merged.attributions,
                 completion_state: progress.complete ? "Complete" : "Incomplete",
                 staff_remarks: staffRemarks || null,
