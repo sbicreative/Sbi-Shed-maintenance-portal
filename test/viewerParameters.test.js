@@ -38,6 +38,12 @@ test('parameter filters require matching loco and schedule, include boundaries, 
     assert.equal(parameters.filterRows(rows, { ...filter, parameter: 'Unknown' }).length, 0);
 });
 
+test('viewer component list is built only from parameters that have saved values', () => {
+    const viewer = fs.readFileSync(require('node:path').join(__dirname, '../public/js/viewer.js'), 'utf8');
+    assert.match(viewer, /parameterRows\.map\(item => item\.parameter\)/);
+    assert.doesNotMatch(viewer, /templates\.values\(\).*map\(item => item\.parameter\)/s);
+});
+
 test('viewer uses the same coordinate normalization as the saved schedule form', () => {
     const form = fs.readFileSync(require('node:path').join(__dirname, '../public/js/schedule-form.js'), 'utf8');
     const viewer = fs.readFileSync(require('node:path').join(__dirname, '../public/js/viewer-parameters.js'), 'utf8');

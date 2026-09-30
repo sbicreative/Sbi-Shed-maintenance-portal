@@ -184,7 +184,8 @@ async function loadParameterHistory() {
             if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load parameter history.');
             const templates = new Map(result.templates.map(template => [template.key, ViewerParameters.parseTemplate(template.html)]));
             parameterRows = result.records.flatMap(record => ViewerParameters.buildRows(record, templates.get(record.templateKey) || [], IcFormControls));
-            parameterNames = [...new Set([...templates.values()].flat().map(item => item.parameter))].sort((a, b) => a.localeCompare(b));
+            parameterNames = [...new Set(parameterRows.map(item => item.parameter).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b));
             result.records.forEach(record => {
                 if (record.locoNo && !locoList.some(item => String(item.loco_no || item.locoNo) === String(record.locoNo))) {
                     locoList.push({ loco_no: record.locoNo });
